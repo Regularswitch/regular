@@ -2,15 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import Logo from "../public/logo-blanc.svg";
-import menu from "../public/menu.png";
+import imageMenu from "../public/menu.png";
 import { getCookie, setCookie } from "./Translate";
 
 type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents({lang}: headerProps) {
-	const [eventClick, setEventClick] = useState(0)
+export default function HeaderComponents({ lang }: headerProps) {
+	const [menu, SetMenu] = useState(false)
+
+	function toggleMenu() {
+		SetMenu(!menu)
+	}
 
 	function Lang() {
 		let selectLanguage = lang || 'PT'
@@ -47,10 +51,10 @@ export default function HeaderComponents({lang}: headerProps) {
 						<nav className=" sm:flex items-center flex md:hidden lx:hidden">
 							<div className="">
 								<Image
-									src={menu}
+									src={imageMenu}
 									alt="menu"
 									className="w-5 h-5 cursor-pointer"
-									onClick={() => setEventClick(eventClick + 1)}
+									onClick={toggleMenu}
 								/>
 							</div>
 						</nav>
@@ -116,16 +120,50 @@ export default function HeaderComponents({lang}: headerProps) {
 						</nav>
 						<Lang />
 					</div>
-					<div className="relative hidden">
-						<nav className="fixed z-10 inset-0 bg-black text-[33px]">
+					<div className={"relative " + (!menu && 'hidden')}>
+						<nav className="fixed z-50 inset-0 bg-black text-[33px]">
+							<span
+								onClick={toggleMenu}
+								className="absolute right-8 top-4 text-white text-[33px]"
+							>
+								x
+							</span>
 							<ul className="fixed left-5 bottom-14">
-								<li>Trabalhos selecionados</li>
-								<li>Marca</li>
-								<li>Experiencia digital</li>
-								<li>Arquitetura gráfica</li>
-								<li>Pagina inicial</li>
-								<li>Pagina inicial</li>
-								<li>Pagina inicial</li>
+								<li>
+									<Link href="/work" legacyBehavior>
+										<a>Selected works</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="/branding" legacyBehavior>
+										<a>Branding</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="digital-and-internet" legacyBehavior>
+										<a>Digital exprirence</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="graphical-arquitecture" legacyBehavior>
+										<a>Graphic architecture</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="/about" legacyBehavior>
+										<a>Sobre</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="/contact-3" legacyBehavior>
+										<a>Contato</a>
+									</Link>
+								</li>
+								<li>
+									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
+										<a>Instagram</a>
+									</Link>
+								</li>
 							</ul>
 						</nav>
 					</div>

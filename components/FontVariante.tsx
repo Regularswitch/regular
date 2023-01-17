@@ -83,7 +83,7 @@ function VariableFont({ text, text2 }: any) {
                 style={{
                     textRendering: 'optimizeSpeed',
                 }}
-                className="pointer-events-none text-[150px] lg:text-[400px] leading-[0.8em]"
+                className="pointer-events-none text-[70px] lg:text-[400px] lg:leading-[0.8em]"
             >
                 {char}
             </span>
@@ -93,7 +93,7 @@ function VariableFont({ text, text2 }: any) {
 
     return (
         <div ref={containerRef}>
-            <div className="text-[200px] text-white text-center uppercase font-home py-8" >
+            <div className=" text-white text-center uppercase font-home lg:py-8" >
                 {chars}
             </div>
         </div>
