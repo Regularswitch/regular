@@ -11,8 +11,9 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'digital-and-internet': 'digital',
 		'work': 'home',
 		'graphical-arquitecture': 'graphic-architecture',
-
 	}
+
+	const teste = true
 
 	function getName(id: any): string {
 		return allCat.find((c: any) => c.id == id).slug
