@@ -13,12 +13,13 @@ export default function translate(text: string, language?: string): string {
     return word
 }
 
-export function getCookie(name: string) {
+export function getCookie(name: string) : string {
     const value = `; ${document.cookie}`
     const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) return parts?.pop()?.split(';')?.shift()
+    return parts?.pop()?.split(';')?.shift() || ''
 }
 
 export function setCookie(name: string, value: string) {
     document.cookie = `${name}=${value};path=/`
+    window.location.reload()
 }

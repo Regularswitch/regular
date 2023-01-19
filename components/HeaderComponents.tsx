@@ -1,23 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "../public/logo-blanc.svg";
 import imageMenu from "../public/menu.png";
-import { getCookie, setCookie } from "./Translate";
+import translate , { getCookie, setCookie  } from "./Translate";
 
 type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents({ lang }: headerProps) {
+export default function HeaderComponents( {lang}:any) {
 	const [menu, SetMenu] = useState(false)
+	const [language, setLang] = useState('PT')
 
 	function toggleMenu() {
 		SetMenu(!menu)
 	}
 
+
+
+	useEffect( function() {
+		let L = getCookie('language')
+		setLang( L )
+
+	}, [] )
+
 	function Lang() {
-		let selectLanguage = lang || 'PT'
+		
+		let selectLanguage = language 
 		return <>
 			<div className="hidden xl:flex justify-center gap-4">
 				{['EN', 'PT'].map(L => <span key={L}
@@ -103,12 +113,12 @@ export default function HeaderComponents({ lang }: headerProps) {
 							<ul>
 								<li>
 									<Link href="/about" legacyBehavior>
-										<a>Sobre</a>
+										<a>{translate('Sobre', language )}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href="/contact-3" legacyBehavior>
-										<a>Contato</a>
+										<a>{translate('Contato', language )}</a>
 									</Link>
 								</li>
 								<li>
@@ -151,12 +161,12 @@ export default function HeaderComponents({ lang }: headerProps) {
 								</li>
 								<li>
 									<Link href="/about" legacyBehavior>
-										<a>Sobre</a>
+										<a>{translate('Sobre', language )}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href="/contact-3" legacyBehavior>
-										<a>Contato</a>
+										<a>{translate('Contato', language )}</a>
 									</Link>
 								</li>
 								<li>

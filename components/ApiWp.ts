@@ -78,7 +78,7 @@ export function porter(payloadWp: listResponseWp): ListPost {
 }
 
 export async function GetApi(path: string, data: any , lang: tipoLinguagens) {
-    const BASE = 'https://regularswitch.com/wp-json/wp/v2'
+    const BASE = 'https://wp.regularswitch.com/wp-json/wp/v2'
     if (lang == 'EN') {
         data.translate = 'EN'
     }
