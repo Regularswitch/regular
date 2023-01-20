@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import Language from "../../../components/Language"
 import { GetApi, data, ListPost } from '../../../components/ApiWp'
 
 export default async function handler(
@@ -7,12 +6,12 @@ export default async function handler(
 	res: NextApiResponse<ListPost>
 ) {
 	let slug = `${req.query?.slug}`
-	let lang = Language(req)
 	let query: data = {
 		categories: slug,
 		_embed: '',
-		per_page: 100
+		per_page: 100,
+		translate: 'EN',
 	}
-	let apiWp = await GetApi('/project', query, lang)
+	let apiWp = await GetApi('/project', query)
 	res.status(200).json(apiWp)
 }

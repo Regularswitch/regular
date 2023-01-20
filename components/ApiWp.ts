@@ -1,4 +1,4 @@
-import Language, { tipoLinguagens } from "./Language"
+import { tipoLinguagens } from "./Language"
 
 export type data = {
     translate?: tipoLinguagens
@@ -77,13 +77,9 @@ export function porter(payloadWp: listResponseWp): ListPost {
     }))
 }
 
-export async function GetApi(path: string, data: any , lang: tipoLinguagens) {
+export async function GetApi(path: string, data: any) {
     const BASE = 'https://wp.regularswitch.com/wp-json/wp/v2'
-    if (lang == 'EN') {
-        data.translate = 'EN'
-    }
     let full_path = new URL(`${BASE}${path}`)
     full_path.search = new URLSearchParams(data).toString();
-    console.log(full_path)
     return porter(await (await fetch(full_path)).json())
 }
