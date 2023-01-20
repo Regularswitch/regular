@@ -1,7 +1,7 @@
 import { tipoLinguagens } from "./Language"
 
 export type data = {
-    translate?: tipoLinguagens
+    translate?: tipoLinguagens | string
     _links?: string
     _embed?: string
     slug?: string
