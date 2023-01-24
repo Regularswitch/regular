@@ -23,6 +23,7 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 		}
 	}
 
+	allPosts = [allPosts[0]]
 
 	return (
 		<div>
@@ -63,9 +64,14 @@ export async function getStaticProps(req: any) {
 	let base = process.env?.BASE
 	let url = base + "/api/project/" + slug
 	let allPosts = []
-	let lang = Language(req)
+	
+	let lang = req.cookies?.['language'] || 'PT'
 	try {
-		let requestPosts = await fetch(url)
+		let requestPosts = await fetch(url,{
+			// headers: {
+			// 	Cookie: `language=${lang}`
+			// }
+		})
 		allPosts = await requestPosts.json()
 	} catch (error) { }
 	return {

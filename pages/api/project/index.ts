@@ -5,13 +5,12 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<ListPost>
 ) {
-	const language = req.cookies['language'] || 'PT'
+	const language = req.cookies['language'] || ''
 	let query: data = {
 		_embed: '',
 		per_page: 22,
-		translate: language,
+		translate: language	
 	}
 	let apiWp = await GetApi('/project/', query)
-
 	res.status(200).json(apiWp.map(p => ({ ...p, content: "" })))
 }
