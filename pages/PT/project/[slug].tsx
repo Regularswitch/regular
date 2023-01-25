@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import HeaderComponents from "../../components/HeaderComponents";
-import FooterComponents from "../../components/FooterComponents";
+import HeaderComponents from "../../../components/HeaderComponents";
+import FooterComponents from "../../../components/FooterComponents";
 import Image from 'next/image'
-import Language from "../../components/Language";
 
 export default function ProjectBySlug({ allPosts, lang }: any) {
 	const [visible, setVisible] = useState(1)
@@ -67,7 +66,11 @@ export async function getStaticProps(req: any) {
 	console.log(req)
 	let lang = req.cookies?.['language'] || 'PT'
 	try {
-		let requestPosts = await fetch(url)
+		let requestPosts = await fetch(url,{
+			headers: {
+				Cookie: `language=PT`
+			}
+		})
 		allPosts = await requestPosts.json()
 	} catch (error) { }
 	return {
