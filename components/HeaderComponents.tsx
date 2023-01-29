@@ -3,13 +3,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "../public/logo-blanc.svg";
 import imageMenu from "../public/menu.png";
-import translate , { getCookie, setCookie  } from "./Translate";
+import translate, { getCookie, setCookie } from "./Translate";
+import { useRouter } from 'next/router'
 
 type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents( {lang}:any) {
+export default function HeaderComponents({ lang }: any) {
 	const [menu, SetMenu] = useState(false)
 	const [language, setLang] = useState('PT')
 
@@ -17,17 +18,15 @@ export default function HeaderComponents( {lang}:any) {
 		SetMenu(!menu)
 	}
 
+	const router = useRouter()
 
-
-	useEffect( function() {
+	useEffect(function () {
 		let L = getCookie('language')
-		setLang( L )
-
-	}, [] )
+		setLang(L)
+	}, [])
 
 	function Lang() {
-		
-		let selectLanguage = language 
+		let selectLanguage = language
 		return <>
 			<div className="hidden xl:flex justify-center gap-4">
 				{['EN', 'PT'].map(L => <span key={L}
@@ -36,12 +35,30 @@ export default function HeaderComponents( {lang}:any) {
 						(selectLanguage == L && "bg-[#FFF2] ")
 
 					}
-					onClick={_ => setCookie('language', L)}
+					onClick={_ => {
+						setCookie('language', L)
+						loadLang()
+					}}
 				>
 					{L}
 				</span>)}
 			</div>
 		</>
+	}
+
+	const prefix = language == 'PT' ? 'PT' : '';
+
+	function loadLang() {
+		let fullUrl = router.asPath
+		fullUrl = fullUrl.replace('/PT', '')
+		let nowLanguage = getCookie('language')
+		if (nowLanguage == 'PT') {
+			fullUrl = '/PT' + fullUrl
+		}
+		setTimeout(() => {			
+			router.replace(fullUrl)
+		}, 1000)		
+
 	}
 
 	return (
@@ -50,12 +67,13 @@ export default function HeaderComponents( {lang}:any) {
 				<header>
 					<div className=" sm: flex justify-between xl:grid grid-cols-5">
 						<nav className="flex justify-center">
-							<Link href="/" legacyBehavior>
+							<Link href={"/" + prefix} legacyBehavior>
 								<Image
 									src={Logo}
 									alt="RSW"
 									className="w-20 h-8 cursor-pointer"
 								/>
+
 							</Link>
 						</nav>
 						<nav className=" sm:flex items-center flex md:hidden lx:hidden">
@@ -88,22 +106,22 @@ export default function HeaderComponents( {lang}:any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<Link href="/work" legacyBehavior>
-										<a>Selected works</a>
+									<Link href={'/' + prefix + '/work'} legacyBehavior>
+										<a>Selected works </a>
 									</Link>
 								</li>
 								<li>
-									<Link href="/branding" legacyBehavior>
+									<Link href={'/' + prefix + '/branding'} legacyBehavior>
 										<a>Branding</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="digital-and-internet" legacyBehavior>
+									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
 										<a>Digital exprirence</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="graphical-arquitecture" legacyBehavior>
+									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
 										<a>Graphic architecture</a>
 									</Link>
 								</li>
@@ -112,13 +130,13 @@ export default function HeaderComponents( {lang}:any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<Link href="/about" legacyBehavior>
-										<a>{translate('Sobre', language )}</a>
+									<Link href={'/' + prefix + '/about'} legacyBehavior>
+										<a>{translate('Sobre', language)}</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="/contact-3" legacyBehavior>
-										<a>{translate('Contato', language )}</a>
+									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
+										<a>{translate('Contato', language)}</a>
 									</Link>
 								</li>
 								<li>
@@ -140,33 +158,33 @@ export default function HeaderComponents( {lang}:any) {
 							</span>
 							<ul className="fixed left-5 bottom-14">
 								<li>
-									<Link href="/work" legacyBehavior>
+									<Link href={'/' + prefix + '/work'} legacyBehavior>
 										<a>Selected works</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="/branding" legacyBehavior>
+									<Link href={'/' + prefix + '/branding'} legacyBehavior>
 										<a>Branding</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="digital-and-internet" legacyBehavior>
+									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
 										<a>Digital exprirence</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="graphical-arquitecture" legacyBehavior>
+									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
 										<a>Graphic architecture</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="/about" legacyBehavior>
-										<a>{translate('Sobre', language )}</a>
+									<Link href={'/' + prefix + '/about'} legacyBehavior>
+										<a>{translate('Sobre', language)}</a>
 									</Link>
 								</li>
 								<li>
-									<Link href="/contact-3" legacyBehavior>
-										<a>{translate('Contato', language )}</a>
+									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
+										<a>{translate('Contato', language)}</a>
 									</Link>
 								</li>
 								<li>

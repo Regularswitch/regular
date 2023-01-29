@@ -27,7 +27,7 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		<div>
 			<HeaderComponents />
 			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className="text-white font-hk my-8">
+				<h1 className="text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]">
 					{allPosts[0].title}
 				</h1>
 

@@ -27,15 +27,15 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		<div>
 			<HeaderComponents />
 			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className="text-white font-hk my-8">
+				<h1 className="text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]">
 					{allPosts[0].title}
 				</h1>
 
 				<div dangerouslySetInnerHTML={{ __html: allPosts[0].content }} />
 				<div className="columns-1 md:columns-3 gap-8 font-hk">
-					{allPostCat && allPostCat.map((p: any) => <div 
-					key={p.id}
-					className="mb-8"
+					{allPostCat && allPostCat.map((p: any) => <div
+						key={p.id}
+						className="mb-8"
 					>
 						<Link href={'project/' + p.slug} >
 							<div className="relative flex overflow-hidden">
@@ -83,14 +83,14 @@ export async function getStaticProps(req: any) {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
 
-		let requestCat = await fetch(base + "/api/project/all-category",{
+		let requestCat = await fetch(base + "/api/project/all-category", {
 			headers: {
 				Cookie: `language=PT`
 			}
 		})
 		allCat = await requestCat.json()
 
-		let requestPostsCat = await fetch(base + "/api/project-category/" + slug,{
+		let requestPostsCat = await fetch(base + "/api/project-category/" + slug, {
 			headers: {
 				Cookie: `language=PT`
 			}
