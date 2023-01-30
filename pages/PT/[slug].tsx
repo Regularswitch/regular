@@ -2,7 +2,6 @@ import React from "react";
 import HeaderComponents from "../../components/HeaderComponents";
 import FooterComponents from "../../components/FooterComponents";
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: any) {
 
@@ -13,7 +12,13 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'graphical-arquitecture': 'graphic-architecture',
 	}
 
-	const teste = true
+	const slugWhite = ['about', 'contact-3']
+
+	const isLight = slugWhite.includes(slug)
+
+	const bgPage = isLight ? " bg-[#FFF] text-[#000] " : ''
+	const lightTitle = isLight ? " text-[#000] " : ''
+
 
 	function getName(id: any): string {
 		return allCat.find((c: any) => c.id == id).slug
@@ -24,10 +29,10 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	})
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
 	return (
-		<div>
-			<HeaderComponents />
+		<div className={bgPage}>
+			<HeaderComponents isLight={isLight} />
 			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className="text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]">
+				<h1 className={"text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
 				</h1>
 
@@ -83,18 +88,10 @@ export async function getStaticProps(req: any) {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
 
-		let requestCat = await fetch(base + "/api/project/all-category", {
-			headers: {
-				Cookie: `language=PT`
-			}
-		})
+		let requestCat = await fetch(base + "/api/project/all-category")
 		allCat = await requestCat.json()
 
-		let requestPostsCat = await fetch(base + "/api/project-category/" + slug, {
-			headers: {
-				Cookie: `language=PT`
-			}
-		})
+		let requestPostsCat = await fetch(base + "/api/project-category/" + slug)
 		allPostCat = await requestPostsCat.json()
 
 	} catch (error) { }
@@ -108,7 +105,3 @@ export async function getStaticProps(req: any) {
 		revalidate: 10
 	}
 }
-
-
-
-
