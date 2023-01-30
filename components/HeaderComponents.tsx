@@ -10,7 +10,7 @@ type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents({ lang }: any) {
+export default function HeaderComponents({ lang, isLight }: any) {
 	const [menu, SetMenu] = useState(false)
 	const [language, setLang] = useState('PT')
 
@@ -25,14 +25,19 @@ export default function HeaderComponents({ lang }: any) {
 		setLang(L)
 	}, [])
 
+	const lightGradient = isLight ? ' from-[#EEE] ' : ''
+	const lightLogo = isLight ? ' invert ' : ''
+	const lightLang = isLight ? ' bg-[#0002] ' : ''
+	const lightLangHover = isLight ? ' hover:bg-[#0002] ' : ''
+
 	function Lang() {
 		let selectLanguage = language
 		return <>
 			<div className="hidden xl:flex justify-center gap-4">
 				{['EN', 'PT'].map(L => <span key={L}
 					className={
-						"flex cursor-pointer rounded w-[28px] h-[28px] justify-center items-center hover:bg-[#FFF3] " +
-						(selectLanguage == L && "bg-[#FFF2] ")
+						"flex cursor-pointer rounded w-[28px] h-[28px] justify-center items-center hover:bg-[#FFF3] " + lightLangHover +
+						(selectLanguage == L && "bg-[#FFF2] " + lightLang)
 
 					}
 					onClick={_ => {
@@ -60,10 +65,13 @@ export default function HeaderComponents({ lang }: any) {
 		}, 1000)		
 
 	}
+	
+	
 
 	return (
 		<header>
-			<div className="mx-auto px-5 pt-5 bg-gradient-to-b from-[#000] lg:pb-8">
+			
+			<div className={"mx-auto px-5 pt-5 bg-gradient-to-b from-[#000] lg:pb-8" + lightGradient}>
 				<header>
 					<div className=" sm: flex justify-between xl:grid grid-cols-5">
 						<nav className="flex justify-center">
@@ -71,7 +79,7 @@ export default function HeaderComponents({ lang }: any) {
 								<Image
 									src={Logo}
 									alt="RSW"
-									className="w-20 h-8 cursor-pointer"
+									className={"w-20 h-8 cursor-pointer" + lightLogo}
 								/>
 
 							</Link>

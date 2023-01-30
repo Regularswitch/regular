@@ -2,7 +2,6 @@ import React from "react";
 import HeaderComponents from "../components/HeaderComponents";
 import FooterComponents from "../components/FooterComponents";
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: any) {
 
@@ -13,7 +12,13 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'graphical-arquitecture': 'graphic-architecture',
 	}
 
-	const teste = true
+	const slugWhite = ['about', 'contact-3']
+
+	const isLight = slugWhite.includes(slug)
+
+	const bgPage = isLight ? " bg-[#FFF] text-[#000] " : ''
+	const lightTitle = isLight ? " text-[#000] " : ''
+
 
 	function getName(id: any): string {
 		return allCat.find((c: any) => c.id == id).slug
@@ -24,18 +29,18 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	})
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
 	return (
-		<div>
-			<HeaderComponents />
+		<div className={bgPage}>
+			<HeaderComponents isLight={isLight} />
 			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className="text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]">
+				<h1 className={"text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
 				</h1>
 
 				<div dangerouslySetInnerHTML={{ __html: allPosts[0].content }} />
 				<div className="columns-1 md:columns-3 gap-8 font-hk">
-					{allPostCat && allPostCat.map((p: any) => <div 
-					key={p.id}
-					className="mb-8"
+					{allPostCat && allPostCat.map((p: any) => <div
+						key={p.id}
+						className="mb-8"
 					>
 						<Link href={'project/' + p.slug} >
 							<div className="relative flex overflow-hidden">
@@ -100,7 +105,3 @@ export async function getStaticProps(req: any) {
 		revalidate: 10
 	}
 }
-
-
-
-
