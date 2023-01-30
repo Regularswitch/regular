@@ -17,7 +17,7 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	const isLight = slugWhite.includes(slug)
 
 	const bgPage = isLight ? " bg-[#FFF] text-[#000] " : ''
-	const lightTitle = isLight ? " text-[#000] " : ''
+	const lightTitle = isLight ? " text-[#000] " : 'text-[#FFF]'
 
 
 	function getName(id: any): string {
@@ -32,7 +32,7 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		<div className={bgPage}>
 			<HeaderComponents isLight={isLight} />
 			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className={"text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]" + lightTitle}>
+				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
 				</h1>
 
