@@ -25,7 +25,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 		setLang(L)
 	}, [])
 
-	const lightGradient = isLight ? ' from-[#EEE] ' : ''
+	const lightGradient = isLight ? ' from-[#EEE] ' : ' from-[#000] '
 	const lightLogo = isLight ? ' invert ' : ''
 	const lightLang = isLight ? ' bg-[#0002] ' : ''
 	const lightLangHover = isLight ? ' hover:bg-[#0002] ' : ''
@@ -71,7 +71,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 	return (
 		<header>
 			
-			<div className={"mx-auto px-5 pt-5 bg-gradient-to-b from-[#000] lg:pb-8" + lightGradient}>
+			<div className={"mx-auto px-5 pt-5 bg-gradient-to-b  lg:pb-8" + lightGradient}>
 				<header>
 					<div className=" sm: flex justify-between xl:grid grid-cols-5">
 						<nav className="flex justify-center">
@@ -154,7 +154,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 							</ul>
 						</nav>
-						<Lang />
+						{/* <Lang /> */}
 					</div>
 					<div className={"relative " + (!menu && 'hidden')}>
 						<nav className="fixed z-50 inset-0 bg-black text-[33px]">
