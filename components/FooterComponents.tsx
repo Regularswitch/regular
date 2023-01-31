@@ -18,7 +18,7 @@ export default function FooterComponents() {
 						<li>
 							<span className="select-none">
 								<Link href="tel:+5511945408448" legacyBehavior>
-									<a>+55 11 (9) 45408448</a>
+									<a>+55 11 (9) 4540-8448</a>
 								</Link>								
 							</span>
 						</li>
@@ -37,7 +37,7 @@ export default function FooterComponents() {
 							<span className="select-none">Rua da consolação, 65</span>
 						</li>
 						<li>
-							<span className="select-none">São Paulo / Brasil 01301-000</span>
+							<span className="select-none">São Paulo / Brazil 01301-000</span>
 						</li>
 					</ul>
 				</nav>

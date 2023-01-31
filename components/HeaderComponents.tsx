@@ -69,19 +69,18 @@ export default function HeaderComponents({ lang, isLight }: any) {
 	
 
 	return (
-		<header>
+		<header className={"bg-gradient-to-b"+ lightGradient}>
 			
-			<div className={"mx-auto px-5 pt-5 bg-gradient-to-b  lg:pb-8" + lightGradient}>
+			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8" }>
 				<header>
-					<div className=" sm: flex justify-between xl:grid grid-cols-5">
-						<nav className="flex justify-center">
+					<div className=" sm: flex justify-between xl:grid grid-cols-5 text-[15px] leading-[20px]">
+						<nav className="flex ">
 							<Link href={"/" + prefix} legacyBehavior>
 								<Image
 									src={Logo}
 									alt="RSW"
 									className={"w-20 h-8 cursor-pointer" + lightLogo}
 								/>
-
 							</Link>
 						</nav>
 						<nav className=" sm:flex items-center flex md:hidden lx:hidden">
@@ -97,7 +96,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<span>São Paulo </span>
+									<span>São Paulo / Brazil</span>
 								</li>
 								<li>
 									<Link href="tel:+5511945408448" legacyBehavior>
@@ -114,23 +113,23 @@ export default function HeaderComponents({ lang, isLight }: any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<Link href={'/' + prefix + '/work'} legacyBehavior>
-										<a>Selected works </a>
+									<Link href={'/' + prefix + '/work'}  legacyBehavior>
+										<a className="hover:opacity-70">Selected works </a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a>Branding</a>
+										<a className="hover:opacity-70">Branding</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a>Digital exprirence</a>
+										<a className="hover:opacity-70">Digital exprirence</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a>Graphic architecture</a>
+										<a className="hover:opacity-70">Graphic architecture</a>
 									</Link>
 								</li>
 							</ul>
@@ -139,17 +138,17 @@ export default function HeaderComponents({ lang, isLight }: any) {
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a>{translate('Sobre', language)}</a>
+										<a className="hover:opacity-70">{translate('About', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a>{translate('Contato', language)}</a>
+										<a className="hover:opacity-70">{translate('Contact', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a>Instagram</a>
+										<a className="hover:opacity-70">Instagram</a>
 									</Link>
 								</li>
 							</ul>
@@ -187,12 +186,12 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a>{translate('Sobre', language)}</a>
+										<a>{translate('About', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a>{translate('Contato', language)}</a>
+										<a>{translate('Contact', language)}</a>
 									</Link>
 								</li>
 								<li>
