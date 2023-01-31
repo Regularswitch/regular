@@ -28,7 +28,7 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 	return (
 		<div>
 			<HeaderComponents lang={lang} />
-			<div className="block w-full h-[100vh]"></div>
+			<div className="block w-full h-[100vh] container w-[1200px] mx-auto"></div>
 			{allPosts.map((p: any) => (
 				<div key={p.id}>
 					<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
