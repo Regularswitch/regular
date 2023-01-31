@@ -13,13 +13,9 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	}
 
 	const slugWhite = ['about', 'contact-3']
-
 	const isLight = slugWhite.includes(slug)
-
 	const bgPage = isLight ? " bg-[#FFF] text-[#000] " : ''
 	const lightTitle = isLight ? " text-[#000] " : 'text-[#FFF]'
-
-
 	function getName(id: any): string {
 		return allCat.find((c: any) => c.id == id).slug
 	}
@@ -94,10 +90,8 @@ export async function getStaticProps(req: any) {
 	try {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
-
 		let requestCat = await fetch(base + "/api/project/all-category")
 		allCat = await requestCat.json()
-
 		let requestPostsCat = await fetch(base + "/api/project-category/" + slug)
 		allPostCat = await requestPostsCat.json()
 
