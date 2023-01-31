@@ -1,8 +1,8 @@
 import Link from "next/link";
 export default function FooterComponents() {
 	return (
-		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px]">
-			<div className="sm: flex justify-center flex-col xl:grid grid-cols-4">
+		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px] lg:mt-[100px]">
+			<div className="sm: flex justify-center flex-col xl:grid grid-cols-4 gap-20">
 				<nav className="sm: mb-8">
 					<ul>
 						<li>

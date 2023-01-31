@@ -73,7 +73,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 			
 			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8" }>
 				<header>
-					<div className=" sm: flex justify-between xl:grid grid-cols-5 text-[15px] leading-[20px]">
+					<div className=" sm:flex justify-between xl:grid grid-cols-4 text-[15px] leading-[20px]">
 						<nav className="flex ">
 							<Link href={"/" + prefix} legacyBehavior>
 								<Image

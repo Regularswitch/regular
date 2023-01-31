@@ -64,7 +64,6 @@ export async function getStaticProps(req: any) {
 	let base = process.env?.BASE
 	let url = base + "/api/project/" + slug
 	let allPosts = []
-	console.log(req)
 	let lang = req.cookies?.['language'] || 'PT'
 	try {
 		let requestPosts = await fetch(url)

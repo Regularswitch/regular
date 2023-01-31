@@ -30,9 +30,16 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
 	return (
 		<div className={bgPage}>
+			{isLight && <style>
+			{`
+				body {
+					background-color: #FFF !important;
+				}
+			`}
+			</style>}
 			<HeaderComponents isLight={isLight} />
-			<div className="container lg:w-[1200px] mx-auto">
-				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]" + lightTitle}>
+			<div className="container lg:w-[1200px] mx-auto px-4">
+				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
 				</h1>
 
