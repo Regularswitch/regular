@@ -31,7 +31,7 @@ function Home({ posts = [], cats = [] }: any) {
 				</p>
 			</section>
 
-			<div className="container mx-auto p-4">
+			<div className="mx-auto p-4 lg:w-[90vw]">
 				<div className="columns-1 md:columns-2 gap-4">
 					{posts.filter((f: any) => f.category.includes(17)).map((p: any) => (
 						<div className="break-inside-avoid pb-4" key={p.id}>

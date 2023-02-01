@@ -87,7 +87,7 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 				</div>
 				<div className='h-[90vh]'></div>
 			</>}
-			<div className="container lg:w-[1200px] mx-auto px-4">
+			<div className="lg:w-[90vw] mx-auto px-4">
 				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
 				</h1>
