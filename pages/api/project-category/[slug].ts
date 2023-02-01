@@ -10,7 +10,7 @@ export default async function handler(
 	let query: data = {
 		categories: slug,
 		_embed: '',
-		per_page: 500,
+		per_page: 100,
 		translate: language	
 	}
 	let apiWp = await GetApi('/project', query)
