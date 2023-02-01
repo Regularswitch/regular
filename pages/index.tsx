@@ -18,7 +18,9 @@ function Home({ posts = [], cats = [] }: any) {
 		<div>
 			<HeaderComponents />
 			<FontVariante text="REGULAR" text2="SWITCH" />
-			<FontVariante text="SWITCH" />
+			<div className="mt-[-40px]">
+				<FontVariante text="SWITCH" />
+			</div>
 			<section className="text-white container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
 				<h2 className="block mb-[40px]">Branding / Digital / Arquitetura Gráfica</h2>
 				<p>

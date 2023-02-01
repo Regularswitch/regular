@@ -26,9 +26,9 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 	allPosts = [allPosts[0]]
 
 	return (
-		<div>
+		<div className='font-hg'>
 			<HeaderComponents lang={lang} />
-			<div className="block w-full h-[100vh] container w-[1200px] mx-auto"></div>
+			<div className="block w-full h-[100vh] container lg:w-[1200px] mx-auto"></div>
 			{allPosts.map((p: any) => (
 				<div key={p.id}>
 					<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
@@ -39,14 +39,22 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 							objectFit="cover"
 						/>
 					</div>
-					<div className="container">
-
-						<h1 className="text-white text-[70px] font-hk font-bold">{p.title}</h1>
+					<div className="container px-4 mx-auto">
+						<h1 className="text-white text-[40px] lg:text-[70px] font-hk font-bold">{p.title}</h1>
 						<div dangerouslySetInnerHTML={{ __html: p.content }} />
+						<div className='font-hg text-white text-[30px] lg:text-[70px] font-bold cursor-pointer'
+							onClick={
+								() => window.history.back()
+							}>
+							Back to works →
+						</div>
 					</div>
+
 
 				</div>
 			))}
+
+
 			<FooterComponents />
 		</div>
 	);

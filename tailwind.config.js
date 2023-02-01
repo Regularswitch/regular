@@ -9,6 +9,7 @@ module.exports = {
         fontFamily: {
             hk: ["HK Grotesk", 'sans-serif'],
             home: ["HK-home", 'sans-serif'],
+            hg: ["Hanken Grotesk", 'sans-serif'],
         }
     },
     plugins: [],

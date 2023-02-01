@@ -1,9 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from 'react'
 import HeaderComponents from "../components/HeaderComponents";
 import FooterComponents from "../components/FooterComponents";
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: any) {
+
+	const [visible, setVisible] = useState(1)
+
+
+	useEffect(() => {
+		if (document) {
+			document.addEventListener("scroll", scrollShow)
+		}
+	}, [])
+
+	function scrollShow() {
+		const offsetTop = document.documentElement.scrollTop || document.body.scrollTop || 0
+		if (offsetTop > 70) {
+			setVisible(0)
+		} else {
+			setVisible(1)
+		}
+	}
 
 	let dictionary: any = {
 		'branding': 'branding',
@@ -11,6 +30,29 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'work': 'home',
 		'graphical-arquitecture': 'graphic-architecture',
 	}
+
+	let dictionaryColors: any = {
+		'branding': ' bg-[#00FD] ',
+		'digital-and-internet': ' bg-[#0F0D] ',
+		'graphical-arquitecture': ' bg-[#F00D] ',
+		'work': ' bg-[#FF0D] ',
+	}
+	let dictionaryColorsLine: any = {
+		'branding': ' bg-[#FFF] ',
+		'digital-and-internet': ' bg-[#000] ',
+		'graphical-arquitecture': ' bg-[#FFF] ',
+		'work': ' bg-[#000] ',
+	}
+	let dictionaryColorsText: any = {
+		'branding': ' text-[#FFF] ',
+		'digital-and-internet': ' text-[#000] ',
+		'graphical-arquitecture': ' text-[#FFF] ',
+		'work': ' text-[#000] ',
+	}
+
+	const color = dictionaryColors?.[slug] || 'bg-[#0F0D]'
+	const colorTitle = dictionaryColorsText?.[slug] || 'text-[#000]'
+	const colorLine = dictionaryColorsLine?.[slug] || 'text-[#000]'
 
 	const slugWhite = ['about', 'contact-3']
 	const isLight = slugWhite.includes(slug)
@@ -27,13 +69,24 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	return (
 		<div className={bgPage}>
 			{isLight && <style>
-			{`
+				{`
 				body {
 					background-color: #FFF !important;
 				}
 			`}
 			</style>}
 			<HeaderComponents isLight={isLight} />
+			{allPosts[0].image_full && <>
+				<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
+					<Image
+						alt={allPosts[0].title}
+						src={allPosts[0].image_full}
+						layout="fill"
+						objectFit="cover"
+					/>
+				</div>
+				<div className='h-[90vh]'></div>
+			</>}
 			<div className="container lg:w-[1200px] mx-auto px-4">
 				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]" + lightTitle}>
 					{allPosts[0].title}
@@ -51,14 +104,14 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 									<img className=" w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
 								</div>
 								<div
-									className="p-8 transition-all duration-300 opacity-0 hover:opacity-100 block absolute z-10 top-0 left-0 bg-[#C00D] w-full h-[1000px]"
+									className={"p-8 transition-all duration-300 opacity-0 hover:opacity-100 block absolute z-10 top-0 left-0 w-full h-[1000px]" + color}
 								>
-									<strong className="text-white font-bold">{p.title}</strong>
-									<div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF] "></div>
-									<div dangerouslySetInnerHTML={{ __html: p.more }} />
+									<strong className={"font-bold" + colorTitle}>{p.title}</strong>
+									<div className={"inline-block w-[40px] h-[1px] mb-[6px] mx-[6px]" + colorLine}></div>
+									<div className={colorTitle} dangerouslySetInnerHTML={{ __html: p.more }} />
 									{p.category && p.category.map((id: number) => <span
 										key={id}
-										className="mr-2 text-[#FFF6]"
+										className={"mr-2 opacity-50" + colorTitle}
 									>
 										#{getName(id)}
 									</span>)}
