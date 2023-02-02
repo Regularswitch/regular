@@ -22,12 +22,11 @@ function Home({ posts = [], cats = [] }: any) {
 				<FontVariante text="SWITCH" />
 			</div>
 			<section className="text-white container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
-				<h2 className="block mb-[40px]">Branding / Digital / Arquitetura Gráfica</h2>
+				<h2 className="block mb-[40px]">Branding / Digital / Graphic Architecture</h2>
 				<p>
-					Regularswitch é uma agência de design multi-cultural
-					com escritório no Brasil e na França. Trabalhando na
-					fronteira entre analógico e digital para oferecer experiências
-					visuais que importam.
+					RegularSwitch is a multi-cultural design agency based in Brazil. 
+					Working on the edge between analog and digital to offer visual 
+					experiences that matter.
 				</p>
 			</section>
 

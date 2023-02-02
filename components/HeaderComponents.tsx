@@ -60,18 +60,18 @@ export default function HeaderComponents({ lang, isLight }: any) {
 		if (nowLanguage == 'PT') {
 			fullUrl = '/PT' + fullUrl
 		}
-		setTimeout(() => {			
+		setTimeout(() => {
 			router.replace(fullUrl)
-		}, 1000)		
+		}, 1000)
 
 	}
-	
-	
+
+
 
 	return (
-		<header className={"bg-gradient-to-b"+ lightGradient}>
-			
-			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8" }>
+		<header className={"bg-gradient-to-b" + lightGradient}>
+
+			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8"}>
 				<header>
 					<div className=" flex justify-between xl:grid grid-cols-4 text-[15px] leading-[20px]">
 						<nav className="flex ">
@@ -88,7 +88,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								<Image
 									src={imageMenu}
 									alt="menu"
-									className="w-5 h-5 cursor-pointer"
+									className={"w-5 h-5 cursor-pointer" + lightLogo}
 									onClick={toggleMenu}
 								/>
 							</div>
@@ -96,11 +96,17 @@ export default function HeaderComponents({ lang, isLight }: any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<span>São Paulo / Brazil</span>
+									<span>
+										<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
+											<a target="_blank" rel="noopener noreferrer" >
+												São Paulo / Brazil
+											</a>
+										</Link>
+									</span>
 								</li>
 								<li>
 									<Link href="tel:+5511945408448" legacyBehavior>
-										<a><span>+55 11 (9) 4540-8448</span></a>
+										<a><span>+55 (11) 9 4540-8448</span></a>
 									</Link>
 								</li>
 								<li>
@@ -113,7 +119,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<Link href={'/' + prefix + '/work'}  legacyBehavior>
+									<Link href={'/' + prefix + '/work'} legacyBehavior>
 										<a className="hover:opacity-70">Selected works </a>
 									</Link>
 								</li>
@@ -124,7 +130,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a className="hover:opacity-70">Digital exprirence</a>
+										<a className="hover:opacity-70">Digital experience</a>
 									</Link>
 								</li>
 								<li>
@@ -148,7 +154,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a className="hover:opacity-70">Instagram</a>
+										<a target="_blank" rel="noopener noreferrer" className="hover:opacity-70">Instagram</a>
 									</Link>
 								</li>
 							</ul>
@@ -176,7 +182,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a>Digital exprirence</a>
+										<a>Digital experience</a>
 									</Link>
 								</li>
 								<li>
@@ -196,7 +202,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a>Instagram</a>
+										<a target="_blank" rel="noopener noreferrer" >Instagram</a>
 									</Link>
 								</li>
 							</ul>
