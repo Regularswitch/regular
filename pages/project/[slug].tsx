@@ -37,6 +37,7 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 							src={p.image_full}
 							layout="fill"
 							objectFit="cover"
+							priority
 						/>
 					</div>
 					<div className="lg:w-[90vw] px-4 mx-auto">
