@@ -50,12 +50,8 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 							Back to works →
 						</div>
 					</div>
-
-
 				</div>
 			))}
-
-
 			<FooterComponents />
 		</div>
 	);

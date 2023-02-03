@@ -162,14 +162,14 @@ export default function HeaderComponents({ lang, isLight }: any) {
 						{/* <Lang /> */}
 					</div>
 					<div className={"relative " + (!menu && 'hidden')}>
-						<nav className="fixed z-50 inset-0 bg-black text-[33px]">
+						<nav className="fixed z-50 inset-0 bg-black text-[33px] text-white">
 							<span
 								onClick={toggleMenu}
 								className="absolute right-8 top-4 text-white text-[33px]"
 							>
 								x
 							</span>
-							<ul className="fixed left-5 bottom-14">
+							<ul className="fixed left-5 bottom-14" onClick={toggleMenu}>
 								<li>
 									<Link href={'/' + prefix + '/work'} legacyBehavior>
 										<a>Selected works</a>
