@@ -1,3 +1,4 @@
+import { type } from "os"
 import { tipoLinguagens } from "./Language"
 
 export type data = {
@@ -8,6 +9,9 @@ export type data = {
     per_page?: number
     more?: string
     categories?: string
+    meta?: string
+    links?: []
+
 }
 
 export type responseWpMedia = {
@@ -21,6 +25,10 @@ export type responseWpMedia = {
             }
         }
     }
+}
+
+export type attachment = {
+    href?: string
 }
 
 export type responseWp = {
@@ -38,10 +46,14 @@ export type responseWp = {
     content: {
         rendered: string
     }
+    featured_media?: string
     _embedded: {
         'wp:featuredmedia': responseWpMedia[]
     }
     "project-category"?: []
+    _links?: {
+        "wp:attachment"?: attachment[]
+    }
 }
 
 export type listResponseWp = Array<responseWp>
@@ -73,7 +85,8 @@ export function porter(payloadWp: listResponseWp): ListPost {
         content: p?.content?.rendered ,
         more: p?.excerpt?.rendered,
         category: p["project-category"],
-        description: p.description
+        description: p.description,
+        image: p?._links?.["wp:attachment"]?.[0]?.href,
     }))
 }
 
@@ -83,3 +96,9 @@ export async function GetApi(path: string, data: any) {
     full_path.search = new URLSearchParams(data).toString();
     return porter(await (await fetch(full_path)).json())
 }
+
+export async function GetMeta() {
+    let full_path = 'https://wp.regularswitch.com/wp-json/api-etc/v2/all-posts'
+    return await (await fetch(full_path)).json()
+}
+

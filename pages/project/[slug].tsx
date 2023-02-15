@@ -4,7 +4,7 @@ import FooterComponents from "../../components/FooterComponents";
 import Image from 'next/image'
 import Language from "../../components/Language";
 
-export default function ProjectBySlug({ allPosts, lang }: any) {
+export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 	const [visible, setVisible] = useState(1)
 
 
@@ -24,6 +24,7 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 	}
 
 	allPosts = [allPosts[0]]
+	let bg = allMetas?.img_single?.url ?? allPosts?.[0]?.image_full
 
 	return (
 		<div className='font-hg'>
@@ -34,7 +35,7 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 					<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
 						<Image
 							alt={p.title}
-							src={p.image_full}
+							src={bg}
 							layout="fill"
 							objectFit="cover"
 							priority
@@ -69,14 +70,18 @@ export async function getStaticProps(req: any) {
 	let base = process.env?.BASE
 	let url = base + "/api/project/" + slug
 	let allPosts = []
+	let allMetas = []
 	let lang = req.cookies?.['language'] || 'PT'
 	try {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
+		allMetas = await (await fetch(base +"/api/project/all-metas")).json()
 	} catch (error) { }
+	allMetas = allMetas.find( (m:any) => m.slug == slug )
 	return {
 		props: {
 			allPosts,
+			allMetas,
 			lang
 		},
 		revalidate: 10

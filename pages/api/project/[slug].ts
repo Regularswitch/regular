@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { GetApi, data, ListPost } from '../../../components/ApiWp'
+import { GetApi, data, ListPost, GetMeta } from '../../../components/ApiWp'
 
 export default async function handler(
 	req: NextApiRequest,
@@ -11,7 +11,8 @@ export default async function handler(
 	let query: data = {
 		slug,
 		_embed: '',	
-		translate: language	
+		translate: language,
+		meta: '1'
 	}
 	let apiWp = await GetApi('/project/', query)
 	res.status(200).json(apiWp)
