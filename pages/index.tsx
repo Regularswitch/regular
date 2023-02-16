@@ -57,7 +57,6 @@ function Home({ posts = [], cats = [], allMetas = [] }: any) {
 										<img className="w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
 									</div>
 									<div>
-										{get_image_secondary_by_slug(p.slug)}
 										<strong className="text-white inline-block mt-4">{p.title}</strong>
 										<div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF] "></div>
 										<div dangerouslySetInnerHTML={{ __html: p.more }} />
