@@ -9,10 +9,15 @@ import Link from 'next/link'
 
 
 
-function Home({ posts = [], cats = [] }: any) {
+function Home({ posts = [], cats = [], allMetas = [] }: any) {
 	function getName(id: any) {
 		return cats.find((c: any) => c.id == id).title
 	}
+
+	function get_image_secondary_by_slug(slug:any) {
+		return (allMetas.find( (p:any) => slug == p.slug ))?.img_secondary?.url
+	}
+	
 
 	return (
 		<div>
@@ -45,9 +50,14 @@ function Home({ posts = [], cats = [] }: any) {
 										layout='fill'										
 										objectFit='cover'
 									/> */}
+										{
+											get_image_secondary_by_slug(p.slug) &&
+											<img className="absolute top-0 left-0 w-full transition-all  duration-300 hover:scale-[1.05] opacity-0 hover:opacity-100" src={get_image_secondary_by_slug(p.slug)} alt={p.title} />
+										}
 										<img className="w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
 									</div>
 									<div>
+										{get_image_secondary_by_slug(p.slug)}
 										<strong className="text-white inline-block mt-4">{p.title}</strong>
 										<div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF] "></div>
 										<div dangerouslySetInnerHTML={{ __html: p.more }} />
@@ -72,10 +82,10 @@ function Home({ posts = [], cats = [] }: any) {
 
 
 
-export default function Index({ allPosts, allCat }: any) {
+export default function Index({ allPosts, allCat, allMetas }: any) {
 	return (
 		<div>
-			<Home posts={allPosts} cats={allCat}></Home>
+			<Home posts={allPosts} cats={allCat} allMetas={allMetas}></Home>
 		</div>
 	);
 }
@@ -85,17 +95,21 @@ export async function getStaticProps() {
 	let url = base + "/api/project"
 	let allPosts = []
 	let allCat = []
+	let allMetas = []
 	try {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
 		let requestCat = await fetch(base + "/api/project/all-category")
 		allCat = await requestCat.json()
+		allMetas = await (await fetch(base +"/api/project/all-metas")).json()
+		
 	} catch (error) { }
 
 	return {
 		props: {
 			allPosts,
-			allCat
+			allCat,
+			allMetas
 		},
 		revalidate: 10
 	}
