@@ -98,7 +98,7 @@ export async function GetApi(path: string, data: any) {
 }
 
 export async function GetMeta() {
-    let full_path = 'https://wp.regularswitch.com/wp-json/api-etc/v2/all-posts'
+    let full_path = 'https://wp.regularswitch.com/wp-json/api-etc/v2/all-posts?v=1.1.1'
     return await (await fetch(full_path)).json()
 }
 

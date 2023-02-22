@@ -24,7 +24,8 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 	}
 
 	allPosts = [allPosts[0]]
-	let bg = allMetas?.img_single?.url ?? allPosts?.[0]?.image_full
+	let bg = allMetas?.img_single?.url || allPosts?.[0]?.image_full
+	let video = allMetas?.video?.url || false
 
 	return (
 		<div className='font-hg'>
@@ -33,13 +34,20 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 			{allPosts.map((p: any) => (
 				<div key={p.id}>
 					<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
-						<Image
-							alt={p.title}
-							src={bg}
-							layout="fill"
-							objectFit="cover"
-							priority
-						/>
+						{!video &&
+							<Image
+								alt={p.title}
+								src={bg}
+								layout="fill"
+								objectFit="cover"
+								priority
+							/>
+						}
+						{video &&
+							<video src={video} muted autoPlay loop className='object-cover w-[100vw] h-[100vh]'>
+								
+							</video>
+						}
 					</div>
 					<div className="lg:w-[90vw] px-4 mx-auto">
 						<h1 className="text-white text-[40px] lg:text-[70px] font-hk font-bold">{p.title}</h1>
@@ -75,9 +83,9 @@ export async function getStaticProps(req: any) {
 	try {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
-		allMetas = await (await fetch(base +"/api/project/all-metas")).json()
+		allMetas = await (await fetch(base + "/api/project/all-metas")).json()
 	} catch (error) { }
-	allMetas = allMetas.find( (m:any) => m.slug == slug )
+	allMetas = allMetas.find((m: any) => m.slug == slug)
 	return {
 		props: {
 			allPosts,
