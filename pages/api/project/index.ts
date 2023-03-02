@@ -8,7 +8,7 @@ export default async function handler(
 	const language = req.cookies['language'] || ''
 	let query: data = {
 		_embed: '',
-		per_page: 22,
+		per_page: 100,
 		translate: language	
 	}
 	let apiWp = await GetApi('/project/', query)
