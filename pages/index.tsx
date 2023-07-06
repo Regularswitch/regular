@@ -36,7 +36,7 @@ function Home({ posts = [], cats = [], allMetas = [] }: any) {
 			</section>
 
 			<div className="mx-auto p-4 lg:w-[90vw]">
-				<div className="columns-1 md:columns-2 gap-4">
+				<div className="columns-1 md:columns-3 gap-4">
 					{posts.filter((f: any) => f.category.includes(17)).map((p: any) => (
 						<div className="break-inside-avoid pb-4" key={p.id}>
 							<Link href={'project/' + p.slug}  >
