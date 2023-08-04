@@ -93,7 +93,7 @@ function VariableFont({ text, text2 }: any) {
 
     return (
         <div ref={containerRef}>
-            <div className=" text-white text-center uppercase font-home lg:py-8" >
+            <div className=" text-black text-center uppercase font-home lg:py-8" >
                 {chars}
             </div>
         </div>

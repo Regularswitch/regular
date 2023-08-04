@@ -7,7 +7,6 @@ import Language from "../../components/Language";
 export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 	const [visible, setVisible] = useState(1)
 
-
 	useEffect(() => {
 		if (document) {
 			document.addEventListener("scroll", scrollShow)
@@ -50,9 +49,9 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 						}
 					</div>
 					<div className="lg:w-[90vw] px-4 mx-auto">
-						<h1 className="text-white text-[40px] lg:text-[70px] font-hk font-bold">{p.title}</h1>
+						<h1 className="text-balck text-[40px] lg:text-[70px] font-hk font-bold">{p.title}</h1>
 						<div dangerouslySetInnerHTML={{ __html: p.content }} />
-						<div className='font-hg text-white text-[30px] lg:text-[70px] font-bold cursor-pointer'
+						<div className='font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer'
 							onClick={
 								() => window.history.back()
 							}>

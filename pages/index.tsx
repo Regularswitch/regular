@@ -26,7 +26,7 @@ function Home({ posts = [], cats = [], allMetas = [] }: any) {
 			<div className="mt-[-40px]">
 				<FontVariante text="SWITCH" />
 			</div>
-			<section className="text-white container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
+			<section className="text-black container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
 				<h2 className="block mb-[40px]">Branding / Digital / Graphic Architecture</h2>
 				<p>
 					RegularSwitch is a multi-cultural design agency based in Brazil. 
@@ -57,7 +57,7 @@ function Home({ posts = [], cats = [], allMetas = [] }: any) {
 										<img className="w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
 									</div>
 									<div>
-										<strong className="text-white inline-block mt-4">{p.title}</strong>
+										<strong className="text-black inline-block mt-4">{p.title}</strong>
 										<div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF] "></div>
 										<div dangerouslySetInnerHTML={{ __html: p.more }} />
 										{p.category && p.category.map((id: number) => <span
