@@ -25,7 +25,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 		setLang(L)
 	}, [])
 
-	const lightGradient = isLight ? ' from-[#FFF] ' : ' from-[#FFF] '
+	const lightGradient = isLight ? ' from-[#FFF0] ' : ' from-[#FFF0] '
 	const lightLogo = '  invert'
 	const lightLang = isLight ? ' bg-[#0002] ' : ''
 	const lightLangHover = isLight ? ' hover:bg-[#0002] ' : ''
