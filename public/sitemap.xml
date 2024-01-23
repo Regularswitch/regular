@@ -1,8 +1,497 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://regularswitch.com/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://regularswitch.com/</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/work</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/branding</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/digital-and-internet</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/graphical-arquitecture</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/about</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/contact-3</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/baile-da-dj-ophia</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/blum-10-anos</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/terravista</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/circuito-sesc-de-artes</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/love-cabaret</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/cine-joia</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/variant-typographique</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/grande-hotel</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/casa-canta</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/club-athletico-paulistano</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/deize-tigrona</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/marco-0</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/lions-nightclub</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/sesc-paulista</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/central-1926</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/daki</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/agfa-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/ursofrango</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/terro</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/ip-co</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/restinga</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/meoty</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/santista-inverno-22</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/koin</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/lecorbusier</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/aic</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/santista-summer-19</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/elan</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/france-excellence-2022</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/dan-and-gee</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/barro-de-chao</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/santista-summer-21-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/nike</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/catalogue-mbs</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/mbs-stand</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/project/deichman-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/baile-da-dj-ophia</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/blum-10-anos</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/terravista</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/circuito-sesc-de-artes</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/love-cabaret</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/cine-joia</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/variant-typographique</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/grande-hotel</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/casa-canta</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/club-athletico-paulistano</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/deize-tigrona</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/marco-0</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/lions-nightclub</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/sesc-paulista</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/central-1926</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/daki</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/agfa-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/ursofrango</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/terro</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/ip-co</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/restinga</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/meoty</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/santista-inverno-22</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/koin</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/lecorbusier</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/aic</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/santista-summer-19</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/elan</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/france-excellence-2022</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/dan-and-gee</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/barro-de-chao</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/santista-summer-21-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/nike</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/catalogue-mbs</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/mbs-stand</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/deichman-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/melange</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/liac</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/quebrante</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/suivie</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/agfa</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/france-excellence-2021</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/anna-hard-tea</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/design-in-mind-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/agfa-calendar</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/living-line-2-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/print-in-progress-2018</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/project-8-2</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/thiings</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/france-panificacao</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/a-louca-debaixo-do-branco</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/cremme-moveis</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/latelier-v</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://regularswitch.com/PT/project/plug-play</loc>
+  <lastmod>2024-01-23T17:37:20+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+
+
 </urlset>
