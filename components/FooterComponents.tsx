@@ -46,7 +46,7 @@ export default function FooterComponents() {
 							<span className="select-none">
 								<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
 									<a target="_blank" rel="noopener noreferrer" >
-										Sao Paulo / Brazil 01301-000 
+										Sao Paulo / Brazil 01301-000. 
 									</a>
 								</Link>
 							</span>
