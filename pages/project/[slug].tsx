@@ -6,7 +6,7 @@ import Language from "../../components/Language";
 
 export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 	const [visible, setVisible] = useState(1)
-
+	console.log(allPosts)
 	useEffect(() => {
 		if (document) {
 			document.addEventListener("scroll", scrollShow)
@@ -15,7 +15,7 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 
 	function scrollShow() {
 		const offsetTop = document.documentElement.scrollTop || document.body.scrollTop || 0
-		if (offsetTop > 70) {
+		if (offsetTop > 300) {
 			setVisible(0)
 		} else {
 			setVisible(1)
@@ -43,9 +43,7 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 							/>
 						}
 						{video &&
-							<video src={video} muted autoPlay loop className='object-cover w-[100vw] h-[100vh]'>
-								
-							</video>
+							<video src={video} muted autoPlay loop className='object-cover w-[100vw] h-[100vh]' />
 						}
 					</div>
 					<div className="lg:w-[90vw] px-4 mx-auto">

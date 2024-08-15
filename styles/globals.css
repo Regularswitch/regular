@@ -3476,3 +3476,7 @@ pre.wp-block-verse {
 	width: auto;
 	z-index: 100000
 }
+
+.wp-block-embed iframe {
+	width: 100%;
+}
