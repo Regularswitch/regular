@@ -11,28 +11,28 @@ export interface Meta {
 }
 
 export interface HomeProps {
-  projects: Projects[];
+  projects: Projects;
   cats: Category[];
   allMetas: Meta[];
 }
 
 export interface IndexProps {
-  projects: Projects[];
+  projects: Projects;
   allCat: Category[];
   allMetas: Meta[];
 }
 
 export type Project = {
-  id: number
-  title?: string
-  slug: string
-  name?: string
-  image_full?: string
-  image_medium?: string
-  content: string
-  link: string
-  more?: string
-  category?: []
-  description?: string
-  created_at?: Date
-}
+  id: number;
+  title?: string;
+  slug: string;
+  name?: string;
+  image_full?: string;
+  image_medium?: string;
+  content: string;
+  link: string;
+  more?: string;
+  category?: number[];
+  description?: string;
+  created_at?: Date;
+};

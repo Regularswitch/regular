@@ -8,11 +8,16 @@ import { useMemo } from 'react';
 export default function ContainerProjects({ projects, cats, allMetas }: HomeProps) {
     const getName = (id: number) => cats.find((c: any) => c.id === id)?.title || '';
     const getImageSecondaryBySlug = (slug: string) => allMetas.find((p: any) => slug === p.slug)?.img_secondary?.url || '';
-    const sortedProjects = useMemo(() => projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()), [projects]);
+    const sortedProjects = useMemo(() =>
+        projects.sort((a, b) =>
+            new Date(b.created_at as Date).getTime() - new Date(a.created_at as Date).getTime()
+        ),
+        [projects]
+    );
 
-    const createColumnWiseLayout = (items, numColumns) => {
-        const columns = Array.from({ length: numColumns }, () => []);
-        items.forEach((item, index) => {
+    const createColumnWiseLayout = (items: any[], numColumns: number) => {
+        const columns: any[][] = Array.from({ length: numColumns }, () => [] as any[]);
+        items.forEach((item: any, index: number) => {
             columns[index % numColumns].push(item);
         });
         return columns;
@@ -24,7 +29,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
         <>
             {columns.map((column, columnIndex) => (
                 <div key={columnIndex} className="break-inside-avoid pb-4">
-                    {column.filter((f: Project) => f.category.includes(17)).map((p) => (
+                    {column.filter((f: Project) => (f.category || []).includes(17)).map((p) => (
                         <div className="break-inside-avoid pb-4" key={p.id}>
                             <Link href={`/project/${p.slug}`} passHref>
                                 <div className="font-hk">
@@ -55,7 +60,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                                         <div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF]" />
                                         <div dangerouslySetInnerHTML={{ __html: p.more }} />
                                         {p.category &&
-                                            p.category.map((id) => (
+                                            p.category.map((id: number) => (
                                                 <span key={id} className="mr-2 text-[#FFF6]">
                                                     #{getName(id)}
                                                 </span>

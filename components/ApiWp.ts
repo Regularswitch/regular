@@ -1,6 +1,6 @@
 import { type } from "os"
 import { tipoLinguagens } from "./Language"
-import { Projects, Project } from '../types';
+import { Projects } from '../types';
 
 export type data = {
     translate?: tipoLinguagens | string
