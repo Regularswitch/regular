@@ -23,9 +23,7 @@ const Home: FC<HomeProps> = ({ projects, cats, allMetas }) => {
 			</section>
 
 			<div className="mx-auto p-4 lg:w-[90vw]">
-				<div className="columns-1 md:columns-3 gap-4">
-					<ContainerProjects projects={projects} cats={cats} allMetas={allMetas} />
-				</div>
+				<ContainerProjects projects={projects} cats={cats} allMetas={allMetas} />
 			</div>
 			<div className="h-96" />
 			<FooterComponents />
