@@ -25,6 +25,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 		setLang(L)
 	}, [])
 
+	const lightGradient = isLight ? 'from-gray-300' : 'from-gray-900';
 	const lightLogo = isLight ? '' : ' invert';
 	const lightLang = isLight ? ' bg-[#FFF2] ' : ' bg-[#0002] ';
 	const lightLangHover = isLight ? ' hover:bg-[#FFF3] ' : ' hover:bg-[#0002] ';
@@ -66,10 +67,8 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 
 	}
 
-
-
 	return (
-		<header className={"bg-gradient-to-b"}>
+		<header className={`bg-gradient-to-b ${lightGradient}`}>
 
 			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8"}>
 				<header>
