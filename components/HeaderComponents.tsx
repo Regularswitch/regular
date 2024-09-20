@@ -29,7 +29,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 	const lightLogo = isLight ? '' : ' invert';
 	const lightLang = isLight ? ' bg-[#FFF2] ' : ' bg-[#0002] ';
 	const lightLangHover = isLight ? ' hover:bg-[#FFF3] ' : ' hover:bg-[#0002] ';
-	const lightTextColor = isLight ? 'text-white dynamic-text-shadow' : 'text-black';
+	const lightTextColor = isLight ? 'text-white' : 'text-black';
 
 	function Lang() {
 		let selectLanguage = language
