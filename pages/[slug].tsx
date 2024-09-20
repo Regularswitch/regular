@@ -1,19 +1,34 @@
 import React, { useEffect, useState } from 'react'
 import HeaderComponents from "../components/HeaderComponents";
 import FooterComponents from "../components/FooterComponents";
-import Link from 'next/link'
-import Image from 'next/image'
+import Link from 'next/link';
+import Image from 'next/image';
+import DateTimeComponent from '../components/DateTimeComponent';
+import parse, { domToReact } from 'html-react-parser';
 
 export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: any) {
 
-	const [visible, setVisible] = useState(1)
+	const [visible, setVisible] = useState(1);
 
+	function renderContent() {
+		const content = allPosts[0].content;
+
+		const options = {
+			replace: (domNode: any) => {
+				if (domNode.type === 'comment' && domNode.data.trim() === 'DATETIME_COMPONENT') {
+					return <DateTimeComponent />;
+				}
+			},
+		};
+
+		return parse(content, options);
+	}
 
 	useEffect(() => {
 		if (document) {
 			document.addEventListener("scroll", scrollShow)
 		}
-	}, [])
+	}, []);
 
 	function scrollShow() {
 		const offsetTop = document.documentElement.scrollTop || document.body.scrollTop || 0
@@ -54,10 +69,6 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	const colorTitle = dictionaryColorsText?.[slug] || 'text-[#000]'
 	const colorLine = dictionaryColorsLine?.[slug] || 'text-[#000]'
 
-	const slugWhite = ['about', 'contact-3']
-	const isLight = slugWhite.includes(slug)
-	const bgPage = isLight ? " bg-[#FFF] text-[#000] " : ''
-	const lightTitle = isLight ? " text-[#000] " : 'text-[#FFF]'
 	function getName(id: any): string {
 		return allCat.find((c: any) => c.id == id).slug
 	}
@@ -67,15 +78,8 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	})
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
 	return (
-		<div className={bgPage}>
-			{isLight && <style>
-				{`
-				body {
-					background-color: #FFF !important;
-				}
-			`}
-			</style>}
-			<HeaderComponents isLight={isLight} />
+		<div>
+			<HeaderComponents/>
 			{allPosts[0].image_full && <>
 				<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
 					<Image
@@ -88,11 +92,12 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 				<div className='h-[90vh]'></div>
 			</>}
 			<div className="lg:w-[90vw] mx-auto px-4">
-				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]" + lightTitle}>
+				<h1 className={" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]"}>
 					{allPosts[0].title}
 				</h1>
 
-				<div dangerouslySetInnerHTML={{ __html: allPosts[0].content }} />
+				<div>{renderContent()}</div>
+
 				<div className="columns-1 md:columns-3 gap-8 font-hk">
 					{allPostCat && allPostCat.map((p: any) => <div
 						key={p.id}

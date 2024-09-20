@@ -10,7 +10,7 @@ type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents({ lang, isLight }: any) {
+export default function HeaderComponents({ lang, isLight = false }: any) {
 	const [menu, SetMenu] = useState(false)
 	const [language, setLang] = useState('PT')
 
@@ -25,10 +25,10 @@ export default function HeaderComponents({ lang, isLight }: any) {
 		setLang(L)
 	}, [])
 
-	const lightGradient = isLight ? ' from-[#FFF0] ' : ' from-[#FFF0] '
-	const lightLogo = '  invert'
-	const lightLang = isLight ? ' bg-[#0002] ' : ''
-	const lightLangHover = isLight ? ' hover:bg-[#0002] ' : ''
+	const lightLogo = isLight ? '' : ' invert';
+	const lightLang = isLight ? ' bg-[#FFF2] ' : ' bg-[#0002] ';
+	const lightLangHover = isLight ? ' hover:bg-[#FFF3] ' : ' hover:bg-[#0002] ';
+	const lightTextColor = isLight ? 'text-white dynamic-text-shadow' : 'text-black';
 
 	function Lang() {
 		let selectLanguage = language
@@ -69,7 +69,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 
 
 	return (
-		<header className={"bg-gradient-to-b" + lightGradient}>
+		<header className={"bg-gradient-to-b"}>
 
 			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8"}>
 				<header>
@@ -93,12 +93,12 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								/>
 							</div>
 						</nav>
-						<nav className="sm: hidden xl:flex justify-center">
+						<nav className={"sm: hidden xl:flex justify-center" + lightTextColor}>
 							<ul>
 								<li>
 									<span>
 										<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-											<a target="_blank" rel="noopener noreferrer" >
+											<a target="_blank" rel="noopener noreferrer" className={lightTextColor}>
 												São Paulo / Brazil
 											</a>
 										</Link>
@@ -106,12 +106,12 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href="tel:+5511945408448" legacyBehavior>
-										<a><span>+55 (11) 9 4540-8448</span></a>
+										<a className={lightTextColor}><span>+55 (11) 9 4540-8448</span></a>
 									</Link>
 								</li>
 								<li>
 									<Link href="mailto:contact@regularswitch.com" legacyBehavior>
-										<a>contact@regularswitch.com</a>
+										<a className={lightTextColor}>contact@regularswitch.com</a>
 									</Link>
 								</li>
 							</ul>
@@ -120,22 +120,22 @@ export default function HeaderComponents({ lang, isLight }: any) {
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/work'} legacyBehavior>
-										<a className="hover:opacity-70">Selected works </a>
+										<a className={"hover:opacity-70 " + lightTextColor}>Selected works </a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a className="hover:opacity-70">Branding</a>
+										<a className={"hover:opacity-70 " + lightTextColor}>Branding</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a className="hover:opacity-70">Digital experience</a>
+										<a className={"hover:opacity-70 " + lightTextColor}>Digital experience</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a className="hover:opacity-70">Graphic architecture</a>
+										<a className={"hover:opacity-70 " + lightTextColor}>Graphic architecture</a>
 									</Link>
 								</li>
 							</ul>
@@ -144,17 +144,17 @@ export default function HeaderComponents({ lang, isLight }: any) {
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a className="hover:opacity-70">{translate('About', language)}</a>
+										<a className={"hover:opacity-70 " + lightTextColor}>{translate('About', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a className="hover:opacity-70">{translate('Contact', language)}</a>
+										<a className={"hover:opacity-70 " + lightTextColor}>{translate('Contact', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a target="_blank" rel="noopener noreferrer" className="hover:opacity-70">Instagram</a>
+										<a target="_blank" rel="noopener noreferrer" className={"hover:opacity-70 " + lightTextColor}>Instagram</a>
 									</Link>
 								</li>
 							</ul>

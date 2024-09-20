@@ -12,5 +12,7 @@ module.exports = {
             hg: ["Hanken Grotesk", 'sans-serif'],
         }
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/aspect-ratio'),
+    ],
 }
