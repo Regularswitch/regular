@@ -1,29 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { FastAverageColor } from 'fast-average-color';
+import React, { useEffect, forwardRef } from 'react';
 import Image from 'next/image';
+import { FastAverageColor } from 'fast-average-color';
 
-const BackgroundProject: React.FC<{ bg: string, video?: string, visible: boolean, onChangeTextColor: (color: string) => void }> = ({ bg, video, visible, onChangeTextColor }) => {
+const BackgroundProject = forwardRef<
+    HTMLDivElement,
+    { bg: string; video?: string; visible: boolean; onColorExtract: (color: string) => void }
+>(({ bg, video, visible, onColorExtract }, ref) => {
+    
     useEffect(() => {
         const fac = new FastAverageColor();
-        fac.getColorAsync(bg, { crossOrigin: 'Anonymous' })
-          .then((color) => {
+
+        fac.getColorAsync(bg).then((color) => {
             const luminance = (0.299 * color.value[0] + 0.587 * color.value[1] + 0.114 * color.value[2]) / 255;
-    console.log(luminance);
-            if (luminance > 0.5) {
-              onChangeTextColor('black');
-            } else {
-              onChangeTextColor('white');
-            }
-          })
-          .catch((e) => {
-            console.error('Error getting average color', e);
-          });
-    
+            onColorExtract(luminance > 0.52 ? 'black' : 'white');
+        });
+
         return () => fac.destroy();
-      }, [bg, onChangeTextColor]);
+    }, [bg, video, onColorExtract]);
 
     return (
-        <div className={`transition-opacity duration-300 fixed top-0 left-0 w-full z-[-1] ${visible ? 'opacity-100' : 'opacity-0'} bg-container`}>
+        <div ref={ref} className={`transition-opacity duration-300 fixed top-0 left-0 w-full z-[-1] ${visible ? 'opacity-100' : 'opacity-0'} bg-container`}>
             {!video && (
                 <Image
                     alt="Background"
@@ -46,6 +42,8 @@ const BackgroundProject: React.FC<{ bg: string, video?: string, visible: boolean
             )}
         </div>
     );
-};
+});
+
+BackgroundProject.displayName = "BackgroundProject";
 
 export default BackgroundProject;
