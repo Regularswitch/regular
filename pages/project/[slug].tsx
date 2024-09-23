@@ -49,7 +49,7 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 					className="font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer"
 					onClick={() => window.history.back()}
 				>
-					Back to works →
+					←
 				</div>
 			</div>
 
