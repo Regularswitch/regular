@@ -1,9 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { GetApi, data, ListPost, GetMeta } from '../../../components/ApiWp'
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { GetApi, data, GetMeta } from '../../../components/ApiWp';
+import { Projects } from '../../../types';
 
 export default async function handler(
 	req: NextApiRequest,
-	res: NextApiResponse<ListPost>
+	res: NextApiResponse<Projects>
 ) {
 	const language = req.cookies['language'] || ''
 	

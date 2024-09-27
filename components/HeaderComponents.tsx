@@ -10,25 +10,26 @@ type headerProps = {
 	lang?: string
 }
 
-export default function HeaderComponents({ lang, isLight }: any) {
-	const [menu, SetMenu] = useState(false)
-	const [language, setLang] = useState('PT')
+export default function HeaderComponents({ lang, isLight = false }: any) {
+	const [menu, SetMenu] = useState(false);
+	const [language, setLang] = useState('PT');
+	let textColor = isLight ? 'text-white' : 'text-black';
+	let lightLogo = isLight ? '' : ' invert';
+	const lightLang = isLight ? ' bg-[#FFF2] ' : ' bg-[#0002] ';
+	const lightLangHover = isLight ? ' hover:bg-[#FFF3] ' : ' hover:bg-[#0002] ';
 
 	function toggleMenu() {
 		SetMenu(!menu)
 	}
 
 	const router = useRouter()
+	const currentPath = router.asPath;
+	const forceLightmode = currentPath.includes('/project/sesc-paulista') || currentPath.includes('/project/cine-joia');
 
 	useEffect(function () {
 		let L = getCookie('language')
 		setLang(L)
 	}, [])
-
-	const lightGradient = isLight ? ' from-[#FFF0] ' : ' from-[#FFF0] '
-	const lightLogo = '  invert'
-	const lightLang = isLight ? ' bg-[#0002] ' : ''
-	const lightLangHover = isLight ? ' hover:bg-[#0002] ' : ''
 
 	function Lang() {
 		let selectLanguage = language
@@ -66,10 +67,8 @@ export default function HeaderComponents({ lang, isLight }: any) {
 
 	}
 
-
-
 	return (
-		<header className={"bg-gradient-to-b" + lightGradient}>
+		<header className={`bg-gradient-to-b`}>
 
 			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8"}>
 				<header>
@@ -79,7 +78,7 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								<Image
 									src={Logo}
 									alt="RSW"
-									className={"w-20 h-8 cursor-pointer" + lightLogo}
+									className={"w-20 h-8 cursor-pointer" + (forceLightmode ? 'invert' : lightLogo)}
 								/>
 							</Link>
 						</nav>
@@ -93,12 +92,12 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								/>
 							</div>
 						</nav>
-						<nav className="sm: hidden xl:flex justify-center">
+						<nav className={"sm: hidden xl:flex justify-center" + (forceLightmode ? 'text-white' : textColor)}>
 							<ul>
 								<li>
 									<span>
 										<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-											<a target="_blank" rel="noopener noreferrer" >
+											<a target="_blank" rel="noopener noreferrer" className={(forceLightmode ? 'text-white' : textColor)}>
 												São Paulo / Brazil
 											</a>
 										</Link>
@@ -106,12 +105,12 @@ export default function HeaderComponents({ lang, isLight }: any) {
 								</li>
 								<li>
 									<Link href="tel:+5511945408448" legacyBehavior>
-										<a><span>+55 (11) 9 4540-8448</span></a>
+										<a className={(forceLightmode ? 'text-white' : textColor)}><span>+55 (11) 9 4540-8448</span></a>
 									</Link>
 								</li>
 								<li>
 									<Link href="mailto:contact@regularswitch.com" legacyBehavior>
-										<a>contact@regularswitch.com</a>
+										<a className={(forceLightmode ? 'text-white' : textColor)}>contact@regularswitch.com</a>
 									</Link>
 								</li>
 							</ul>
@@ -120,22 +119,22 @@ export default function HeaderComponents({ lang, isLight }: any) {
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/work'} legacyBehavior>
-										<a className="hover:opacity-70">Selected works </a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Selected works </a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a className="hover:opacity-70">Branding</a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Branding</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a className="hover:opacity-70">Digital experience</a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Digital experience</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a className="hover:opacity-70">Graphic architecture</a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Graphic architecture</a>
 									</Link>
 								</li>
 							</ul>
@@ -144,22 +143,22 @@ export default function HeaderComponents({ lang, isLight }: any) {
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a className="hover:opacity-70">{translate('About', language)}</a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>{translate('About', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a className="hover:opacity-70">{translate('Contact', language)}</a>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>{translate('Contact', language)}</a>
 									</Link>
 								</li>
 								<li>
 									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a target="_blank" rel="noopener noreferrer" className="hover:opacity-70">Instagram</a>
+										<a target="_blank" rel="noopener noreferrer" className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Instagram</a>
 									</Link>
 								</li>
 							</ul>
 						</nav>
-						{/* <Lang /> */}
+
 					</div>
 					<div className={"relative " + (!menu && 'hidden')}>
 						<nav className="fixed z-50 inset-0 bg-black text-[33px] text-white">

@@ -6,7 +6,7 @@ export default function FooterComponents() {
 				<nav className="sm: mb-8">
 					<ul>
 						<li>
-							<span className="select-none">© 2023 Regularswitch</span>
+							<span className="select-none">© 2024-25 Regularswitch</span>
 						</li>
 						<li>
 							<span className="select-none">all rights reserved.</span>

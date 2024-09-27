@@ -1,69 +1,62 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react';
 import HeaderComponents from "../../components/HeaderComponents";
 import FooterComponents from "../../components/FooterComponents";
-import Image from 'next/image'
+import BackgroundProject from "../../components/BackgroundProject";
 import Language from "../../components/Language";
 
-export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
-	const [visible, setVisible] = useState(1)
+const useScrollVisibility = () => {
+	const [visible, setVisible] = useState(true);
 
 	useEffect(() => {
-		if (document) {
-			document.addEventListener("scroll", scrollShow)
-		}
-	}, [])
+		const handleScroll = () => {
+			const offsetTop = document.documentElement.scrollTop || document.body.scrollTop;
+			setVisible(offsetTop <= 300);
+		};
 
-	function scrollShow() {
-		const offsetTop = document.documentElement.scrollTop || document.body.scrollTop || 0
-		if (offsetTop > 70) {
-			setVisible(0)
-		} else {
-			setVisible(1)
-		}
-	}
+		window.addEventListener('scroll', handleScroll);
 
-	allPosts = [allPosts[0]]
-	let bg = allMetas?.img_single?.url || allPosts?.[0]?.image_full
-	let video = allMetas?.video?.url || false
+		return () => window.removeEventListener('scroll', handleScroll);
+	}, []);
+
+	return visible;
+};
+
+export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
+	const visible = useScrollVisibility();
+	const bgRef = useRef<HTMLDivElement | null>(null);
+	const [headerTextColor, setHeaderTextColor] = useState('black');
+
+	const post = allPosts[0];
+	const bg = allMetas?.img_single?.url || post?.image_full;
+	const video = allMetas?.video?.url || undefined;
+
+	const handleColorExtract = (color: string) => {
+		setHeaderTextColor(color);
+	};
 
 	return (
-		<div className='font-hg'>
-			<HeaderComponents lang={lang} />
-			<div className="block w-full h-[100vh]  lg:w-[90vw] mx-auto"></div>
-			{allPosts.map((p: any) => (
-				<div key={p.id}>
-					<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
-						{!video &&
-							<Image
-								alt={p.title}
-								src={bg}
-								layout="fill"
-								objectFit="cover"
-								priority
-							/>
-						}
-						{video &&
-							<video src={video} muted autoPlay loop className='object-cover w-[100vw] h-[100vh]'>
-								
-							</video>
-						}
-					</div>
-					<div className="lg:w-[90vw] px-4 mx-auto">
-						<h1 className="text-balck text-[40px] lg:text-[70px] font-hk font-bold">{p.title}</h1>
-						<div dangerouslySetInnerHTML={{ __html: p.content }} />
-						<div className='font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer'
-							onClick={
-								() => window.history.back()
-							}>
-							Back to works →
-						</div>
-					</div>
+		<div className="font-hg">
+			<HeaderComponents lang={lang} isLight={headerTextColor === 'white'} />
+
+			<div className="block w-full h-auto lg:w-[90vw] mx-auto aspect-w-16 aspect-h-9"></div>
+
+			<BackgroundProject bg={bg} video={video} visible={visible} ref={bgRef} onColorExtract={handleColorExtract} />
+
+			<div className="lg:w-[90vw] px-4 mx-auto">
+				<h1 className={`text-[40px] lg:text-[70px] font-hk font-bold`}>{post.title}</h1>
+				<div dangerouslySetInnerHTML={{ __html: post.content }} />
+				<div
+					className="font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer"
+					onClick={() => window.history.back()}
+				>
+					←
 				</div>
-			))}
+			</div>
+
 			<FooterComponents />
 		</div>
 	);
-}
+};
 
 export async function getStaticPaths() {
 	return {
@@ -72,25 +65,33 @@ export async function getStaticPaths() {
 	}
 }
 
-export async function getStaticProps(req: any) {
-	const { slug } = req.params;
-	let base = process.env?.BASE
-	let url = base + "/api/project/" + slug
-	let allPosts = []
-	let allMetas = []
-	let lang = req.cookies?.['language'] || 'PT'
+export async function getStaticProps(context: { params: { slug: string }; req: { cookies: { language: string } } }) {
+	const { slug } = context.params;
+	const base = process.env.BASE || '';
+	const lang = context.req?.cookies?.language || 'PT';
+
+	const postsUrl = `${base}/api/project/${slug}`;
+	const metasUrl = `${base}/api/project/all-metas`;
+
+	let allPosts = [];
+	let allMetas = null;
+
 	try {
-		let requestPosts = await fetch(url)
-		allPosts = await requestPosts.json()
-		allMetas = await (await fetch(base + "/api/project/all-metas")).json()
-	} catch (error) { }
-	allMetas = allMetas.find((m: any) => m.slug == slug)
+		const postsResponse = await fetch(postsUrl);
+		allPosts = await postsResponse.json();
+
+		const metasResponse = await fetch(metasUrl);
+		const allMetasData = await metasResponse.json();
+		allMetas = allMetasData.find((meta: any) => meta.slug === slug);
+	} catch (error) {
+		console.error('Error fetching project data', error);
+	}
+
 	return {
 		props: {
 			allPosts,
 			allMetas,
-			lang
+			lang,
 		},
-		revalidate: 10
-	}
+	};
 }

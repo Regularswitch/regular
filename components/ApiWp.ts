@@ -1,5 +1,6 @@
 import { type } from "os"
 import { tipoLinguagens } from "./Language"
+import { Projects } from '../types';
 
 export type data = {
     translate?: tipoLinguagens | string
@@ -37,6 +38,7 @@ export type responseWp = {
     link: string
     name?: string
     description?: string
+    date?: Date
     title: {
         rendered: string
     }
@@ -58,23 +60,7 @@ export type responseWp = {
 
 export type listResponseWp = Array<responseWp>
 
-export type singlePost = {
-    id: number
-    title?: string
-    slug: string
-    name?: string
-    image_full?: string
-    image_medium?: string
-    content: string
-    link: string
-    more?: string
-    category?: []
-    description?: string
-}
-
-export type ListPost = Array<singlePost>
-
-export function porter(payloadWp: listResponseWp): ListPost {
+export function porter(payloadWp: listResponseWp): Projects {
     return payloadWp.map(p => ({
         id: p.id,
         title: p?.title?.rendered || p.name,
@@ -86,19 +72,22 @@ export function porter(payloadWp: listResponseWp): ListPost {
         more: p?.excerpt?.rendered,
         category: p["project-category"],
         description: p.description,
+        created_at: p.date,
         image: p?._links?.["wp:attachment"]?.[0]?.href,
     }))
 }
 
 export async function GetApi(path: string, data: any) {
-    const BASE = 'https://wp.regularswitch.com/wp-json/wp/v2'
-    let full_path = new URL(`${BASE}${path}`)
+    const BASE = `${process.env?.API}/wp-json/wp/v2`;
+    let full_path = new URL(`${BASE}${path}`);
     full_path.search = new URLSearchParams(data).toString();
-    return porter(await (await fetch(full_path)).json())
+
+    return porter(await (await fetch(full_path)).json());
 }
 
 export async function GetMeta() {
-    let full_path = 'https://wp.regularswitch.com/wp-json/api-etc/v2/all-posts?v=1.1.1'
-    return await (await fetch(full_path)).json()
+    let full_path = `${process.env?.API}/wp-json/api-etc/v2/all-posts?v=1.1.1`;
+
+    return await (await fetch(full_path)).json();
 }
 
