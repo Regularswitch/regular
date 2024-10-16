@@ -93,5 +93,6 @@ export async function getStaticProps(context: { params: { slug: string }; req: {
 			allMetas,
 			lang,
 		},
+		revalidate: 10
 	};
 }
