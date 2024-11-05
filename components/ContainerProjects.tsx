@@ -17,7 +17,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
         [projects]
     );
 
-    const displayedProjects = showAll ? sortedProjects : sortedProjects.slice(0, 13);
+    const displayedProjects = showAll ? sortedProjects : sortedProjects.slice(0, 18);
 
     const createColumnWiseLayout = (items: any[], numColumns: number) => {
         const columns: any[][] = Array.from({ length: numColumns }, () => [] as any[]);

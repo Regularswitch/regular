@@ -6,7 +6,7 @@ const BackgroundProject = forwardRef<
     HTMLDivElement,
     { bg: string; video?: string; visible: boolean; onColorExtract: (color: string) => void }
 >(({ bg, video, visible, onColorExtract }, ref) => {
-    
+
     useEffect(() => {
         const fac = new FastAverageColor();
 
@@ -20,26 +20,30 @@ const BackgroundProject = forwardRef<
 
     return (
         <div ref={ref} className={`transition-opacity duration-300 fixed top-0 left-0 w-full z-[-1] ${visible ? 'opacity-100' : 'opacity-0'} bg-container`}>
-            {!video && (
-                <Image
-                    alt="Background"
-                    src={bg}
-                    width={1920}
-                    height={1080}
-                    layout="responsive"
-                    objectFit="contain"
-                    priority
-                />
-            )}
-            {video && (
-                <video
-                    src={video}
-                    muted
-                    autoPlay
-                    loop
-                    className="w-full h-auto object-contain"
-                />
-            )}
+            <div
+                className={`relative w-full overflow-hidden h-56 md:h-auto lg:h-auto`}
+            >
+                {!video && (
+                    <Image
+                        alt="Background"
+                        src={bg}
+                        width={1920}
+                        height={1080}
+                        layout="responsive"
+                        objectFit="contain"
+                        priority
+                    />
+                )}
+                {video && (
+                    <video
+                        src={video}
+                        muted
+                        autoPlay
+                        loop
+                        className="w-full h-auto object-contain"
+                    />
+                )}
+            </div>
         </div>
     );
 });

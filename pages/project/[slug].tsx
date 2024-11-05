@@ -10,7 +10,9 @@ const useScrollVisibility = () => {
 	useEffect(() => {
 		const handleScroll = () => {
 			const offsetTop = document.documentElement.scrollTop || document.body.scrollTop;
-			setVisible(offsetTop <= 300);
+			const isMobile = window.innerWidth <= 768;
+			const threshold = isMobile ? 65 : 300;
+			setVisible(offsetTop <= threshold);
 		};
 
 		window.addEventListener('scroll', handleScroll);
