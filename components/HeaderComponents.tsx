@@ -123,18 +123,8 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Branding</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Digital experience</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Graphic architecture</a>
+									<Link href={'/' + prefix + '/education'} legacyBehavior>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Education</a>
 									</Link>
 								</li>
 							</ul>
@@ -175,20 +165,10 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a>Branding</a>
+									<Link href={'/' + prefix + '/education'} legacyBehavior>
+										<a>Education</a>
 									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a>Digital experience</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a>Graphic architecture</a>
-									</Link>
-								</li>
+								</li>								
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
 										<a>{translate('About', language)}</a>

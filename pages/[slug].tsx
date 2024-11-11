@@ -50,19 +50,19 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'branding': ' bg-[#00FD] ',
 		'digital-and-internet': ' bg-[#0F0D] ',
 		'graphical-arquitecture': ' bg-[#F00D] ',
-		'work': ' bg-[#FF0D] ',
+		'work': ' bg-[#000] ',
 	}
 	let dictionaryColorsLine: any = {
 		'branding': ' bg-[#FFF] ',
 		'digital-and-internet': ' bg-[#000] ',
 		'graphical-arquitecture': ' bg-[#FFF] ',
-		'work': ' bg-[#000] ',
+		'work': ' bg-[#FFF] ',
 	}
 	let dictionaryColorsText: any = {
 		'branding': ' text-[#FFF] ',
 		'digital-and-internet': ' text-[#000] ',
 		'graphical-arquitecture': ' text-[#FFF] ',
-		'work': ' text-[#000] ',
+		'work': ' text-[#FFF] text-sm-rsw',
 	}
 
 	const color = dictionaryColors?.[slug] || 'bg-[#0F0D]'
