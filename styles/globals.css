@@ -397,7 +397,7 @@ body {
 }
 
 @media (max-width:782px) {
-	.wp-block-spacer {
+	.hide-height .wp-block-spacer {
 		height: 0px !important;
 	}
 

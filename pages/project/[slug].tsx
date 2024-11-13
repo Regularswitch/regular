@@ -23,7 +23,7 @@ const useScrollVisibility = () => {
 	return visible;
 };
 
-export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
+export default function ProjectBySlug({ allPosts, lang, allMetas, slug }: any) {
 	const visible = useScrollVisibility();
 	const bgRef = useRef<HTMLDivElement | null>(null);
 	const [headerTextColor, setHeaderTextColor] = useState('black');
@@ -37,7 +37,7 @@ export default function ProjectBySlug({ allPosts, lang, allMetas }: any) {
 	};
 
 	return (
-		<div className="font-hg">
+		<div className={`font-hg ${slug !== 'about' ? 'hide-height' : ''}`}>
 			<HeaderComponents lang={lang} isLight={headerTextColor === 'white'} />
 
 			<div className="block w-full h-auto lg:w-[90vw] mx-auto aspect-w-16 aspect-h-9"></div>
@@ -94,6 +94,7 @@ export async function getStaticProps(context: { params: { slug: string }; req: {
 			allPosts,
 			allMetas,
 			lang,
+			slug
 		},
 		revalidate: 10
 	};
