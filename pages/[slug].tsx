@@ -78,7 +78,7 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	})
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
 	return (
-		<div className={slug !== 'about' ? 'hide-height' : ''}>
+		<div className={slug !== 'about' && slug !== 'education' ? 'hide-height' : ''}>
 			<HeaderComponents/>
 			{allPosts[0].image_full && <>
 				<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
