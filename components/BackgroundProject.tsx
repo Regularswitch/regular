@@ -9,11 +9,14 @@ const BackgroundProject = forwardRef<
 
     useEffect(() => {
         const fac = new FastAverageColor();
-
-        fac.getColorAsync(bg).then((color) => {
-            const luminance = (0.299 * color.value[0] + 0.587 * color.value[1] + 0.114 * color.value[2]) / 255;
-            onColorExtract(luminance > 0.52 ? 'black' : 'white');
-        });
+        const isVideo = bg?.endsWith('.mp4');
+        if (!isVideo) {
+            const fac = new FastAverageColor();
+            fac.getColorAsync(bg).then((color) => {
+                const luminance = (0.299 * color.value[0] + 0.587 * color.value[1] + 0.114 * color.value[2]) / 255;
+                onColorExtract(luminance > 0.52 ? 'black' : 'white');
+            }).catch((error) => console.error('FastAverageColor Error:', error));
+        }
 
         return () => fac.destroy();
     }, [bg, video, onColorExtract]);

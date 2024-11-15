@@ -1,13 +1,34 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import HeaderComponents from "../components/HeaderComponents";
 import FooterComponents from "../components/FooterComponents";
 import Link from 'next/link';
 import Image from 'next/image';
 import DateTimeComponent from '../components/DateTimeComponent';
 import parse, { domToReact } from 'html-react-parser';
+import BackgroundProject from "../components/BackgroundProject";
 
-export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: any) {
+const useScrollVisibility = () => {
+	const [visible, setVisible] = useState(true);
 
+	useEffect(() => {
+		const handleScroll = () => {
+			const offsetTop = document.documentElement.scrollTop || document.body.scrollTop;
+			const isMobile = window.innerWidth <= 768;
+			const threshold = isMobile ? 65 : 300;
+			setVisible(offsetTop <= threshold);
+		};
+
+		window.addEventListener('scroll', handleScroll);
+
+		return () => window.removeEventListener('scroll', handleScroll);
+	}, []);
+
+	return visible;
+};
+
+export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug, allMetas }: any) {
+	const visibleBG = useScrollVisibility();
+	const bgRef = useRef<HTMLDivElement | null>(null);
 	const [visible, setVisible] = useState(1);
 
 	function renderContent() {
@@ -65,6 +86,14 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 		'work': ' text-[#FFF] text-sm-rsw',
 	}
 
+	const bg = allMetas?.meta?.etc_project_video_thumbnail[0];
+	const video = allMetas?.meta?.etc_project_video_thumbnail[0] || undefined;
+	const [headerTextColor, setHeaderTextColor] = useState('black');
+
+	const handleColorExtract = (color: string) => {
+		setHeaderTextColor(color);
+	};
+
 	const color = dictionaryColors?.[slug] || 'bg-[#0F0D]'
 	const colorTitle = dictionaryColorsText?.[slug] || 'text-[#000]'
 	const colorLine = dictionaryColorsLine?.[slug] || 'text-[#000]'
@@ -75,11 +104,26 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug }: an
 	allPostCat = allPostCat.map((post: any) => {
 		post.categorySlugs = post?.category?.map((catId: number) => getName(catId)) || []
 		return post
-	})
+	});
 	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
+
 	return (
 		<div className={slug !== 'about' && slug !== 'education' ? 'hide-height' : ''}>
-			<HeaderComponents/>
+			<HeaderComponents isLight={headerTextColor === 'white'} />
+
+			{slug === "education" && (
+				<>
+					<div className="block w-full h-auto lg:w-[90vw] mx-auto aspect-w-16 aspect-h-9"></div>
+					<BackgroundProject
+						bg={bg}
+						video={video}
+						visible={visibleBG}
+						ref={bgRef}
+						onColorExtract={handleColorExtract}
+					/>
+				</>
+			)}
+
 			{allPosts[0].image_full && <>
 				<div className={"transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] " + (visible ? 'opacity-[1]' : 'opacity-[0]')}>
 					<Image
@@ -141,10 +185,12 @@ export async function getStaticPaths() {
 export async function getStaticProps(req: any) {
 	const { slug } = req.params;
 	let base = process.env?.BASE
-	let url = base + "/api/" + slug
+	let url = base + "/api/" + slug;
+	const metasUrl = `https://wp.regularswitch.com/wp-json/wp/v2/pages/4687`;
 	let allPosts = []
 	let allCat = []
 	let allPostCat = []
+	let allMetas = null;
 	try {
 		let requestPosts = await fetch(url)
 		allPosts = await requestPosts.json()
@@ -153,13 +199,19 @@ export async function getStaticProps(req: any) {
 		let requestPostsCat = await fetch(base + "/api/project-category/" + slug)
 		allPostCat = await requestPostsCat.json()
 
-	} catch (error) { }
+		const metasResponse = await fetch(metasUrl);
+		const allMetasData = await metasResponse.json();
+		allMetas = allMetasData;
+	} catch (error) {
+		console.error('Error fetching project data', error);
+	}
 	return {
 		props: {
 			allPosts,
 			allCat,
 			allPostCat,
-			slug
+			slug,
+			allMetas
 		},
 		revalidate: 10
 	}
