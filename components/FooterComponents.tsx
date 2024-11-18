@@ -2,8 +2,8 @@ import Link from "next/link";
 export default function FooterComponents() {
 	return (
 		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px] lg:mt-[100px]">
-			<div className="sm: flex justify-center flex-col xl:grid grid-cols-4 lg:gap-20">
-				<nav className="sm: mb-8">
+			<div className="sm:flex justify-center flex-col xl:grid grid-cols-4 gap-5 md:gap-10 lg:gap-10 xl:gap-20">
+				<nav className="mb-8 sm:mb-0">
 					<ul>
 						<li>
 							<span className="select-none">© 2024-25 Regularswitch</span>
@@ -13,7 +13,7 @@ export default function FooterComponents() {
 						</li>
 					</ul>
 				</nav>
-				<nav className="sm: mb-8">
+				<nav className="mb-8 sm:mb-0">
 					<ul>
 						<li>
 							<span className="select-none">

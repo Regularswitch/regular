@@ -397,7 +397,7 @@ body {
 }
 
 @media (max-width:782px) {
-	.wp-block-spacer {
+	.hide-height .wp-block-spacer {
 		height: 0px !important;
 	}
 
@@ -3526,4 +3526,8 @@ pre.wp-block-verse {
 
 .dynamic-text-shadow {
 	text-shadow: .1em .1em 0 hsla(0, 0%, 0%, 0.1);
+}
+
+.text-sm-rsw p {
+	font-size: 25px;
 }

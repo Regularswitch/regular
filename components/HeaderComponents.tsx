@@ -82,7 +82,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								/>
 							</Link>
 						</nav>
-						<nav className=" sm:flex items-center flex md:hidden lx:hidden">
+						<nav className="sm:flex items-center flex lg:hidden lx:hidden">
 							<div className="">
 								<Image
 									src={imageMenu}
@@ -92,7 +92,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								/>
 							</div>
 						</nav>
-						<nav className={"sm: hidden xl:flex justify-center" + (forceLightmode ? 'text-white' : textColor)}>
+						<nav className={"sm: hidden lg:flex justify-center" + (forceLightmode ? 'text-white' : textColor)}>
 							<ul>
 								<li>
 									<span>
@@ -115,31 +115,26 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								</li>
 							</ul>
 						</nav>
-						<nav className="sm: hidden xl:flex justify-center">
+						<nav className="sm: hidden lg:flex justify-center">
 							<ul>
+								<li>
+									<Link href="/" legacyBehavior>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Home Page</a>
+									</Link>
+								</li>
 								<li>
 									<Link href={'/' + prefix + '/work'} legacyBehavior>
 										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Selected works </a>
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Branding</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Digital experience</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Graphic architecture</a>
+									<Link href={'/' + prefix + '/education'} legacyBehavior>
+										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Education</a>
 									</Link>
 								</li>
 							</ul>
 						</nav>
-						<nav className="sm: hidden xl:flex justify-center">
+						<nav className="sm: hidden lg:flex justify-center">
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
@@ -160,6 +155,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 						</nav>
 
 					</div>
+
 					<div className={"relative " + (!menu && 'hidden')}>
 						<nav className="fixed z-50 inset-0 bg-black text-[33px] text-white">
 							<span
@@ -170,23 +166,18 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 							</span>
 							<ul className="fixed left-5 bottom-14" onClick={toggleMenu}>
 								<li>
+									<Link href="/" legacyBehavior>
+										<a>Home Page</a>
+									</Link>
+								</li>
+								<li>
 									<Link href={'/' + prefix + '/work'} legacyBehavior>
 										<a>Selected works</a>
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/branding'} legacyBehavior>
-										<a>Branding</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/digital-and-internet'} legacyBehavior>
-										<a>Digital experience</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/graphical-arquitecture'} legacyBehavior>
-										<a>Graphic architecture</a>
+									<Link href={'/' + prefix + '/education'} legacyBehavior>
+										<a>Education</a>
 									</Link>
 								</li>
 								<li>
