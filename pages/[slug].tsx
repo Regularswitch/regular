@@ -105,7 +105,12 @@ export default function ProjectBySlug({ allPosts, allPostCat, allCat, slug, allM
 		post.categorySlugs = post?.category?.map((catId: number) => getName(catId)) || []
 		return post
 	});
-	allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
+
+	if (slug === 'work') {
+		allPostCat = allPostCat.filter((post: any) => Array.isArray(post.category) && post.category.includes(32));
+	} else {
+		allPostCat = allPostCat.filter((f: any) => f.categorySlugs.includes(dictionary?.[slug] || slug || ''))
+	}
 
 	return (
 		<div className={slug !== 'about' && slug !== 'education' ? 'hide-height' : ''}>
