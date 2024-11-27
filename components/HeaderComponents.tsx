@@ -70,7 +70,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 	return (
 		<header className={`bg-gradient-to-b`}>
 
-			<div className={"mx-auto lg:w-[1200px] px-5 pt-5  lg:pb-8"}>
+			<div className={"mx-auto xl:w-[1200px] px-5 pt-5  lg:pb-8"}>
 				<header>
 					<div className=" flex justify-between xl:grid grid-cols-4 text-[15px] leading-[20px]">
 						<nav className="flex ">
@@ -82,7 +82,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								/>
 							</Link>
 						</nav>
-						<nav className="sm:flex items-center flex lg:hidden lx:hidden">
+						<nav className="sm:flex items-center flex xl:hidden">
 							<div className="">
 								<Image
 									src={imageMenu}
@@ -92,7 +92,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								/>
 							</div>
 						</nav>
-						<nav className={"sm: hidden lg:flex justify-center" + (forceLightmode ? 'text-white' : textColor)}>
+						<nav className={"sm: hidden xl:flex justify-center" + (forceLightmode ? 'text-white' : textColor)}>
 							<ul>
 								<li>
 									<span>
@@ -115,7 +115,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								</li>
 							</ul>
 						</nav>
-						<nav className="sm: hidden lg:flex justify-center">
+						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
 									<Link href="/" legacyBehavior>
@@ -134,7 +134,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 								</li>
 							</ul>
 						</nav>
-						<nav className="sm: hidden lg:flex justify-center">
+						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
 									<Link href={'/' + prefix + '/about'} legacyBehavior>
