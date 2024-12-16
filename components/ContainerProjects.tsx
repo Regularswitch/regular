@@ -17,7 +17,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
         [projects]
     );
 
-    const displayedProjects = showAll ? sortedProjects : sortedProjects.slice(0, 18);
+    const displayedProjects = showAll ? sortedProjects : sortedProjects.slice(0, 1000);
 
     const createColumnWiseLayout = (items: any[], numColumns: number) => {
         const columns: any[][] = Array.from({ length: numColumns }, () => [] as any[]);
@@ -79,9 +79,9 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                 ))}
             </div>
 
-            {!showAll && sortedProjects.length > 13 && (
+            {!showAll && sortedProjects.length > 1000 && (
                 <div className="text-center mt-4">
-                    <div onClick={() => setShowAll(true)} className="load-more"></div>
+                    {/*<div onClick={() => setShowAll(true)} className="load-more"></div>*/}
                 </div>
             )}
         </>
