@@ -86,8 +86,12 @@ export default function ProjectBySlug({allPosts, allPostCat, allCat, slug, allMe
         'work': ' text-[#FFF] text-sm-rsw',
     }
 
-    const bg = allMetas?.meta?.etc_project_video_thumbnail[0];
-    const video = allMetas?.meta?.etc_project_video_thumbnail[0] || undefined;
+    const bg = Array.isArray(allMetas?.meta?.etc_project_video_thumbnail)
+        ? allMetas?.meta?.etc_project_video_thumbnail[0] || ''
+        : '';
+    const video = Array.isArray(allMetas?.meta?.etc_project_video_thumbnail)
+        ? allMetas?.meta?.etc_project_video_thumbnail[0]
+        : undefined;
     const [headerTextColor, setHeaderTextColor] = useState('black');
 
     const handleColorExtract = (color: string) => {

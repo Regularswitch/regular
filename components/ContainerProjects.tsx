@@ -27,7 +27,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
         return columns;
     };
 
-    const columns = createColumnWiseLayout(displayedProjects, 3);
+    const columns = createColumnWiseLayout(displayedProjects, 5);
 
     return (
         <>
