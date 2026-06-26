@@ -44,12 +44,13 @@ body {
 }
 
 @font-face {
-	src: url('https://res.cloudinary.com/dr6lvwubh/raw/upload/v1529908256/CompressaPRO-GX.woff2');
+	src: url('../public/fonts/CompressaPRO_GX.woff2') format('woff2-variations');
 	font-family: 'HK-home';
 	font-style: normal;
+	font-weight: 100 900;
+	font-stretch: 5% 200%;
+	font-display: swap;
 }
-
-@charset "UTF-8";
 
 #start-resizable-editor-section {
 	display: none
