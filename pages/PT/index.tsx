@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 function Home({ posts = [], cats = [] }: any) {
 	function getName(id: any) {
-		return cats.find((c: any) => c.id == id).title
+		return cats.find((c: any) => c.id == id)?.title || ''
 	}
 
 	return (
@@ -30,7 +30,7 @@ function Home({ posts = [], cats = [] }: any) {
 
 			<div className="container mx-auto p-4">
 				<div className="columns-1 md:columns-2 gap-4">
-					{posts.filter((f: any) => f.category.includes(17)).map((p: any) => (
+					{posts.filter((f: any) => (f.category || []).includes(17)).map((p: any) => (
 						<div className="break-inside-avoid pb-4" key={p.id}>
 							<Link href={'project/' + p.slug}  >
 								<div className="font-hk">
