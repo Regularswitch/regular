@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 function Home({ posts = [], cats = [] }: any) {
 	function getName(id: any) {
-		return cats.find((c: any) => c.id == id).title
+		return cats.find((c: any) => c.id == id)?.title || ''
 	}
 
 	return (
@@ -30,20 +30,20 @@ function Home({ posts = [], cats = [] }: any) {
 
 			<div className="container mx-auto p-4">
 				<div className="columns-1 md:columns-2 gap-4">
-					{posts.filter((f: any) => f.category.includes(17)).map((p: any) => (
+					{posts.filter((f: any) => (f.category || []).includes(17)).map((p: any) => (
 						<div className="break-inside-avoid pb-4" key={p.id}>
 							<Link href={'project/' + p.slug}  >
 								<div className="font-hk">
 									<div className="block relative w-full overflow-hidden">
-										{/* <Image
-										alt={p.title}
-										src={
-											p.image_full
-										}
-										layout='fill'										
-										objectFit='cover'
-									/> */}
-										<img className="w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
+										
+										<Image
+											src={p.image_full}
+											alt={p.title}
+											width={500}
+											height={500}
+											sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+											className="w-full h-auto transition-all duration-300 hover:scale-[1.05]"
+										/>
 									</div>
 									<div>
 										<strong className="text-white inline-block mt-4">{p.title}</strong>

@@ -34,8 +34,8 @@ export default function ProjectBySlug({ allPosts, lang }: any) {
 						<Image
 							alt={p.title}
 							src={p.image_full}
-							layout="fill"
-							objectFit="cover"
+							fill
+							style={{ objectFit: 'cover' }}
 						/>
 					</div>
 					<div className="container">

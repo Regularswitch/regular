@@ -45,8 +45,8 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                                                     src={getImageSecondaryBySlug(p.slug)}
                                                     width={500}
                                                     height={500}
-                                                    objectFit="cover"
                                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                    style={{ objectFit: 'cover' }}
                                                     className="absolute top-0 left-0 w-full transition-all duration-300 hover:scale-[1.05] opacity-0 hover:opacity-100"
                                                 />
                                             )}
@@ -55,8 +55,8 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                                                 src={p.image_full}
                                                 width={500}
                                                 height={500}
-                                                objectFit="cover"
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                style={{ objectFit: 'cover' }}
                                                 className="w-full transition-all duration-300 hover:scale-[1.05]"
                                             />
                                         </div>
