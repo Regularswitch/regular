@@ -153,8 +153,8 @@ export default function ProjectBySlug({allPosts, allPostCat, allCat, slug, allMe
                     <Image
                         alt={allPosts[0].title}
                         src={allPosts[0].image_full}
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        style={{ objectFit: 'cover' }}
                     />
                 </div>
                 <div className='h-[90vh]'></div>
@@ -174,8 +174,14 @@ export default function ProjectBySlug({allPosts, allPostCat, allCat, slug, allMe
                         <Link href={'project/' + p.slug}>
                             <div className="relative flex overflow-hidden">
                                 <div className="block relative w-full overflow-hidden">
-                                    <img className=" w-full transition-all  duration-300 hover:scale-[1.05]"
-                                         src={p.image_full} alt={p.title}/>
+                                    <Image
+                                        src={p.image_full}
+                                        alt={p.title}
+                                        width={500}
+                                        height={500}
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        className="w-full h-auto transition-all duration-300 hover:scale-[1.05]"
+                                    />
                                 </div>
                                 <div
                                     className={"p-8 transition-all duration-300 opacity-0 hover:opacity-100 block absolute z-10 top-0 left-0 w-full h-[1000px]" + color}

@@ -32,9 +32,8 @@ const BackgroundProject = forwardRef<
                         src={bg}
                         width={1920}
                         height={1080}
-                        layout="responsive"
-                        objectFit="contain"
                         priority
+                        style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
                     />
                 )}
                 {video && (

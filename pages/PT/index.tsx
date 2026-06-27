@@ -35,15 +35,15 @@ function Home({ posts = [], cats = [] }: any) {
 							<Link href={'project/' + p.slug}  >
 								<div className="font-hk">
 									<div className="block relative w-full overflow-hidden">
-										{/* <Image
-										alt={p.title}
-										src={
-											p.image_full
-										}
-										layout='fill'										
-										objectFit='cover'
-									/> */}
-										<img className="w-full transition-all  duration-300 hover:scale-[1.05]" src={p.image_full} alt={p.title} />
+										
+										<Image
+											src={p.image_full}
+											alt={p.title}
+											width={500}
+											height={500}
+											sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+											className="w-full h-auto transition-all duration-300 hover:scale-[1.05]"
+										/>
 									</div>
 									<div>
 										<strong className="text-white inline-block mt-4">{p.title}</strong>
