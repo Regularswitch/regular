@@ -1,14 +1,19 @@
 import '../styles/globals.css';
 import type { ReactNode } from 'react';
+import { cookies } from 'next/headers';
+import Header from '../components/Header';
+import FooterComponents from '../components/FooterComponents';
 
 export const metadata = {
 	title: 'Regular Switch',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+	const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
 	return (
-		<html lang="en">
+		<html lang="en" className={theme === 'dark' ? 'dark' : undefined}>
 			<head>
+				<meta name="color-scheme" content="dark light" />
 				<script
 					type="application/ld+json"
 					dangerouslySetInnerHTML={{
@@ -28,7 +33,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 					}}
 				/>
 			</head>
-			<body>{children}</body>
+			<body>
+				<Header />
+				<main className="pt-20 px-7 sm:pt-24 lg:pt-28">{children}</main>
+				<FooterComponents />
+			</body>
 		</html>
 	);
 }

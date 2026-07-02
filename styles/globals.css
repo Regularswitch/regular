@@ -1,6 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,500;0,700;1,900&display=swap');
 @import "tailwindcss";
 
+/* Theme tokens (default: dark) */
+:root {
+	--bg: #000000;
+	--fg: #e8ebf1;
+	--surface: #11131a;
+	--muted: rgba(232, 235, 241, 0.72);
+}
+
+/* Light theme */
+html:not(.dark) {
+	--bg: #ffffff;
+	--fg: #000000;
+	--surface: #f5f6f8;
+	--muted: rgba(14, 15, 19, 0.72);
+}
+
 * {
 	/* border: 1px solid #CCC */
 }
@@ -8,8 +24,8 @@
 
 
 body {
-	background-color: #FFF;
-	color: #000;
+	background-color: var(--bg);
+	color: var(--fg);
 	font-family: 'Hanken Grotesk' !important;
 }
 

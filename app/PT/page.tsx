@@ -1,5 +1,3 @@
-import HeaderComponents from '../../components/HeaderComponents';
-import FooterComponents from '../../components/FooterComponents';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getBaseUrl } from '../../lib/getBaseUrl';
@@ -22,7 +20,6 @@ export default async function PtHomePage() {
 
 	return (
 		<div>
-			<HeaderComponents />
 			<section className="text-white container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
 				<h2 className="block mb-[40px]">Branding / Digital / Arquitetura Gráfica</h2>
 				<p>
@@ -67,7 +64,6 @@ export default async function PtHomePage() {
 			</div>
 
 			<div className="h-96" />
-			<FooterComponents />
 		</div>
 	);
 }

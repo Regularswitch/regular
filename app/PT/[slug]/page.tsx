@@ -1,5 +1,3 @@
-import HeaderComponents from '../../../components/HeaderComponents';
-import FooterComponents from '../../../components/FooterComponents';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getBaseUrl } from '../../../lib/getBaseUrl';
@@ -46,7 +44,6 @@ export default async function PtSlugPage({ params }: PageProps) {
 
 	return (
 		<div className={bgPage}>
-			<HeaderComponents isLight={isLight} />
 			<div className="container lg:w-[1200px] mx-auto">
 				<h1 className={`text-white text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[50px]${lightTitle}`}>
 					{allPosts?.[0]?.title}
@@ -84,7 +81,6 @@ export default async function PtSlugPage({ params }: PageProps) {
 					))}
 				</div>
 			</div>
-			<FooterComponents />
 		</div>
 	);
 }

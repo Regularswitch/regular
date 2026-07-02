@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import HeaderComponents from './HeaderComponents';
-import FooterComponents from './FooterComponents';
 import Image from 'next/image';
 
 type PtProjectSlugClientProps = {
@@ -28,7 +26,6 @@ export default function PtProjectSlugClient({ allPosts, lang }: PtProjectSlugCli
 
 	return (
 		<div>
-			<HeaderComponents lang={lang} />
 			<div className="block w-full h-[100vh]" />
 			<div>
 				<div className={`transition-all duration-300 fixed top-0 left-0 w-[100vw] z-[-1] h-[100vh] ${visible ? 'opacity-[1]' : 'opacity-[0]'}`}>
@@ -39,7 +36,6 @@ export default function PtProjectSlugClient({ allPosts, lang }: PtProjectSlugCli
 					<div dangerouslySetInnerHTML={{ __html: post.content }} />
 				</div>
 			</div>
-			<FooterComponents />
 		</div>
 	);
 }

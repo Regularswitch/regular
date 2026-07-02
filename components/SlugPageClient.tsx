@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import HeaderComponents from './HeaderComponents';
-import FooterComponents from './FooterComponents';
 import Link from 'next/link';
 import Image from 'next/image';
 import DateTimeComponent from './DateTimeComponent';
@@ -134,8 +132,6 @@ export default function SlugPageClient({ allPosts, allPostCat, allCat, slug, all
 
 	return (
 		<div className={slug !== 'about' && slug !== 'education' && slug !== 'contact-3' ? 'hide-height' : ''}>
-			<HeaderComponents isLight={headerTextColor === 'white'} />
-
 			{(slug === 'education' || slug === 'about') && (
 				<>
 					<div className="block w-full h-auto lg:w-[90vw] mx-auto aspect-w-16 aspect-h-9" />
@@ -189,7 +185,6 @@ export default function SlugPageClient({ allPosts, allPostCat, allCat, slug, all
 					))}
 				</div>
 			</div>
-			<FooterComponents />
 		</div>
 	);
 }

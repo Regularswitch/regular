@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import HeaderComponents from './HeaderComponents';
-import FooterComponents from './FooterComponents';
 import BackgroundProject from './BackgroundProject';
 
 type ProjectSlugClientProps = {
@@ -45,8 +43,6 @@ export default function ProjectSlugClient({ allPosts, lang, allMetas, slug }: Pr
 
 	return (
 		<div className={`font-hg ${slug !== 'about' ? 'hide-height' : ''}`}>
-			<HeaderComponents lang={lang} isLight={headerTextColor === 'white'} />
-
 			<div className="block w-full h-auto lg:w-[90vw] mx-auto aspect-w-16 aspect-h-9"></div>
 
 			<BackgroundProject bg={bg} video={video} visible={visible} ref={bgRef} onColorExtract={handleColorExtract} />
@@ -59,7 +55,6 @@ export default function ProjectSlugClient({ allPosts, lang, allMetas, slug }: Pr
 				</div>
 			</div>
 
-			<FooterComponents />
 		</div>
 	);
 }

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react'
 function VariableFont({ text, text2 }: any) {
     const [cursor, setCursor] = useState({ x: 0, y: 0 })

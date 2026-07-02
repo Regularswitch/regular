@@ -20,6 +20,5 @@ export function getCookie(name: string) : string {
 }
 
 export function setCookie(name: string, value: string) {
-    document.cookie = `${name}=${value};path=/`
-    window.location.reload()
+    document.cookie = `${name}=${value};path=/;max-age=31536000;samesite=lax`
 }

@@ -7,6 +7,7 @@ import Logo from "../public/logo-blanc.svg";
 import imageMenu from "../public/menu.png";
 import translate, { getCookie, setCookie } from "./Translate";
 import { usePathname, useRouter } from 'next/navigation'
+import ThemeToggle from './ThemeToggle';
 
 type headerProps = {
 	lang?: string
@@ -139,6 +140,9 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 									</Link>
 								</li>
 							</ul>
+						</nav>
+						<nav className="sm: hidden xl:flex justify-center items-start">
+							<ThemeToggle />
 						</nav>
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>

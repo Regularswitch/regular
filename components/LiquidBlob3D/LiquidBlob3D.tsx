@@ -30,9 +30,9 @@ function useReducedMotion() {
 }
 
 export default function LiquidBlob3D({
-	color1 = '#6ae4ff',
-	color2 = '#7e79ff',
-	palette = ['#7B00FF', '#D400FF', '#FF5FAF', '#304FFE', '#FFD500'],
+	color1 = '#fe4857',
+	color2 = '#4af117',
+	palette = ['#7B00FF', '#D400FF', '#FF5FAF', '#304FFE', '#FFD500','#4af117','#fe4857'],
 	intensity = 0.85,
 	blobRadius = 1.55,
 	blobDetail = 80,
@@ -89,7 +89,7 @@ export default function LiquidBlob3D({
 						dpr={dpr}
 						camera={{ fov: isMobile ? 40 : 36, position: [0, 0, isMobile ? 7 : 6.4] }}
 						gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-						style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 40px 80px rgba(0,0,0,.35))' }}
+						style={{ width: '100%', height: '100%'}}
 					>
 						<BlobMesh
 							color1={color1}
