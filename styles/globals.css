@@ -29,6 +29,39 @@ body {
 	font-family: 'Hanken Grotesk' !important;
 }
 
+/* Brands marquee — linear infinite scroll */
+:root {
+	--brands-marquee-duration: 35s;
+}
+
+@keyframes brands-marquee-scroll {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-50%);
+	}
+}
+
+.brands-marquee-track {
+	animation: brands-marquee-scroll var(--brands-marquee-duration) linear infinite;
+	will-change: transform;
+}
+
+/* Logos brancos do WP → pretos no tema claro */
+html:not(.dark) .brand-mark {
+	filter: invert(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.brands-marquee-track {
+		animation: none;
+		flex-wrap: wrap;
+		justify-content: center;
+		width: 100%;
+	}
+}
+
 @font-face {
 	font-family: "HK Grotesk";
 	font-display: swap;

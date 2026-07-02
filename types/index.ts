@@ -36,3 +36,13 @@ export type Project = {
   description?: string;
   created_at?: Date;
 };
+
+export type Brands = Brand[];
+
+export type Brand = {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
+  link?: string;
+};

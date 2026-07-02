@@ -1,19 +1,21 @@
+import BrandsMarquee from '../../components/BrandsMarquee/BrandsMarquee';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getBaseUrl } from '../../lib/getBaseUrl';
-import type { Category, Projects } from '../../types';
+import type { Brand, Category, Projects } from '../../types';
 
 export const revalidate = 10;
 
 export default async function PtHomePage() {
 	const base = getBaseUrl();
 
-	const [allPosts, allCat] = await Promise.all([
+	const [allPosts, allCat, brands] = await Promise.all([
 		fetch(`${base}/api/project`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Category[]>),
+		fetch(`${base}/api/brand`, { headers: { Cookie: 'language=PT' }, cache: 'no-store' }).then((r) => r.json() as Promise<Brand[]>),
 	]).catch((error) => {
 		console.error('Failed to fetch PT home', error);
-		return [[], []] as [Projects, Category[]];
+		return [[], [], []] as [Projects, Category[], Brand[]];
 	});
 
 	const getName = (id: number) => allCat.find((c) => c.id === id)?.title ?? '';
@@ -27,6 +29,8 @@ export default async function PtHomePage() {
 					digital para oferecer experiências visuais que importam.
 				</p>
 			</section>
+
+			<BrandsMarquee brands={brands} />
 
 			<div className="container mx-auto p-4">
 				<div className="columns-1 md:columns-2 gap-4">

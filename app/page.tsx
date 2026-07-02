@@ -1,5 +1,6 @@
+import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
 import ContainerProjects from '../components/ContainerProjects';
-import type { Category, Meta, Projects } from '../types';
+import type { Brand, Category, Meta, Projects } from '../types';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 
 function getBaseUrl(): string {
@@ -12,13 +13,14 @@ export const revalidate = 600;
 
 export default async function HomePage() {
 	const base = getBaseUrl();
-	const [projects, allCat, allMetas] = await Promise.all([
+	const [projects, allCat, allMetas, brands] = await Promise.all([
 		fetch(`${base}/api/project`).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`).then((r) => r.json() as Promise<Category[]>),
 		fetch(`${base}/api/project/all-metas`).then((r) => r.json() as Promise<Meta[]>),
+		fetch(`${base}/api/brand`, { cache: 'no-store' }).then((r) => r.json() as Promise<Brand[]>),
 	]).catch((error) => {
 		console.error('Failed to fetch data:', error);
-		return [[], [], []] as [Projects, Category[], Meta[]];
+		return [[], [], [], []] as [Projects, Category[], Meta[], Brand[]];
 	});
 
 	return (
@@ -35,6 +37,8 @@ export default async function HomePage() {
 					experiences that matter.
 				</p>
 			</section>
+
+			<BrandsMarquee title="Brands that trust us" brands={brands} />
 
 			<div className="mx-auto p-4 lg:w-[90vw]">
 				<ContainerProjects projects={projects} cats={allCat} allMetas={allMetas} />

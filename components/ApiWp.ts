@@ -1,6 +1,5 @@
-import { type } from "os"
 import { tipoLinguagens } from "./Language"
-import { Projects } from '../types';
+import { type Brand, type Projects } from '../types';
 
 export type data = {
     translate?: tipoLinguagens | string
@@ -16,6 +15,9 @@ export type data = {
 }
 
 export type responseWpMedia = {
+    alt_text?: string
+    title?: { rendered: string }
+    source_url?: string
     media_details: {
         sizes: {
             medium: {
@@ -89,5 +91,51 @@ export async function GetMeta() {
     let full_path = `${process.env?.API}/wp-json/api-etc/v2/all-posts?v=1.1.1`;
 
     return await (await fetch(full_path)).json();
+}
+
+function featuredImageUrl(item: responseWp): string | undefined {
+    const media = item._embedded?.['wp:featuredmedia']?.[0];
+    if (!media) return undefined;
+
+    const sizes = media.media_details?.sizes;
+    return sizes?.full?.source_url ?? sizes?.medium?.source_url ?? (media as { source_url?: string }).source_url;
+}
+
+function brandName(item: responseWp): string {
+    const title = item?.title?.rendered?.trim();
+    if (title) return title;
+
+    const media = item._embedded?.['wp:featuredmedia']?.[0];
+    const alt = media?.alt_text?.trim();
+    if (alt) return alt;
+
+    const mediaTitle = media?.title?.rendered?.trim();
+    if (mediaTitle) return mediaTitle;
+
+    return item.slug;
+}
+
+export function porterBrands(payloadWp: listResponseWp): Brand[] {
+    return payloadWp.map((item) => ({
+        id: item.id,
+        name: brandName(item),
+        slug: item.slug,
+        logo: featuredImageUrl(item),
+        link: item.link,
+    }));
+}
+
+export async function GetBrandsApi(data: Record<string, string> = {}) {
+    const BASE = `${process.env?.API}/wp-json/wp/v2`;
+    const fullPath = new URL(`${BASE}/brand`);
+    fullPath.search = new URLSearchParams(data).toString();
+
+    const response = await fetch(fullPath, { cache: 'no-store' });
+    if (!response.ok) return [];
+
+    const payload = await response.json();
+    if (!Array.isArray(payload)) return [];
+
+    return porterBrands(payload);
 }
 
