@@ -2,6 +2,7 @@ import FooterComponents from '../components/FooterComponents';
 import HeaderComponents from '../components/HeaderComponents';
 import ContainerProjects from '../components/ContainerProjects';
 import type { Category, Meta, Projects } from '../types';
+import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 
 function getBaseUrl(): string {
 	if (process.env.BASE) return process.env.BASE;
@@ -25,6 +26,15 @@ export default async function HomePage() {
 	return (
 		<div>
 			<HeaderComponents />
+			<LiquidBlob3D
+				className="relative h-[70svh] min-h-[520px] md:h-[78vh] grid place-items-center overflow-hidden bg-black"
+				color1="#6ae4ff"
+				color2="#7e79ff"
+				intensity={0.5}
+				blobRadius={1.45}
+			>
+				<h1 className='text-5xl font-bold text-black'>REGULAR SWITCH</h1>
+			</LiquidBlob3D>
 			<section className="text-black container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
 				<h2 className="block mb-[40px]">Branding / Digital / Graphic Architecture</h2>
 				<p>
