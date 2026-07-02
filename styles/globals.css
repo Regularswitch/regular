@@ -53,6 +53,24 @@ html:not(.dark) .brand-mark {
 	filter: invert(1);
 }
 
+/* Intro — destaque com <strong> no conteúdo do WordPress */
+.intro-headline {
+	color: var(--muted);
+}
+
+.intro-headline strong {
+	color: var(--fg);
+	font-weight: inherit;
+}
+
+.intro-body {
+	color: var(--muted);
+}
+
+.intro-body p {
+	margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.brands-marquee-track {
 		animation: none;

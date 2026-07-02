@@ -1,5 +1,6 @@
 import BrandsMarquee from '../../components/BrandsMarquee/BrandsMarquee';
-import { GetBrandsApi } from '../../components/ApiWp';
+import { GetBrandsApi, GetIntroApi } from '../../components/ApiWp';
+import IntroSection from '../../components/Intro/IntroSection';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getBaseUrl } from '../../lib/getBaseUrl';
@@ -10,26 +11,21 @@ export const revalidate = 10;
 export default async function PtHomePage() {
 	const base = getBaseUrl();
 
-	const [allPosts, allCat, brands] = await Promise.all([
+	const [allPosts, allCat, brands, intro] = await Promise.all([
 		fetch(`${base}/api/project`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Category[]>),
 		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc', translate: 'PT' }),
+		GetIntroApi({ translate: 'PT' }),
 	]).catch((error) => {
 		console.error('Failed to fetch PT home', error);
-		return [[], [], []] as [Projects, Category[], Brand[]];
+		return [[], [], [], null] as [Projects, Category[], Brand[], null];
 	});
 
 	const getName = (id: number) => allCat.find((c) => c.id === id)?.title ?? '';
 
 	return (
 		<div>
-			<section className="text-white container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
-				<h2 className="block mb-[40px]">Branding / Digital / Arquitetura Gráfica</h2>
-				<p>
-					Regularswitch é uma agência de design multi-cultural com escritório no Brasil e na França. Trabalhando na fronteira entre analógico e
-					digital para oferecer experiências visuais que importam.
-				</p>
-			</section>
+			<IntroSection intro={intro} locale="pt" />
 
 			<BrandsMarquee brands={brands} />
 

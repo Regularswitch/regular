@@ -46,3 +46,8 @@ export type Brand = {
   logo?: string;
   link?: string;
 };
+
+export type Intro = {
+  headline: string;
+  body: string;
+};

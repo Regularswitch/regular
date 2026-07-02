@@ -1,5 +1,5 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type Projects } from '../types';
+import { type Brand, type Intro, type Projects } from '../types';
 
 export type data = {
     translate?: tipoLinguagens | string
@@ -146,6 +146,39 @@ export async function GetBrandsApi(data: Record<string, string> = {}) {
         return porterBrands(payload);
     } catch {
         return [];
+    }
+}
+
+export function porterIntro(payloadWp: listResponseWp): Intro | null {
+    const item = payloadWp[0];
+    if (!item) return null;
+
+    const headline = item.content?.rendered?.trim();
+    if (!headline) return null;
+
+    return {
+        headline,
+        body: item.excerpt?.rendered?.trim() ?? '',
+    };
+}
+
+export async function GetIntroApi(data: Record<string, string> = {}): Promise<Intro | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/intro`);
+        fullPath.search = new URLSearchParams({ per_page: '1', ...data }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterIntro(payload);
+    } catch {
+        return null;
     }
 }
 

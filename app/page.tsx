@@ -1,6 +1,7 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
-import { GetBrandsApi } from '../components/ApiWp';
+import { GetBrandsApi, GetIntroApi } from '../components/ApiWp';
 import ContainerProjects from '../components/ContainerProjects';
+import IntroSection from '../components/Intro/IntroSection';
 import type { Brand, Category, Meta, Projects } from '../types';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 
@@ -14,14 +15,15 @@ export const revalidate = 60;
 
 export default async function HomePage() {
 	const base = getBaseUrl();
-	const [projects, allCat, allMetas, brands] = await Promise.all([
+	const [projects, allCat, allMetas, brands, intro] = await Promise.all([
 		fetch(`${base}/api/project`).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`).then((r) => r.json() as Promise<Category[]>),
 		fetch(`${base}/api/project/all-metas`).then((r) => r.json() as Promise<Meta[]>),
 		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
+		GetIntroApi(),
 	]).catch((error) => {
 		console.error('Failed to fetch data:', error);
-		return [[], [], [], []] as [Projects, Category[], Meta[], Brand[]];
+		return [[], [], [], [], null] as [Projects, Category[], Meta[], Brand[], null];
 	});
 
 	return (
@@ -31,13 +33,7 @@ export default async function HomePage() {
 				intensity={0.5}
 				blobRadius={1.45}
 			/>
-			<section className="text-(--fg) container mx-auto text-[20px] lg:text-[50px] font-hk leading-[1em] font-extrabold py-4 px-4 lg:py-[150px]">
-				<h2 className="block mb-[40px]">Branding / Digital / Graphic Architecture</h2>
-				<p>
-					RegularSwitch is a multi-cultural design agency based in Brazil. Working on the edge between analog and digital to offer visual
-					experiences that matter.
-				</p>
-			</section>
+			<IntroSection intro={intro} locale="en" />
 
 			<BrandsMarquee title="Brands that trust us" brands={brands} />
 
