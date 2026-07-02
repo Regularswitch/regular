@@ -250,16 +250,16 @@ export default function Header({ isLight = false }: HeaderProps) {
 					))}
 
 				</nav>
-					<div className="flex items-center gap-3">
-						<button
-							type="button"
-							onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
-							className={`rounded w-[34px] h-[28px] text-xs border border-black/10 dark:border-white/15 bg-(--surface) ${textColor} hover:opacity-80`}
-						>
-							{language}
-						</button>
-						<ThemeToggle />
-					</div>
+				<div className="hidden lg:flex items-center gap-3">
+					<button
+						type="button"
+						onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
+						className={`rounded w-[34px] h-[28px] text-xs border border-black/10 dark:border-white/15 bg-(--surface) ${textColor} hover:opacity-80`}
+					>
+						{language}
+					</button>
+					<ThemeToggle />
+				</div>
 
 				{/* Mobile toggle */}
 				<button
