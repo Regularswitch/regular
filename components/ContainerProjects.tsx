@@ -36,7 +36,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                     <div key={columnIndex} className="break-inside-avoid pb-4">
                         {column.filter((f: Project) => (f.category || []).includes(17)).map((p) => (
                             <div className="break-inside-avoid pb-4" key={p.id}>
-                                <Link href={`/project/${p.slug}`} passHref>
+                                <Link href={`/project/${p.slug}`}>
                                     <div className="font-hk">
                                         <div className="relative w-full overflow-hidden">
                                             {getImageSecondaryBySlug(p.slug) && (

@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
-    domains: ['regularswitch.com', 'wp.regularswitch.com']
+    remotePatterns: [
+      { protocol: 'https', hostname: 'regularswitch.com' },
+      { protocol: 'https', hostname: 'wp.regularswitch.com' },
+    ],
   },
   
 }

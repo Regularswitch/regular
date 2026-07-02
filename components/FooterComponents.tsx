@@ -1,4 +1,3 @@
-import Link from "next/link";
 export default function FooterComponents() {
 	return (
 		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px] lg:mt-[100px]">
@@ -17,16 +16,12 @@ export default function FooterComponents() {
 					<ul>
 						<li>
 							<span className="select-none">
-								<Link href="tel:+5511945408448" legacyBehavior>
-									<a>+55 (11) 9 4540-8448</a>
-								</Link>
+								<a href="tel:+5511945408448">+55 (11) 9 4540-8448</a>
 							</span>
 						</li>
 						<li>
 							<span className="select-none">
-								<Link href="mailto:contact@regularswitch.com" legacyBehavior>
-									<a>contact@regularswitch.com</a>
-								</Link>
+								<a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a>
 							</span>
 						</li>
 					</ul>
@@ -35,20 +30,16 @@ export default function FooterComponents() {
 					<ul>
 						<li>							
 							<span className="select-none">
-								<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-									<a target="_blank" rel="noopener noreferrer" >
-										Rua da consolação, 65
-									</a>
-								</Link>
+								<a href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" target="_blank" rel="noopener noreferrer">
+									Rua da consolação, 65
+								</a>
 							</span>
 						</li>
 						<li>
 							<span className="select-none">
-								<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-									<a target="_blank" rel="noopener noreferrer" >
-										Sao Paulo / Brazil 01301-000 
-									</a>
-								</Link>
+								<a href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" target="_blank" rel="noopener noreferrer">
+									Sao Paulo / Brazil 01301-000
+								</a>
 							</span>
 						</li>
 					</ul>

@@ -1,8 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
-import HeaderComponents from "../../components/HeaderComponents";
-import FooterComponents from "../../components/FooterComponents";
-import BackgroundProject from "../../components/BackgroundProject";
-import Language from "../../components/Language";
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import HeaderComponents from './HeaderComponents';
+import FooterComponents from './FooterComponents';
+import BackgroundProject from './BackgroundProject';
+
+type ProjectSlugClientProps = {
+	allPosts: any[];
+	lang: string;
+	allMetas: any;
+	slug: string;
+};
 
 const useScrollVisibility = () => {
 	const [visible, setVisible] = useState(true);
@@ -16,14 +24,13 @@ const useScrollVisibility = () => {
 		};
 
 		window.addEventListener('scroll', handleScroll);
-
 		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
 	return visible;
 };
 
-export default function ProjectBySlug({ allPosts, lang, allMetas, slug }: any) {
+export default function ProjectSlugClient({ allPosts, lang, allMetas, slug }: ProjectSlugClientProps) {
 	const visible = useScrollVisibility();
 	const bgRef = useRef<HTMLDivElement | null>(null);
 	const [headerTextColor, setHeaderTextColor] = useState('black');
@@ -47,10 +54,7 @@ export default function ProjectBySlug({ allPosts, lang, allMetas, slug }: any) {
 			<div className="lg:w-[90vw] px-4 mx-auto">
 				<h1 className={`text-[40px] lg:text-[70px] font-hk font-bold`}>{post.title}</h1>
 				<div dangerouslySetInnerHTML={{ __html: post.content }} />
-				<div
-					className="font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer"
-					onClick={() => window.history.back()}
-				>
+				<div className="font-hg text-black text-[30px] lg:text-[70px] font-bold cursor-pointer" onClick={() => window.history.back()}>
 					←
 				</div>
 			</div>
@@ -58,44 +62,5 @@ export default function ProjectBySlug({ allPosts, lang, allMetas, slug }: any) {
 			<FooterComponents />
 		</div>
 	);
-};
-
-export async function getStaticPaths() {
-	return {
-		paths: [],
-		fallback: 'blocking'
-	}
 }
 
-export async function getStaticProps(context: { params: { slug: string }; req: { cookies: { language: string } } }) {
-	const { slug } = context.params;
-	const base = process.env.BASE || '';
-	const lang = context.req?.cookies?.language || 'PT';
-
-	const postsUrl = `${base}/api/project/${slug}`;
-	const metasUrl = `${base}/api/project/all-metas`;
-
-	let allPosts = [];
-	let allMetas = null;
-
-	try {
-		const postsResponse = await fetch(postsUrl);
-		allPosts = await postsResponse.json();
-
-		const metasResponse = await fetch(metasUrl);
-		const allMetasData = await metasResponse.json();
-		allMetas = allMetasData.find((meta: any) => meta.slug === slug);
-	} catch (error) {
-		console.error('Error fetching project data', error);
-	}
-
-	return {
-		props: {
-			allPosts,
-			allMetas,
-			lang,
-			slug
-		},
-		revalidate: 10
-	};
-}

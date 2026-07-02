@@ -1,10 +1,12 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "../public/logo-blanc.svg";
 import imageMenu from "../public/menu.png";
 import translate, { getCookie, setCookie } from "./Translate";
-import { useRouter } from 'next/router'
+import { usePathname, useRouter } from 'next/navigation'
 
 type headerProps = {
 	lang?: string
@@ -23,7 +25,8 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 	}
 
 	const router = useRouter()
-	const currentPath = router.asPath;
+	const pathname = usePathname();
+	const currentPath = pathname ?? '';
 	const forceLightmode = currentPath.includes('/project/sesc-paulista') || currentPath.includes('/project/cine-joia');
 
 	useEffect(function () {
@@ -55,7 +58,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 	const prefix = language == 'PT' ? 'PT' : '';
 
 	function loadLang() {
-		let fullUrl = router.asPath
+		let fullUrl = currentPath
 		fullUrl = fullUrl.replace('/PT', '')
 		let nowLanguage = getCookie('language')
 		if (nowLanguage == 'PT') {
@@ -74,7 +77,7 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 				<header>
 					<div className=" flex justify-between xl:grid grid-cols-4 text-[15px] leading-[20px]">
 						<nav className="flex ">
-							<Link href={"/" + prefix} legacyBehavior>
+							<Link href={'/' + prefix}>
 								<Image
 									src={Logo}
 									alt="RSW"
@@ -96,21 +99,43 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 							<ul>
 								<li>
 									<span>
-										<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-											<a target="_blank" rel="noopener noreferrer" className={(forceLightmode ? 'text-white' : textColor)}>
-												São Paulo / Brazil
-											</a>
-										</Link>
+										<a
+											href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7"
+											target="_blank"
+											rel="noopener noreferrer"
+											className={(forceLightmode ? 'text-white' : textColor)}
+										>
+											São Paulo / Brazil
+										</a>
 									</span>
 								</li>
 								<li>
-									<Link href="tel:+5511945408448" legacyBehavior>
-										<a className={(forceLightmode ? 'text-white' : textColor)}><span>+55 (11) 9 4540-8448</span></a>
+									<a href="tel:+5511945408448" className={(forceLightmode ? 'text-white' : textColor)}>
+										<span>+55 (11) 9 4540-8448</span>
+									</a>
+								</li>
+								<li>
+									<a href="mailto:contact@regularswitch.com" className={(forceLightmode ? 'text-white' : textColor)}>
+										contact@regularswitch.com
+									</a>
+								</li>
+							</ul>
+						</nav>
+						<nav className="sm: hidden xl:flex justify-center">
+							<ul>
+								<li>
+									<Link href="/" className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>
+										Home Page
 									</Link>
 								</li>
 								<li>
-									<Link href="mailto:contact@regularswitch.com" legacyBehavior>
-										<a className={(forceLightmode ? 'text-white' : textColor)}>contact@regularswitch.com</a>
+									<Link href={'/' + prefix + '/work'} className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>
+										Selected works
+									</Link>
+								</li>
+								<li>
+									<Link href={'/' + prefix + '/education'} className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>
+										Education
 									</Link>
 								</li>
 							</ul>
@@ -118,38 +143,24 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 						<nav className="sm: hidden xl:flex justify-center">
 							<ul>
 								<li>
-									<Link href="/" legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Home Page</a>
+									<Link href={'/' + prefix + '/about'} className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>
+										{translate('About', language)}
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/work'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Selected works </a>
+									<Link href={'/' + prefix + '/contact-3'} className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>
+										{translate('Contact', language)}
 									</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/education'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Education</a>
-									</Link>
-								</li>
-							</ul>
-						</nav>
-						<nav className="sm: hidden xl:flex justify-center">
-							<ul>
-								<li>
-									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>{translate('About', language)}</a>
-									</Link>
-								</li>
-								<li>
-									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>{translate('Contact', language)}</a>
-									</Link>
-								</li>
-								<li>
-									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a target="_blank" rel="noopener noreferrer" className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}>Instagram</a>
-									</Link>
+									<a
+										href="https://www.instagram.com/regular.switch"
+										target="_blank"
+										rel="noopener noreferrer"
+										className={"hover:opacity-70 " + (forceLightmode ? 'text-white' : textColor)}
+									>
+										Instagram
+									</a>
 								</li>
 							</ul>
 						</nav>
@@ -166,34 +177,24 @@ export default function HeaderComponents({ lang, isLight = false }: any) {
 							</span>
 							<ul className="fixed left-5 bottom-14" onClick={toggleMenu}>
 								<li>
-									<Link href="/" legacyBehavior>
-										<a>Home Page</a>
-									</Link>
+									<Link href="/">Home Page</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/work'} legacyBehavior>
-										<a>Selected works</a>
-									</Link>
+									<Link href={'/' + prefix + '/work'}>Selected works</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/education'} legacyBehavior>
-										<a>Education</a>
-									</Link>
+									<Link href={'/' + prefix + '/education'}>Education</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/about'} legacyBehavior>
-										<a>{translate('About', language)}</a>
-									</Link>
+									<Link href={'/' + prefix + '/about'}>{translate('About', language)}</Link>
 								</li>
 								<li>
-									<Link href={'/' + prefix + '/contact-3'} legacyBehavior>
-										<a>{translate('Contact', language)}</a>
-									</Link>
+									<Link href={'/' + prefix + '/contact-3'}>{translate('Contact', language)}</Link>
 								</li>
 								<li>
-									<Link href="https://www.instagram.com/regular.switch" legacyBehavior>
-										<a target="_blank" rel="noopener noreferrer" >Instagram</a>
-									</Link>
+									<a href="https://www.instagram.com/regular.switch" target="_blank" rel="noopener noreferrer">
+										Instagram
+									</a>
 								</li>
 							</ul>
 						</nav>
