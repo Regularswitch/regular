@@ -1,4 +1,5 @@
 import BrandsMarquee from '../../components/BrandsMarquee/BrandsMarquee';
+import { GetBrandsApi } from '../../components/ApiWp';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getBaseUrl } from '../../lib/getBaseUrl';
@@ -12,7 +13,7 @@ export default async function PtHomePage() {
 	const [allPosts, allCat, brands] = await Promise.all([
 		fetch(`${base}/api/project`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`, { headers: { Cookie: 'language=PT' } }).then((r) => r.json() as Promise<Category[]>),
-		fetch(`${base}/api/brand`, { headers: { Cookie: 'language=PT' }, cache: 'no-store' }).then((r) => r.json() as Promise<Brand[]>),
+		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc', translate: 'PT' }),
 	]).catch((error) => {
 		console.error('Failed to fetch PT home', error);
 		return [[], [], []] as [Projects, Category[], Brand[]];

@@ -1,4 +1,5 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
+import { GetBrandsApi } from '../components/ApiWp';
 import ContainerProjects from '../components/ContainerProjects';
 import type { Brand, Category, Meta, Projects } from '../types';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
@@ -9,7 +10,7 @@ function getBaseUrl(): string {
 	return 'http://localhost:3000';
 }
 
-export const revalidate = 600;
+export const revalidate = 60;
 
 export default async function HomePage() {
 	const base = getBaseUrl();
@@ -17,7 +18,7 @@ export default async function HomePage() {
 		fetch(`${base}/api/project`).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`).then((r) => r.json() as Promise<Category[]>),
 		fetch(`${base}/api/project/all-metas`).then((r) => r.json() as Promise<Meta[]>),
-		fetch(`${base}/api/brand`, { cache: 'no-store' }).then((r) => r.json() as Promise<Brand[]>),
+		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
 	]).catch((error) => {
 		console.error('Failed to fetch data:', error);
 		return [[], [], [], []] as [Projects, Category[], Meta[], Brand[]];

@@ -130,16 +130,22 @@ export function porterBrands(payloadWp: listResponseWp): Brand[] {
 }
 
 export async function GetBrandsApi(data: Record<string, string> = {}) {
-    const BASE = `${process.env?.API}/wp-json/wp/v2`;
-    const fullPath = new URL(`${BASE}/brand`);
-    fullPath.search = new URLSearchParams(data).toString();
+    const api = process.env?.API;
+    if (!api) return [];
 
-    const response = await fetch(fullPath, { cache: 'no-store' });
-    if (!response.ok) return [];
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/brand`);
+        fullPath.search = new URLSearchParams(data).toString();
 
-    const payload = await response.json();
-    if (!Array.isArray(payload)) return [];
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return [];
 
-    return porterBrands(payload);
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return [];
+
+        return porterBrands(payload);
+    } catch {
+        return [];
+    }
 }
 
