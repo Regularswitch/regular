@@ -7,9 +7,10 @@ import { useState, useMemo } from 'react';
 
 export default function ContainerProjects({ projects, cats, allMetas }: HomeProps) {
     const [showAll, setShowAll] = useState(false);
+    const metas = Array.isArray(allMetas) ? allMetas : [];
 
     const getName = (id: number) => cats.find((c: any) => c.id === id)?.title || '';
-    const getImageSecondaryBySlug = (slug: string) => allMetas.find((p: any) => slug === p.slug)?.img_secondary?.url || '';
+    const getImageSecondaryBySlug = (slug: string) => metas.find((p: any) => slug === p.slug)?.img_secondary?.url || '';
     const sortedProjects = useMemo(() =>
         projects.sort((a, b) =>
             new Date(b.created_at as Date).getTime() - new Date(a.created_at as Date).getTime()

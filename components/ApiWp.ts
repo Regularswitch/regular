@@ -90,7 +90,11 @@ export async function GetApi(path: string, data: any) {
 export async function GetMeta() {
     let full_path = `${process.env?.API}/wp-json/api-etc/v2/all-posts?v=1.1.1`;
 
-    return await (await fetch(full_path)).json();
+    const response = await fetch(full_path, { cache: 'no-store' });
+    if (!response.ok) return [];
+
+    const payload = await response.json();
+    return Array.isArray(payload) ? payload : [];
 }
 
 function featuredImageUrl(item: responseWp): string | undefined {

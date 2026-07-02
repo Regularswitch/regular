@@ -5,6 +5,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'regularswitch.com' },
       { protocol: 'https', hostname: 'wp.regularswitch.com' },
+      { protocol: 'http', hostname: 'regularswitch-wp.local' },
     ],
   },
   
