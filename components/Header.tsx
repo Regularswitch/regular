@@ -249,6 +249,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 						</Link>
 					))}
 
+				</nav>
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
@@ -259,7 +260,6 @@ export default function Header({ isLight = false }: HeaderProps) {
 						</button>
 						<ThemeToggle />
 					</div>
-				</nav>
 
 				{/* Mobile toggle */}
 				<button
