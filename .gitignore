@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# wordpress deploy artifacts
+wordpress/dist/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

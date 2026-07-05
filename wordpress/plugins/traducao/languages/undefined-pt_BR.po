@@ -1,0 +1,3 @@
+#: functions.php:154
+msgid "undefined"
+msgstr "undefined"
