@@ -14,6 +14,10 @@ const HOVER_PX_PER_SEC = 140;
 
 /** Repete marcas até cada metade do track preencher a tela (loop -50% sem vazio). */
 function buildMarqueeTrack(brands: Brand[]) {
+	if (!brands.length) {
+		return { track: [] as Brand[], halfLength: 0 };
+	}
+
 	const minItemsPerHalf = 24;
 	const repeats = Math.max(2, Math.ceil(minItemsPerHalf / brands.length));
 	const half = Array.from({ length: repeats }, () => brands).flat();

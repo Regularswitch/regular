@@ -198,7 +198,12 @@ export async function GetIntroApi(data: Record<string, string> = {}): Promise<In
 
     try {
         const fullPath = new URL(`${api}/wp-json/wp/v2/intro`);
-        fullPath.search = new URLSearchParams({ per_page: '1', ...data }).toString();
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            orderby: 'date',
+            order: 'asc',
+            ...data,
+        }).toString();
 
         const response = await fetch(fullPath, { cache: 'no-store' });
         if (!response.ok) return null;

@@ -42,8 +42,8 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const barBotRef = useRef<SVGLineElement | null>(null);
 
 	useEffect(() => {
-		setLanguage(getLanguage());
-	}, []);
+		setLanguage(pathname.startsWith('/PT') ? 'PT' : getLanguage());
+	}, [pathname]);
 
 	useEffect(() => {
 		const mql = window.matchMedia('(max-width: 768px)');
@@ -65,13 +65,22 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const textColor = isLight ? 'text-white' : 'text-[color:var(--fg)]';
 
 	const links = useMemo<NavLink[]>(
-		() => [
-			{ label: 'Projetos', href: `/${prefix}/work`.replace('//', '/') },
-			{ label: 'Capacidades', href: `/${prefix}/capacidades`.replace('//', '/') },
-			{ label: 'Educação', href: `/${prefix}/education`.replace('//', '/') },
-			{ label: 'Sobre Nós', href: `/${prefix}/about`.replace('//', '/') },
-			{ label: 'Contato', href: `/${prefix}/contact-3`.replace('//', '/') },
-		],
+		() =>
+			language === 'PT'
+				? [
+						{ label: 'Projetos', href: `/${prefix}/work`.replace('//', '/') },
+						{ label: 'Capacidades', href: `/${prefix}/capacidades`.replace('//', '/') },
+						{ label: 'Educação', href: `/${prefix}/education`.replace('//', '/') },
+						{ label: 'Sobre Nós', href: `/${prefix}/about`.replace('//', '/') },
+						{ label: 'Contato', href: `/${prefix}/contact-3`.replace('//', '/') },
+					]
+				: [
+						{ label: 'Projects', href: `/${prefix}/work`.replace('//', '/') },
+						{ label: 'Capabilities', href: `/${prefix}/capacidades`.replace('//', '/') },
+						{ label: 'Education', href: `/${prefix}/education`.replace('//', '/') },
+						{ label: 'About', href: `/${prefix}/about`.replace('//', '/') },
+						{ label: 'Contact', href: `/${prefix}/contact-3`.replace('//', '/') },
+					],
 		[prefix, language],
 	);
 
