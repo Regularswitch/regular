@@ -29,22 +29,12 @@ body {
 	font-family: 'Hanken Grotesk' !important;
 }
 
-/* Brands marquee — linear infinite scroll */
-:root {
-	--brands-marquee-duration: 35s;
+.font-home {
+	font-family: 'HK-home', sans-serif;
 }
 
-@keyframes brands-marquee-scroll {
-	from {
-		transform: translateX(0);
-	}
-	to {
-		transform: translateX(-50%);
-	}
-}
-
+/* Brands marquee — scroll via JS (direção pelo mouse) */
 .brands-marquee-track {
-	animation: brands-marquee-scroll var(--brands-marquee-duration) linear infinite;
 	will-change: transform;
 }
 
@@ -71,12 +61,176 @@ html:not(.dark) .brand-mark {
 	margin: 0;
 }
 
+/* Selected projects — grid bento na home */
+.selected-projects-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2rem;
+}
+
+@media (min-width: 768px) {
+	.selected-projects-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 2.5rem 2rem;
+	}
+
+	.selected-projects-item--full {
+		grid-column: span 2;
+	}
+}
+
+.selected-projects-card-image {
+	aspect-ratio: 4 / 3;
+	border-radius: 12px;
+}
+
+.selected-projects-item--full .selected-projects-card-image {
+	aspect-ratio: 21 / 9;
+}
+
+.selected-projects-tag {
+	display: inline-block;
+	border-radius: 4px;
+	background: var(--surface);
+	padding: 0.35rem 0.65rem;
+	font-size: 0.6875rem;
+	line-height: 1.2;
+	color: var(--muted);
+	text-transform: capitalize;
+}
+
+.selected-projects-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent);
+	border-radius: 9999px;
+	padding: 0.65rem 1.75rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--fg);
+	transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.selected-projects-cta:hover {
+	opacity: 0.75;
+	border-color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+/* Latest projects — carrossel horizontal */
+.latest-projects-scroll {
+	display: flex;
+	gap: 1rem;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scroll-behavior: smooth;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.latest-projects-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.latest-projects-card {
+	width: min(72vw, 320px);
+	scroll-snap-align: start;
+}
+
+@media (min-width: 768px) {
+	.latest-projects-card {
+		width: calc((100% - 3rem) / 4);
+		min-width: 200px;
+	}
+}
+
+.latest-projects-card-image {
+	aspect-ratio: 4 / 3;
+	border-radius: 16px;
+	transition: box-shadow 0.25s ease;
+}
+
+.latest-projects-card:hover .latest-projects-card-image,
+.latest-projects-card:focus-visible .latest-projects-card-image {
+	box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.latest-projects-nav-btn {
+	display: inline-flex;
+	height: 2.5rem;
+	width: 2.5rem;
+	align-items: center;
+	justify-content: center;
+	border-radius: 9999px;
+	border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent);
+	color: var(--fg);
+	font-size: 1rem;
+	line-height: 1;
+	transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.latest-projects-nav-btn:hover {
+	opacity: 0.75;
+	border-color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+.site-footer-brand {
+	user-select: none;
+}
+
+/* Project page */
+.project-summary strong {
+	color: var(--fg);
+	font-weight: inherit;
+}
+
+.project-summary p {
+	margin: 0;
+}
+
+.project-accordion-body p {
+	margin: 0 0 0.75rem;
+}
+
+.project-accordion-body p:last-child {
+	margin-bottom: 0;
+}
+
+.project-gallery-row {
+	display: grid;
+	gap: 1rem;
+}
+
+.project-gallery-row--2 {
+	grid-template-columns: 1fr;
+}
+
+.project-gallery-row--3 {
+	grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+	.project-gallery-row--2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.project-gallery-row--3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+.project-gallery-item {
+	aspect-ratio: 4 / 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.brands-marquee-track {
-		animation: none;
 		flex-wrap: wrap;
 		justify-content: center;
 		width: 100%;
+		transform: none !important;
 	}
 }
 

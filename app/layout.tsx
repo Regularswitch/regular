@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import Header from '../components/Header';
 import FooterComponents from '../components/FooterComponents';
+import { GetFooterApi } from '../components/ApiWp';
 
 export const metadata = {
 	title: 'Regular Switch',
@@ -10,6 +11,8 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
+	const [footerEn, footerPt] = await Promise.all([GetFooterApi(), GetFooterApi({ translate: 'PT' })]);
+
 	return (
 		<html lang="en" className={theme === 'dark' ? 'dark' : undefined}>
 			<head>
@@ -36,7 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			<body>
 				<Header />
 				<main className="pt-20 px-7 sm:pt-24 lg:pt-28">{children}</main>
-				<FooterComponents />
+				<FooterComponents footerEn={footerEn} footerPt={footerPt} />
 			</body>
 		</html>
 	);

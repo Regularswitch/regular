@@ -1,51 +1,93 @@
-export default function FooterComponents() {
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
+
+import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
+import FontVariante from './FontVariante';
+import { getCookie } from './Translate';
+import type { FooterContent, FooterLink } from '../types';
+
+type FooterLocale = 'en' | 'pt';
+
+type FooterComponentsProps = {
+	footerEn: FooterContent | null;
+	footerPt: FooterContent | null;
+};
+
+function resolveLocale(pathname: string): FooterLocale {
+	if (pathname.startsWith('/PT')) return 'pt';
+	const cookie = getCookie('language');
+	return cookie === 'PT' ? 'pt' : 'en';
+}
+
+function withPrefix(href: string, locale: FooterLocale) {
+	if (href.startsWith('http') || href.startsWith('mailto:')) return href;
+	const prefix = locale === 'pt' ? '/PT' : '';
+	return `${prefix}${href}`.replace(/^\/\//, '/') || href;
+}
+
+function isExternal(href: string) {
+	return href.startsWith('http') && !href.includes('regularswitch');
+}
+
+export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
+	const pathname = usePathname() ?? '';
+	const [locale, setLocale] = useState<FooterLocale>('en');
+
+	useEffect(() => {
+		setLocale(resolveLocale(pathname));
+	}, [pathname]);
+
+	const fallback = locale === 'pt' ? DEFAULT_FOOTER_PT : DEFAULT_FOOTER_EN;
+	const fromWp = locale === 'pt' ? footerPt : footerEn;
+	const { brandMark, links, legal } = fromWp ?? fallback;
+
+	const legalLinks = useMemo(
+		() => [
+			{ label: legal.brand, href: withPrefix('/', locale) },
+			{ label: legal.privacy, href: withPrefix(legal.privacyHref, locale) },
+			{ label: legal.cookies, href: withPrefix(legal.cookiesHref, locale) },
+		],
+		[legal, locale],
+	);
+
 	return (
-		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px] lg:mt-[100px]">
-			<div className="sm:flex justify-center flex-col xl:grid grid-cols-4 gap-5 md:gap-10 lg:gap-10 xl:gap-20">
-				<nav className="mb-8 sm:mb-0">
-					<ul>
-						<li>
-							<span className="select-none">© 2024-25 Regularswitch</span>
-						</li>
-						<li>
-							<span className="select-none">all rights reserved.</span>
-						</li>
-					</ul>
-				</nav>
-				<nav className="mb-8 sm:mb-0">
-					<ul>
-						<li>
-							<span className="select-none">
-								<a href="tel:+5511945408448">+55 (11) 9 4540-8448</a>
-							</span>
-						</li>
-						<li>
-							<span className="select-none">
-								<a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a>
-							</span>
-						</li>
-					</ul>
-				</nav>
-				<nav>
-					<ul>
-						<li>							
-							<span className="select-none">
-								<a href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" target="_blank" rel="noopener noreferrer">
-									Rua da consolação, 65
-								</a>
-							</span>
-						</li>
-						<li>
-							<span className="select-none">
-								<a href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" target="_blank" rel="noopener noreferrer">
-									Sao Paulo / Brazil 01301-000
-								</a>
-							</span>
-						</li>
-					</ul>
-				</nav>
+		<footer className="site-footer mt-20 border-t border-white/10 pt-12 md:mt-28 md:pt-16">
+			<div className="grid gap-10 px-7 md:w-1/2 md:grid-cols-3 md:gap-8">
+				{links.map((item: FooterLink) => (
+					<Link
+						key={`${item.title}-${item.href}`}
+						href={withPrefix(item.href, locale)}
+						className="group block max-w-xs"
+						{...(item.external || isExternal(item.href)
+							? { target: '_blank', rel: 'noopener noreferrer' }
+							: {})}
+					>
+						<p className="font-hk text-base font-extrabold text-(--fg) md:text-lg">{item.title}</p>
+						<p className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80">{item.subtitle}</p>
+					</Link>
+				))}
 			</div>
-			<br />
+
+			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
+				<FontVariante text={brandMark} align="justify" />
+			</div>
+
+			<nav
+				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-sm text-(--muted) md:mt-10"
+				aria-label="Legal"
+			>
+				{legalLinks.map((item, index) => (
+					<span key={item.label} className="inline-flex items-center gap-2">
+						{index > 0 ? <span aria-hidden>/</span> : null}
+						<Link href={item.href} className="transition-opacity hover:opacity-80 hover:text-(--fg)">
+							{item.label}
+						</Link>
+					</span>
+				))}
+			</nav>
 		</footer>
 	);
 }

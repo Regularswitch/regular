@@ -1,8 +1,9 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
 import { GetBrandsApi, GetIntroApi } from '../components/ApiWp';
-import ContainerProjects from '../components/ContainerProjects';
 import IntroSection from '../components/Intro/IntroSection';
-import type { Brand, Category, Meta, Projects } from '../types';
+import SelectedProjects from '../components/SelectedProjects/SelectedProjects';
+import LatestProjects from '../components/LatestProjects/LatestProjects';
+import type { Brand, Category, Projects } from '../types';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 
 function getBaseUrl(): string {
@@ -15,15 +16,14 @@ export const revalidate = 60;
 
 export default async function HomePage() {
 	const base = getBaseUrl();
-	const [projects, allCat, allMetas, brands, intro] = await Promise.all([
+	const [projects, allCat, brands, intro] = await Promise.all([
 		fetch(`${base}/api/project`).then((r) => r.json() as Promise<Projects>),
 		fetch(`${base}/api/project/all-category`).then((r) => r.json() as Promise<Category[]>),
-		fetch(`${base}/api/project/all-metas`).then((r) => r.json() as Promise<Meta[]>),
 		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
 		GetIntroApi(),
 	]).catch((error) => {
 		console.error('Failed to fetch data:', error);
-		return [[], [], [], [], null] as [Projects, Category[], Meta[], Brand[], null];
+		return [[], [], [], null] as [Projects, Category[], Brand[], null];
 	});
 
 	return (
@@ -37,9 +37,10 @@ export default async function HomePage() {
 
 			<BrandsMarquee title="Brands that trust us" brands={brands} />
 
-			<div className="mx-auto p-4 lg:w-[90vw]">
-				<ContainerProjects projects={projects} cats={allCat} allMetas={allMetas} />
-			</div>
+			<SelectedProjects projects={projects} categories={allCat} locale="en" />
+
+			<LatestProjects projects={projects} locale="en" />
+
 			<div className="h-10" />
 		</>
 	);
