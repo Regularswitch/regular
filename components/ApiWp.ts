@@ -84,12 +84,29 @@ export function porter(payloadWp: listResponseWp): Projects {
     }))
 }
 
-export async function GetApi(path: string, data: any) {
-    const BASE = `${process.env?.API}/wp-json/wp/v2`;
-    let full_path = new URL(`${BASE}${path}`);
-    full_path.search = new URLSearchParams(data).toString();
+export async function GetApi(path: string, data: Record<string, string | number> = {}): Promise<Projects> {
+    const api = process.env?.API;
+    if (!api) return [];
 
-    return porter(await (await fetch(full_path)).json());
+    const full_path = new URL(`${api}/wp-json/wp/v2${path}`);
+    full_path.search = new URLSearchParams(
+        Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value)])),
+    ).toString();
+
+    try {
+        const response = await fetch(full_path, { next: { revalidate: 60 } });
+        if (!response.ok) return [];
+
+        const text = await response.text();
+        if (!text.trim()) return [];
+
+        const payload = JSON.parse(text);
+        if (!Array.isArray(payload)) return [];
+
+        return porter(payload);
+    } catch {
+        return [];
+    }
 }
 
 export async function GetMeta() {

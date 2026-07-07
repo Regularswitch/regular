@@ -177,7 +177,13 @@ add_action('rest_api_init', function () {
     ]);
 });
 
-add_action('add_meta_boxes_project', function () {
+function rs_project_register_meta_box(): void {
+    static $registered = false;
+    if ($registered) {
+        return;
+    }
+    $registered = true;
+
     add_meta_box(
         'rs_project_fields',
         'Conteúdo do Projeto (site)',
@@ -188,7 +194,26 @@ add_action('add_meta_boxes_project', function () {
     );
 
     remove_meta_box('postcustom', 'project', 'normal');
-}, 10);
+}
+
+add_action('add_meta_boxes_project', 'rs_project_register_meta_box', 5);
+
+// Editor clássico: meta boxes do tema ("Project") e deste plugin ficam vazias no Gutenberg.
+add_filter('use_block_editor_for_post_type', function ($use, string $post_type) {
+    if ($post_type === 'project') {
+        return false;
+    }
+
+    return $use;
+}, 999, 2);
+
+add_filter('use_block_editor_for_post', function ($use, WP_Post $post) {
+    if ($post->post_type === 'project') {
+        return false;
+    }
+
+    return $use;
+}, 999, 2);
 
 function rs_project_render_media_field(string $name, string $label, int $attachment_id): void {
     $url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';

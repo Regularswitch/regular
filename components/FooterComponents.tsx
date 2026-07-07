@@ -72,7 +72,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 			</div>
 
 			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
-				<FontVariante text={brandMark} align="justify" />
+				<FontVariante text={brandMark} align="justify" splitOnMobile />
 			</div>
 
 			<nav

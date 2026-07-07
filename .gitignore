@@ -35,6 +35,9 @@ yarn-error.log*
 # wordpress deploy artifacts
 wordpress/dist/
 
+# database dumps (não versionar)
+*.sql
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

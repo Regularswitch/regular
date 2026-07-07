@@ -156,3 +156,13 @@ Crie posts no CPT Footer no admin do **staging** e preencha os campos.
 
 **Mudou plugin em produção por engano**  
 Restaure backup da Hostinger ou reimporte export de produção feito antes da mudança.
+
+**`staging-wp` redireciona para `wp.regularswitch.com`**  
+O WordPress ainda aponta `siteurl`/`home` para produção. Em **Configurações → Gerais**, ajuste as duas URLs para `https://staging-wp.regularswitch.com` (ou use WP-CLI / banco). Enquanto redirecionar, o admin e os plugins são os de **produção**.
+
+**Caixas de metadados não aparecem em Projects**  
+1. Confirme que o plugin **Tradução** está ativo e atualizado (`project-fields.php` no ZIP).  
+2. A caixa **Conteúdo do Projeto (site)** fica abaixo do título (editor clássico nos Projects).  
+3. As caixas do tema (**Project Settings**, **Page Settings**) também aparecem na mesma tela.  
+4. No Gutenberg antigo: role até o fim → expanda **Caixas de metadados** (ou **Preferências → Painéis** e ative o painel).  
+5. Reenvie `wordpress/dist/wp-plugins.zip` e substitua a pasta `traducao/` inteira no servidor.
