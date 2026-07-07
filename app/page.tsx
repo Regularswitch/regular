@@ -1,5 +1,5 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
-import { GetApi, GetBrandsApi, GetIntroApi } from '../components/ApiWp';
+import { GetApi, GetBrandsApi, GetCategoriesApi, GetIntroApi } from '../components/ApiWp';
 import IntroSection from '../components/Intro/IntroSection';
 import SelectedProjects from '../components/SelectedProjects/SelectedProjects';
 import LatestProjects from '../components/LatestProjects/LatestProjects';
@@ -11,7 +11,7 @@ export const revalidate = 60;
 export default async function HomePage() {
 	const [projects, allCat, brands, intro] = await Promise.all([
 		GetApi('/project/', { _embed: '', per_page: 100 }),
-		GetApi('/project-category', { per_page: 22 }),
+		GetCategoriesApi('/project-category', { per_page: 22 }),
 		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
 		GetIntroApi(),
 	]).catch((error) => {

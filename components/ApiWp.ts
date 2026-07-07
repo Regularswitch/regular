@@ -1,5 +1,5 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type FooterContent, type Intro, type ProjectStructuredData, type Projects } from '../types';
+import { type Brand, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects } from '../types';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
 
 export type data = {
@@ -84,7 +84,14 @@ export function porter(payloadWp: listResponseWp): Projects {
     }))
 }
 
-export async function GetApi(path: string, data: Record<string, string | number> = {}): Promise<Projects> {
+export function porterCategories(payloadWp: listResponseWp): Category[] {
+    return payloadWp.map((p) => ({
+        id: p.id,
+        title: p?.title?.rendered || p.name || '',
+    }));
+}
+
+async function fetchWpList(path: string, data: Record<string, string | number> = {}): Promise<listResponseWp> {
     const api = process.env?.API;
     if (!api) return [];
 
@@ -103,10 +110,21 @@ export async function GetApi(path: string, data: Record<string, string | number>
         const payload = JSON.parse(text);
         if (!Array.isArray(payload)) return [];
 
-        return porter(payload);
+        return payload;
     } catch {
         return [];
     }
+}
+
+export async function GetApi(path: string, data: Record<string, string | number> = {}): Promise<Projects> {
+    return porter(await fetchWpList(path, data));
+}
+
+export async function GetCategoriesApi(
+    path: string,
+    data: Record<string, string | number> = {},
+): Promise<Category[]> {
+    return porterCategories(await fetchWpList(path, data));
 }
 
 export async function GetMeta() {
