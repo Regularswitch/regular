@@ -13,7 +13,7 @@ type FontVarianteProps = {
 
 const DEFAULT_VARIATION = "'wght' 100, 'wdth' 5, 'ital' 0";
 const DEFAULT_CHAR_CLASS = 'text-[clamp(3rem,18vw,22rem)] leading-[0.82]';
-const MOBILE_LINE_CLASS = 'text-[clamp(3.75rem,19vw,7.5rem)] leading-[0.78]';
+const MOBILE_LINE_CLASS = 'text-[clamp(5rem,24vw,9rem)] leading-[0.78]';
 
 function splitLines(text: string): string[] {
 	const trimmed = text.trim();
