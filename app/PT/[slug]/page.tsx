@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
+
+import { GetIntroApi } from '../../../components/ApiWp';
+import ProjectsListing from '../../../components/ProjectsListing/ProjectsListing';
 import { getBaseUrl } from '../../../lib/getBaseUrl';
-import type { Category, Projects } from '../../../types';
+import type { Category, Intro, Projects } from '../../../types';
 
 export const revalidate = 10;
 export const dynamicParams = true;
@@ -10,8 +13,30 @@ type PageProps = {
 	params: Promise<{ slug: string }>;
 };
 
+async function fetchPtWorkPage() {
+	const base = getBaseUrl();
+	const headers = { Cookie: 'language=PT' };
+
+	const [projects, categories, intro] = await Promise.all([
+		fetch(`${base}/api/project`, { headers }).then((r) => r.json() as Promise<Projects>),
+		fetch(`${base}/api/project/all-category`, { headers }).then((r) => r.json() as Promise<Category[]>),
+		GetIntroApi({ translate: 'PT' }),
+	]).catch((error) => {
+		console.error('Error fetching PT work page', error);
+		return [[], [], null] as [Projects, Category[], Intro | null];
+	});
+
+	return { projects, categories, intro };
+}
+
 export default async function PtSlugPage({ params }: PageProps) {
 	const { slug } = await params;
+
+	if (slug === 'work') {
+		const { projects, categories, intro } = await fetchPtWorkPage();
+		return <ProjectsListing projects={projects} categories={categories} intro={intro} locale="pt" />;
+	}
+
 	const base = getBaseUrl();
 
 	const [allPosts, allCat, allPostCat] = await Promise.all([
@@ -40,7 +65,7 @@ export default async function PtSlugPage({ params }: PageProps) {
 		const categorySlugs = (post.category ?? []).map((catId) => getName(catId));
 		return { ...post, categorySlugs };
 	});
-	const filtered = enriched.filter((p) => (p as any).categorySlugs?.includes(dictionary?.[slug] || slug || ''));
+	const filtered = enriched.filter((p) => (p as { categorySlugs?: string[] }).categorySlugs?.includes(dictionary?.[slug] || slug || ''));
 
 	return (
 		<div className={bgPage}>
@@ -53,7 +78,7 @@ export default async function PtSlugPage({ params }: PageProps) {
 				<div className="columns-1 md:columns-3 gap-8 font-hk">
 					{filtered.map((p) => (
 						<div key={p.id} className="mb-8">
-							<Link href={`/project/${p.slug}`}>
+							<Link href={`/PT/project/${p.slug}`}>
 								<div className="relative flex overflow-hidden">
 									<div className="block relative w-full overflow-hidden">
 										<Image
@@ -84,4 +109,3 @@ export default async function PtSlugPage({ params }: PageProps) {
 		</div>
 	);
 }
-
