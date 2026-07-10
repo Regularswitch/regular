@@ -4,7 +4,11 @@ import {
 	getDefaultContactContent,
 	type ContactContent,
 } from './contactDefaults';
-import { extractHeroImageFromHtml } from './parsePageContent';
+import {
+	extractHeroImageFromHtml,
+	parsePageBlocksFromHeadings,
+	parsePageHeadline,
+} from './parsePageContent';
 import { getBaseUrl } from './getBaseUrl';
 
 function buildContactContent(
@@ -18,10 +22,13 @@ function buildContactContent(
 	const heroImage =
 		pageImage || extractHeroImageFromHtml(html) || defaults.heroImage || DEFAULT_CONTACT_HERO_IMAGE;
 
+	const headline = parsePageHeadline(html) ?? defaults.headline;
+	const parsedBlocks = parsePageBlocksFromHeadings(html);
+
 	return {
 		heroImage,
-		headline: defaults.headline,
-		blocks: defaults.blocks,
+		headline,
+		blocks: parsedBlocks.length ? parsedBlocks : defaults.blocks,
 	};
 }
 

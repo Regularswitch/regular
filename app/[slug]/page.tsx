@@ -1,16 +1,18 @@
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 
 import { GetApi, GetCategoriesApi, GetIntroApi } from '../../components/ApiWp';
 import AboutPage from '../../components/About/AboutPage';
 import CapabilitiesPage from '../../components/Capabilities/CapabilitiesPage';
 import ContactPage from '../../components/Contact/ContactPage';
 import EducationPage from '../../components/Education/EducationPage';
+import LegalWpPage from '../../components/LegalWpPage';
 import ProjectsListing from '../../components/ProjectsListing/ProjectsListing';
-import SlugPageClient from '../../components/SlugPageClient';
 import { fetchAboutPage } from '../../lib/fetchAboutPage';
 import { fetchCapabilitiesPage } from '../../lib/fetchCapabilitiesPage';
 import { fetchContactPage } from '../../lib/fetchContactPage';
 import { fetchEducationPage } from '../../lib/fetchEducationPage';
+import { fetchLegalPage, isLegalPageSlug } from '../../lib/fetchLegalPage';
 import { getBaseUrl } from '../../lib/getBaseUrl';
 import type { Category, Intro, Projects } from '../../types';
 
@@ -100,23 +102,18 @@ export default async function SlugPage({ params }: PageProps) {
 		return <ContactPage content={content} locale={locale} />;
 	}
 
-	const base = getBaseUrl();
-	const lang = (await cookies()).get('language')?.value ?? '';
-	const cookieHeader = lang ? { Cookie: `language=${lang}` } : undefined;
+	if (isLegalPageSlug(slug)) {
+		const lang = (await cookies()).get('language')?.value ?? '';
+		const locale = lang === 'PT' ? 'pt' : 'en';
+		const page = await fetchLegalPage(slug, locale).catch((error) => {
+			console.error('Error fetching legal page', error);
+			return null;
+		});
 
-	const [allPosts, allCat, allPostCat] = await Promise.all([
-		fetch(`${base}/api/${slug}`, { headers: cookieHeader }).then((r) => r.json() as Promise<Projects>),
-		fetch(`${base}/api/project/all-category`, { headers: cookieHeader }).then((r) => r.json() as Promise<Category[]>),
-		fetch(`${base}/api/project-category/${slug}`, { headers: cookieHeader }).then((r) => r.json() as Promise<Projects>),
-	]).catch((error) => {
-		console.error('Error fetching slug page', error);
-		return [[], [], []] as [Projects, Category[], Projects];
-	});
+		if (!page?.content) notFound();
 
-	const api = process.env.API ?? 'https://wp.regularswitch.com';
-	const pageId = allPosts?.[0]?.id;
-	const metasUrl = pageId ? `${api}/wp-json/wp/v2/pages/${pageId}` : null;
-	const allMetas = metasUrl ? await fetch(metasUrl).then((r) => r.json()) : null;
+		return <LegalWpPage title={page.title} content={page.content} />;
+	}
 
-	return <SlugPageClient allPosts={allPosts} allPostCat={allPostCat} allCat={allCat} slug={slug} allMetas={allMetas} />;
+	notFound();
 }

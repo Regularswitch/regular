@@ -1,5 +1,5 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects } from '../types';
+import { type Brand, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects } from '../types';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
 
 export type data = {
@@ -60,6 +60,7 @@ export type responseWp = {
         "wp:attachment"?: attachment[]
     }
     footer_data?: FooterContent
+    capabilities_data?: CapabilitiesContent
     project_data?: ProjectStructuredData
     meta?: Record<string, string>
 }
@@ -350,6 +351,62 @@ export async function GetFooterApi(data: Record<string, string> = {}): Promise<F
         if (!Array.isArray(payload)) return null;
 
         return porterFooter(payload);
+    } catch {
+        return null;
+    }
+}
+
+function isCapabilitySection(value: unknown): value is CapabilitiesContent['sections'][number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.title === 'string';
+}
+
+function isCapabilitiesContent(value: unknown): value is CapabilitiesContent {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    if (typeof item.headline !== 'string') return false;
+    if (!Array.isArray(item.sections)) return false;
+    return item.sections.every(isCapabilitySection);
+}
+
+export function porterCapabilities(payloadWp: listResponseWp): CapabilitiesContent | null {
+    const item = payloadWp[0];
+    if (!item) return null;
+
+    if (item.capabilities_data && isCapabilitiesContent(item.capabilities_data)) {
+        const sections = item.capabilities_data.sections.filter((section) => section.title);
+        if (item.capabilities_data.headline || sections.length > 0) {
+            return {
+                headline: item.capabilities_data.headline,
+                sections,
+            };
+        }
+    }
+
+    return null;
+}
+
+export async function GetCapabilitiesApi(data: Record<string, string> = {}): Promise<CapabilitiesContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/capabilities`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            orderby: 'date',
+            order: 'asc',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterCapabilities(payload);
     } catch {
         return null;
     }

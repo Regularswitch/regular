@@ -53,7 +53,7 @@ function rs_rest_apply_translation(WP_REST_Response $response, WP_Post $post, WP
     return $response;
 }
 
-foreach (['intro', 'brand', 'project', 'post', 'page', 'footer'] as $post_type) {
+foreach (['intro', 'brand', 'project', 'post', 'page', 'footer', 'capabilities'] as $post_type) {
     add_filter("rest_prepare_{$post_type}", 'rs_rest_apply_translation', 10, 3);
 }
 

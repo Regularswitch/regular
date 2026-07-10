@@ -6,7 +6,7 @@ Cópia dos plugins customizados usados pelo headless Next.js.
 
 ```
 wordpress/plugins/
-├── traducao/     # CPTs, tradução EN/PT, campos footer e projeto
+├── traducao/     # CPTs, tradução EN/PT, campos footer, capacidades e projeto
 └── api-etc/      # REST api-etc/v2/all-posts (metas de projeto)
 ```
 

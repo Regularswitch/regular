@@ -5,7 +5,13 @@ import {
 	type AboutAccordionSection,
 	type AboutContent,
 } from './aboutDefaults';
-import { extractHeroImageFromHtml } from './parsePageContent';
+import {
+	extractHeroImageFromHtml,
+	mergeAboutAccordionSections,
+	parsePageBodyAfterHeadline,
+	parsePageHeadline,
+	parsePageAccordionFromHeadings,
+} from './parsePageContent';
 import { getBaseUrl } from './getBaseUrl';
 import { sortProjectsByDate } from './sortProjects';
 import type { Projects } from '../types';
@@ -36,11 +42,18 @@ function buildAboutContent(
 	const heroImage =
 		pageImage || extractHeroImageFromHtml(html) || defaults.heroImage || DEFAULT_ABOUT_HERO_IMAGE;
 
+	const headline = parsePageHeadline(html) ?? defaults.headline;
+	const body = parsePageBodyAfterHeadline(html) ?? defaults.body;
+	const parsedAccordion = parsePageAccordionFromHeadings(html, ['h3']);
+
 	return {
 		heroImage,
-		headline: defaults.headline,
-		body: defaults.body,
-		accordionSections: attachSectionImages(defaults.accordionSections, projects),
+		headline,
+		body,
+		accordionSections: attachSectionImages(
+			mergeAboutAccordionSections(parsedAccordion, defaults.accordionSections),
+			projects,
+		),
 	};
 }
 

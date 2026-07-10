@@ -71,4 +71,22 @@ add_action('init', function () {
             'rewrite'      => array('slug' => 'footer'),
         ]
     );
+
+    register_post_type(
+        'capabilities',
+        [
+            'labels'      => [
+                'name'          => 'Capacidades',
+                'singular_name' => 'Capacidades',
+                'add_new_item'  => 'Adicionar capacidades',
+                'edit_item'     => 'Editar capacidades',
+            ],
+            'public'       => true,
+            'has_archive'  => false,
+            'menu_icon'    => 'dashicons-hammer',
+            'show_in_rest' => true,
+            'supports'     => array('title'),
+            'rewrite'      => array('slug' => 'capabilities'),
+        ]
+    );
 });

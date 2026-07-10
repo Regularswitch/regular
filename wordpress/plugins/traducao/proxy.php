@@ -1,7 +1,7 @@
 <?php
 
 function rs_translate_same_type_cpts(): array {
-    return ['footer', 'intro', 'brand', 'project'];
+    return ['footer', 'intro', 'brand', 'project', 'capabilities'];
 }
 
 function rs_translate_target_post_type(WP_Post $source): string {
@@ -58,6 +58,11 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
         foreach (rs_footer_get_meta($from_id) as $key => $value) {
             update_post_meta($to_id, $key, $value);
         }
+        return;
+    }
+
+    if ($post_type === 'capabilities' && function_exists('rs_copy_capabilities_fields')) {
+        rs_copy_capabilities_fields($from_id, $to_id);
         return;
     }
 

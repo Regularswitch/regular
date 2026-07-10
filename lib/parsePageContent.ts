@@ -1,3 +1,5 @@
+import type { AboutAccordionSection } from './aboutDefaults';
+import type { ContactBlock } from './contactDefaults';
 import type { EducationContent } from './educationDefaults';
 import { DEFAULT_EDUCATION_EN, DEFAULT_EDUCATION_PT } from './educationDefaults';
 import type { ProjectAccordionSection } from './parseProjectContent';
@@ -38,14 +40,29 @@ export function extractHeroImageFromHtml(html: string): string | undefined {
 	return images[0]?.url;
 }
 
+/** Extrai o conteúdo interno do primeiro `<h2>`, preservando HTML (ex.: `<strong>`). */
 export function parsePageHeadline(html: string): string | null {
 	const h2Match = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
 	if (!h2Match) return null;
 
-	const text = stripHtml(h2Match[1]);
-	if (!text) return null;
+	const inner = h2Match[1].trim();
+	if (!inner || !stripHtml(inner)) return null;
 
-	return text;
+	return inner;
+}
+
+/** Conteúdo entre o primeiro `<h2>` e o primeiro `<h3>`. */
+export function parsePageBodyAfterHeadline(html: string): string | null {
+	const cleaned = removeImagesFromHtml(html);
+	const h2Match = cleaned.match(/<h2[^>]*>[\s\S]*?<\/h2>/i);
+	if (!h2Match || h2Match.index === undefined) return null;
+
+	const start = h2Match.index + h2Match[0].length;
+	const h3Match = cleaned.slice(start).match(/<h3[^>]*>/i);
+	const end = h3Match?.index !== undefined ? start + h3Match.index : cleaned.length;
+	const body = cleaned.slice(start, end).trim();
+
+	return body || null;
 }
 
 export function parsePageAccordionFromHeadings(
@@ -73,6 +90,29 @@ export function parsePageAccordionFromHeadings(
 	return sections.filter((section) => section.title);
 }
 
+export function parsePageBlocksFromHeadings(html: string): ContactBlock[] {
+	return parsePageAccordionFromHeadings(html, ['h3']).map((section) => ({
+		title: section.title,
+		body: section.body,
+	}));
+}
+
+export function mergeAboutAccordionSections(
+	parsed: ProjectAccordionSection[],
+	defaults: AboutAccordionSection[],
+): AboutAccordionSection[] {
+	if (!parsed.length) return defaults;
+
+	return parsed.map((section, index) => {
+		const fallback = defaults.find((item) => item.title === section.title) ?? defaults[index];
+
+		return {
+			...section,
+			imageProjectSlug: fallback?.imageProjectSlug,
+		};
+	});
+}
+
 export function buildEducationContent(
 	pageContent: string | undefined,
 	pageImage: string | undefined,
@@ -82,10 +122,12 @@ export function buildEducationContent(
 	const html = pageContent ?? '';
 
 	const heroImage = pageImage || extractHeroImageFromHtml(html) || defaults.heroImage;
+	const headline = parsePageHeadline(html) ?? defaults.headline;
+	const parsedAccordion = parsePageAccordionFromHeadings(html, ['h3']);
 
 	return {
 		heroImage,
-		headline: defaults.headline,
-		accordionSections: defaults.accordionSections,
+		headline,
+		accordionSections: parsedAccordion.length ? parsedAccordion : defaults.accordionSections,
 	};
 }

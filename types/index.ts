@@ -74,6 +74,21 @@ export type FooterContent = {
   legal: FooterLegal;
 };
 
+export type CapabilitySection = {
+  title: string;
+  lead?: string;
+  body: string;
+  servicesTitle?: string;
+  services?: string[];
+  imageProjectSlug?: string;
+  image?: string;
+};
+
+export type CapabilitiesContent = {
+  headline: string;
+  sections: CapabilitySection[];
+};
+
 export type ProjectStructuredImage = {
   url?: string | false;
   width?: number;

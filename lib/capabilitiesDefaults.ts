@@ -1,18 +1,6 @@
-export type CapabilitySection = {
-	title: string;
-	lead?: string;
-	body: string;
-	servicesTitle?: string;
-	services?: string[];
-	/** Slug de projeto no WP para imagem ilustrativa do painel aberto. */
-	imageProjectSlug?: string;
-	image?: string;
-};
+import type { CapabilitySection, CapabilitiesContent } from '../types';
 
-export type CapabilitiesContent = {
-	headline: string;
-	sections: CapabilitySection[];
-};
+export type { CapabilitySection, CapabilitiesContent };
 
 const SERVICES_TITLE_PT = 'Como podemos ajudar:';
 const SERVICES_TITLE_EN = 'How we can help:';
