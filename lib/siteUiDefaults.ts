@@ -23,3 +23,34 @@ const NAV_PT: SiteUiNavLink[] = [
 	{ label: 'Sobre Nós', href: pagePath(ABOUT_PAGE_SLUG) },
 	{ label: 'Contato', href: pagePath(CONTACT_PAGE_SLUG) },
 ];
+
+const LABELS_EN: SiteUiLabels = {
+	selectedProjects: 'Selected Projects',
+	latestProjects: 'The Latest',
+	brandsMarquee: 'Brands that trust us',
+	seeMoreProjects: 'See more projects',
+	seeMoreWork: 'See more work',
+	whatsNewLabel: "What's New",
+	whatsNewTitle: 'Regular Switch',
+	whatsNewSubtitle: 'New website',
+};
+
+const LABELS_PT: SiteUiLabels = {
+	selectedProjects: 'Projetos Selecionados',
+	latestProjects: 'Últimos',
+	brandsMarquee: 'Marcas que confiam em nós',
+	seeMoreProjects: 'Veja mais projetos',
+	seeMoreWork: 'Veja mais projetos',
+	whatsNewLabel: 'Novidades',
+	whatsNewTitle: 'Regular Switch',
+	whatsNewSubtitle: 'Novo site',
+};
+
+export const DEFAULT_SITE_UI: SiteUiContent = {
+	en: { labels: LABELS_EN, nav: NAV_EN },
+	pt: { labels: LABELS_PT, nav: NAV_PT },
+};
+
+export function getDefaultSiteUiContent(): SiteUiContent {
+	return DEFAULT_SITE_UI;
+}

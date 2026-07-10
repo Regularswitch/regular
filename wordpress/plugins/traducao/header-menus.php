@@ -214,20 +214,19 @@ function rs_header_nav_seed_menu(int $menu_id, array $items): void {
     }
 }
 
-function rs_header_nav_ensure_menus(): void {
-    if (get_option('rs_header_menus_seeded_v1')) {
-        return;
-    }
+function rs_header_nav_get_assigned_menu_id(string $location_key): int {
+    $locations = get_nav_menu_locations();
 
+    return !empty($locations[$location_key]) ? (int) $locations[$location_key] : 0;
+}
+
+function rs_header_nav_ensure_menus(): void {
     $locations = get_nav_menu_locations();
     $updated = is_array($locations) ? $locations : [];
+    $changed = false;
 
     foreach (['en' => ['Header EN', 'header-en', RS_HEADER_MENU_LOCATION_EN], 'pt' => ['Header PT', 'header-pt', RS_HEADER_MENU_LOCATION_PT]] as $locale => $config) {
         [$menu_name, $menu_slug, $location_key] = $config;
-
-        if (!empty($updated[$location_key])) {
-            continue;
-        }
 
         $menu_id = rs_header_nav_find_or_create_menu($menu_name, $menu_slug);
         if ($menu_id <= 0) {
@@ -241,13 +240,18 @@ function rs_header_nav_ensure_menus(): void {
                 $seed = rs_header_nav_default_items($locale);
             }
             rs_header_nav_seed_menu($menu_id, $seed);
+            $changed = true;
         }
 
-        $updated[$location_key] = $menu_id;
+        if (($updated[$location_key] ?? 0) !== $menu_id) {
+            $updated[$location_key] = $menu_id;
+            $changed = true;
+        }
     }
 
-    set_theme_mod('nav_menu_locations', $updated);
-    update_option('rs_header_menus_seeded_v1', 1);
+    if ($changed) {
+        set_theme_mod('nav_menu_locations', $updated);
+    }
 }
 
 add_action('init', 'rs_header_nav_ensure_menus', 30);
@@ -267,13 +271,43 @@ add_action('rest_api_init', function () {
 
 add_action('admin_notices', function () {
     $screen = get_current_screen();
-    if (!$screen || $screen->base !== 'post' || $screen->post_type !== 'site-ui') {
+    if (!$screen) {
+        return;
+    }
+
+    $en_id = rs_header_nav_get_assigned_menu_id(RS_HEADER_MENU_LOCATION_EN);
+    $pt_id = rs_header_nav_get_assigned_menu_id(RS_HEADER_MENU_LOCATION_PT);
+
+    if ($screen->id === 'nav-menus') {
+        echo '<div class="notice notice-info"><p><strong>Menus do site (Next.js)</strong> — edite diretamente: ';
+        if ($en_id > 0) {
+            echo '<a href="' . esc_url(admin_url('nav-menus.php?action=edit&menu=' . $en_id)) . '">Header EN</a>';
+        } else {
+            echo 'Header EN (será criado ao recarregar)';
+        }
+        echo ' · ';
+        if ($pt_id > 0) {
+            echo '<a href="' . esc_url(admin_url('nav-menus.php?action=edit&menu=' . $pt_id)) . '">Header PT</a>';
+        } else {
+            echo 'Header PT (será criado ao recarregar)';
+        }
+        echo '<br /><span style="color:#646970;">Use <em>Links personalizados</em> com paths como <code>/work</code>, <code>/capabilities</code> — sem prefixo <code>/PT</code>.</span>';
+        echo '</p></div>';
+        return;
+    }
+
+    if ($screen->base !== 'post' || $screen->post_type !== 'site-ui') {
         return;
     }
 
     $url = admin_url('nav-menus.php');
+    if ($en_id > 0) {
+        $url = admin_url('nav-menus.php?action=edit&menu=' . $en_id);
+    }
+
     echo '<div class="notice notice-info"><p>';
-    echo 'O <strong>menu do header</strong> é editado em <a href="' . esc_url($url) . '">Aparência → Menus</a> ';
-    echo '(<em>Header — English</em> e <em>Header — Português</em>). Use links sem <code>/PT</code> — o site adiciona automaticamente.';
+    echo 'O <strong>menu do header</strong> é editado em <a href="' . esc_url($url) . '">Aparência → Menus → Header EN</a> ';
+    echo '(e <a href="' . esc_url($pt_id > 0 ? admin_url('nav-menus.php?action=edit&menu=' . $pt_id) : admin_url('nav-menus.php')) . '">Header PT</a>).';
+    echo ' Use links sem <code>/PT</code> — o site adiciona automaticamente.';
     echo '</p></div>';
 });
