@@ -2,11 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import type { Category, Project } from '../../types';
+import { getVisibleCategoryTags } from '../../lib/projectCategories';
 import type { GridSpan } from './constants';
-
-function getCategoryName(categories: Category[], id: number) {
-	return categories.find((c) => c.id === id)?.title ?? '';
-}
 
 type ProjectGridCardProps = {
 	project: Project;
@@ -16,9 +13,7 @@ type ProjectGridCardProps = {
 };
 
 export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
-	const tags = (project.category ?? [])
-		.map((id) => getCategoryName(categories, id))
-		.filter(Boolean);
+	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 
 	return (
 		<article className={`selected-projects-item${span === 'full' ? ' selected-projects-item--full' : ''}`}>

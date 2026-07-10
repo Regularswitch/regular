@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GetApi } from '../../../../components/ApiWp';
+import { GetProjectsByCategorySlug } from '../../../../components/ApiWp';
 
 export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
 	const { slug } = await context.params;
@@ -7,14 +7,9 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
 	const match = cookie.match(/(?:^|;\s*)language=([^;]+)/);
 	const language = match?.[1] ?? '';
 
-	const query = {
-		categories: slug,
-		_embed: '',
-		per_page: 100,
-		translate: language,
-	};
+	const query: Record<string, string | number> = {};
+	if (language) query.translate = language;
 
-	const apiWp = await GetApi('/project', query);
+	const apiWp = await GetProjectsByCategorySlug(slug, query);
 	return NextResponse.json(apiWp);
 }
-

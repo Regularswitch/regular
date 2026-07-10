@@ -61,6 +61,14 @@ html:not(.dark) .brand-mark {
 	margin: 0;
 }
 
+.about-body p {
+	margin: 0 0 1rem;
+}
+
+.about-body p:last-child {
+	margin-bottom: 0;
+}
+
 /* Selected projects — grid bento na home */
 .selected-projects-grid {
 	display: grid;
@@ -196,6 +204,26 @@ html:not(.dark) .brand-mark {
 
 .project-accordion-body p:last-child {
 	margin-bottom: 0;
+}
+
+.capabilities-accordion-body p {
+	margin: 0 0 0.75rem;
+}
+
+.capabilities-accordion-body p:last-child {
+	margin-bottom: 0;
+}
+
+.capabilities-accordion-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.capabilities-accordion-list li::before {
+	content: '·';
+	margin-right: 0.5rem;
+	color: var(--muted);
 }
 
 .project-gallery-row {

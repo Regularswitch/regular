@@ -6,10 +6,11 @@ import type { ProjectAccordionSection } from '../../lib/parseProjectContent';
 
 type ProjectAccordionProps = {
 	sections: ProjectAccordionSection[];
+	defaultOpenIndex?: number;
 };
 
-export default function ProjectAccordion({ sections }: ProjectAccordionProps) {
-	const [openIndex, setOpenIndex] = useState(0);
+export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: ProjectAccordionProps) {
+	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
 	const visibleSections = sections.filter((section) => section.body.trim());
 

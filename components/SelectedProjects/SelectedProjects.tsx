@@ -1,12 +1,10 @@
 import Link from 'next/link';
 
 import type { Category, Projects } from '../../types';
+import { HOME_PROJECTS_CATEGORY_ID } from '../../lib/projectCategories';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import { getGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
-
-/** Categoria WordPress "Projetos selecionados" / home. */
-export const SELECTED_PROJECTS_CATEGORY_ID = 17;
 
 const MAX_PROJECTS = INITIAL_PROJECTS_COUNT;
 
@@ -18,7 +16,7 @@ type SelectedProjectsProps = {
 
 export default function SelectedProjects({ projects, categories, locale = 'en' }: SelectedProjectsProps) {
 	const selected = sortProjectsByDate(projects)
-		.filter((p) => (p.category ?? []).includes(SELECTED_PROJECTS_CATEGORY_ID))
+		.filter((p) => (p.category ?? []).includes(HOME_PROJECTS_CATEGORY_ID))
 		.slice(0, MAX_PROJECTS);
 
 	if (!selected.length) return null;

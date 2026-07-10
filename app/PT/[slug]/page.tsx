@@ -1,8 +1,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+import AboutPage from '../../../components/About/AboutPage';
+import CapabilitiesPage from '../../../components/Capabilities/CapabilitiesPage';
+import EducationPage from '../../../components/Education/EducationPage';
 import { GetIntroApi } from '../../../components/ApiWp';
 import ProjectsListing from '../../../components/ProjectsListing/ProjectsListing';
+import { fetchAboutPage } from '../../../lib/fetchAboutPage';
+import { fetchCapabilitiesPage } from '../../../lib/fetchCapabilitiesPage';
+import { fetchEducationPage } from '../../../lib/fetchEducationPage';
+import { getVisibleCategoryIds } from '../../../lib/projectCategories';
 import { getBaseUrl } from '../../../lib/getBaseUrl';
 import type { Category, Intro, Projects } from '../../../types';
 
@@ -35,6 +42,31 @@ export default async function PtSlugPage({ params }: PageProps) {
 	if (slug === 'work') {
 		const { projects, categories, intro } = await fetchPtWorkPage();
 		return <ProjectsListing projects={projects} categories={categories} intro={intro} locale="pt" />;
+	}
+
+	if (slug === 'education') {
+		const { content, projects, categories } = await fetchEducationPage('pt');
+
+		return (
+			<EducationPage
+				content={content}
+				projects={projects}
+				categories={categories}
+				locale="pt"
+			/>
+		);
+	}
+
+	if (slug === 'capacidades') {
+		const { content, latestProjects } = await fetchCapabilitiesPage('pt');
+
+		return <CapabilitiesPage content={content} latestProjects={latestProjects} locale="pt" />;
+	}
+
+	if (slug === 'about') {
+		const { content, latestProjects } = await fetchAboutPage('pt');
+
+		return <AboutPage content={content} latestProjects={latestProjects} locale="pt" />;
 	}
 
 	const base = getBaseUrl();
@@ -94,7 +126,7 @@ export default async function PtSlugPage({ params }: PageProps) {
 										<strong className="text-white font-bold">{p.title}</strong>
 										<div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF] " />
 										<div dangerouslySetInnerHTML={{ __html: p.more ?? '' }} />
-										{(p.category ?? []).map((id) => (
+										{getVisibleCategoryIds(p.category ?? [], allCat).map((id) => (
 											<span key={id} className="mr-2 text-[#FFF6]">
 												#{getName(id)}
 											</span>

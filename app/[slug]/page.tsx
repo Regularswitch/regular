@@ -1,8 +1,14 @@
 import { cookies } from 'next/headers';
 
 import { GetApi, GetCategoriesApi, GetIntroApi } from '../../components/ApiWp';
+import AboutPage from '../../components/About/AboutPage';
+import CapabilitiesPage from '../../components/Capabilities/CapabilitiesPage';
+import EducationPage from '../../components/Education/EducationPage';
 import ProjectsListing from '../../components/ProjectsListing/ProjectsListing';
 import SlugPageClient from '../../components/SlugPageClient';
+import { fetchAboutPage } from '../../lib/fetchAboutPage';
+import { fetchCapabilitiesPage } from '../../lib/fetchCapabilitiesPage';
+import { fetchEducationPage } from '../../lib/fetchEducationPage';
 import { getBaseUrl } from '../../lib/getBaseUrl';
 import type { Category, Intro, Projects } from '../../types';
 
@@ -51,6 +57,37 @@ export default async function SlugPage({ params }: PageProps) {
 		const { projects, categories, intro } = await fetchWorkPage(locale);
 
 		return <ProjectsListing projects={projects} categories={categories} intro={intro} locale={locale} />;
+	}
+
+	if (slug === 'education') {
+		const lang = (await cookies()).get('language')?.value ?? '';
+		const locale = lang === 'PT' ? 'pt' : 'en';
+		const { content, projects, categories } = await fetchEducationPage(locale);
+
+		return (
+			<EducationPage
+				content={content}
+				projects={projects}
+				categories={categories}
+				locale={locale}
+			/>
+		);
+	}
+
+	if (slug === 'capacidades') {
+		const lang = (await cookies()).get('language')?.value ?? '';
+		const locale = lang === 'PT' ? 'pt' : 'en';
+		const { content, latestProjects } = await fetchCapabilitiesPage(locale);
+
+		return <CapabilitiesPage content={content} latestProjects={latestProjects} locale={locale} />;
+	}
+
+	if (slug === 'about') {
+		const lang = (await cookies()).get('language')?.value ?? '';
+		const locale = lang === 'PT' ? 'pt' : 'en';
+		const { content, latestProjects } = await fetchAboutPage(locale);
+
+		return <AboutPage content={content} latestProjects={latestProjects} locale={locale} />;
 	}
 
 	const base = getBaseUrl();

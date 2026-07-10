@@ -127,6 +127,23 @@ export async function GetCategoriesApi(
     return porterCategories(await fetchWpList(path, data));
 }
 
+/** Projetos filtrados por slug da taxonomia `project-category` (ex.: `education`). */
+export async function GetProjectsByCategorySlug(
+    slug: string,
+    data: Record<string, string | number> = {},
+): Promise<Projects> {
+    const terms = await fetchWpList('/project-category', { slug, per_page: 1, ...data });
+    const termId = terms[0]?.id;
+    if (!termId) return [];
+
+    return GetApi('/project', {
+        'project-category': termId,
+        _embed: '',
+        per_page: 100,
+        ...data,
+    });
+}
+
 export async function GetMeta() {
     let full_path = `${process.env?.API}/wp-json/api-etc/v2/all-posts?v=1.1.1`;
 

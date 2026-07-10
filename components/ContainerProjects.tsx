@@ -1,6 +1,7 @@
 'use client'
 
 import { HomeProps, Project } from '../types';
+import { getVisibleCategoryIds } from '../lib/projectCategories';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';
@@ -65,8 +66,7 @@ export default function ContainerProjects({ projects, cats, allMetas }: HomeProp
                                             <strong className="text-black inline-block mt-4">{p.title}</strong>
                                             <div className="inline-block w-[40px] h-[1px] mb-[6px] mx-[6px] bg-[#FFF]" />
                                             <div dangerouslySetInnerHTML={{ __html: p.more }} />
-                                            {p.category &&
-                                                p.category.map((id: number) => (
+                                            {getVisibleCategoryIds(p.category ?? [], cats).map((id: number) => (
                                                     <span key={id} className="mr-2 text-[#FFF6]">
                                                         #{getName(id)}
                                                     </span>

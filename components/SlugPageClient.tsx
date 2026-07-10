@@ -7,6 +7,7 @@ import DateTimeComponent from './DateTimeComponent';
 import parse, { DOMNode } from 'html-react-parser';
 import BackgroundProject from './BackgroundProject';
 import type { Category, Meta, Projects } from '../types';
+import { getVisibleCategoryIds } from '../lib/projectCategories';
 
 type SlugPageClientProps = {
 	allPosts: Projects;
@@ -173,7 +174,7 @@ export default function SlugPageClient({ allPosts, allPostCat, allCat, slug, all
 										<strong className={`font-bold${colorTitle}`}>{p.title}</strong>
 										<div className={`inline-block w-[40px] h-[1px] mb-[6px] mx-[6px]${colorLine}`} />
 										<div className={colorTitle} dangerouslySetInnerHTML={{ __html: p.more ?? '' }} />
-										{(p.category ?? []).map((id) => (
+										{(getVisibleCategoryIds(p.category ?? [], allCat)).map((id) => (
 											<span key={id} className={`mr-2 opacity-50${colorTitle}`}>
 												#{getName(id)}
 											</span>
