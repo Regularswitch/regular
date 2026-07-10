@@ -33,9 +33,10 @@ export default function CapabilitiesAccordion({
 							onClick={() => setOpenIndex(isOpen ? -1 : index)}
 							aria-expanded={isOpen}
 						>
-							<span className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm">
-								{section.title}
-							</span>
+							<span
+								className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm"
+								dangerouslySetInnerHTML={{ __html: section.title }}
+							/>
 							<span className="text-lg leading-none text-(--muted)" aria-hidden>
 								{isOpen ? '−' : '+'}
 							</span>

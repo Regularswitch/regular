@@ -1,11 +1,8 @@
 import { GetApi } from '../components/ApiWp';
 import { getBaseUrl } from './getBaseUrl';
+import { isLegalPageSlug } from './pageSlugs';
 
-const LEGAL_SLUGS = new Set(['privacy-policy', 'cookies-policy']);
-
-export function isLegalPageSlug(slug: string) {
-	return LEGAL_SLUGS.has(slug);
-}
+export { isLegalPageSlug };
 
 export async function fetchLegalPage(slug: string, locale: 'en' | 'pt') {
 	const query: Record<string, string | number> = { _embed: '' };

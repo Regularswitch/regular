@@ -47,6 +47,44 @@ function rs_intro_save_fields(int $post_id, string $headline, string $body): voi
     clean_post_cache($post_id);
 }
 
+function rs_intro_meta_to_payload(int $post_id): array {
+    $fields = rs_intro_get_fields($post_id);
+
+    return [
+        'headline' => $fields['headline'],
+        'body'     => $fields['body'],
+    ];
+}
+
+function rs_intro_resolve_post_id(int $post_id): int {
+    if (function_exists('_getLang')) {
+        $lang = _getLang();
+        if ($lang) {
+            $translated_id = (int) get_post_meta($post_id, $lang, true);
+            if ($translated_id > 0) {
+                return $translated_id;
+            }
+        }
+    }
+
+    return $post_id;
+}
+
+add_action('rest_api_init', function () {
+    register_rest_field('intro', 'intro_data', [
+        'get_callback' => function (array $post) {
+            $post_id = rs_intro_resolve_post_id((int) $post['id']);
+
+            return rs_intro_meta_to_payload($post_id);
+        },
+        'schema' => [
+            'description' => 'Conteúdo estruturado da intro (headline + body)',
+            'type'        => 'object',
+            'context'     => ['view', 'edit'],
+        ],
+    ]);
+});
+
 add_action('add_meta_boxes_intro', function () {
     add_meta_box(
         'rs_intro_fields',
@@ -66,30 +104,19 @@ function rs_intro_render_meta_box(WP_Post $post): void {
     ?>
     <p style="margin-top:0;color:#646970;">
         Estes campos aparecem na seção de texto grande abaixo do hero na home.
-        Use <code>&lt;strong&gt;texto&lt;/strong&gt;</code> para destacar palavras em negrito.
+        Use o botão <strong>B</strong> do editor para destacar palavras em negrito.
     </p>
 
     <fieldset style="margin:0 0 16px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">
         <legend style="font-weight:600;padding:0 6px;"><strong>Título grande (headline)</strong></legend>
-        <textarea
-            id="rs_intro_headline"
-            name="rs_intro_headline"
-            style="width:100%;min-height:120px;font-family:monospace;font-size:13px;"
-        ><?php echo esc_textarea($fields['headline']); ?></textarea>
-        <p style="margin:8px 0 0;color:#646970;font-size:12px;">
-            Exemplo EN: <code>Creating &lt;strong&gt;visual identities&lt;/strong&gt; and ...</code>
-        </p>
+        <?php rs_render_rich_text_field('rs_intro_headline', 'rs_intro_headline', $fields['headline'], 'inline'); ?>
     </fieldset>
 
     <fieldset style="margin:0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">
         <legend style="font-weight:600;padding:0 6px;"><strong>Parágrafo abaixo (body)</strong></legend>
-        <textarea
-            id="rs_intro_body"
-            name="rs_intro_body"
-            style="width:100%;min-height:100px;font-family:monospace;font-size:13px;"
-        ><?php echo esc_textarea($fields['body']); ?></textarea>
+        <?php rs_render_rich_text_field('rs_intro_body', 'rs_intro_body', $fields['body'], 'paragraph'); ?>
         <p style="margin:8px 0 0;color:#646970;font-size:12px;">
-            Texto menor abaixo do título. Pode usar <code>&lt;p&gt;...&lt;/p&gt;</code> ou só o texto.
+            Texto menor abaixo do título.
         </p>
     </fieldset>
     <?php

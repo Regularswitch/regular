@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 
 import { sortProjectsByDate } from '../../lib/sortProjects';
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import type { Project, Projects } from '../../types';
 
 const MAX_LATEST = 12;
@@ -21,6 +22,7 @@ function projectHref(slug: string, locale: 'en' | 'pt') {
 
 export default function LatestProjects({ projects, locale = 'en' }: LatestProjectsProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const siteUi = useSiteUiLocale(locale);
 	const latest = sortProjectsByDate(projects).slice(0, MAX_LATEST);
 
 	const scrollBy = useCallback((direction: -1 | 1) => {
@@ -36,7 +38,7 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 
 	if (!latest.length) return null;
 
-	const title = locale === 'pt' ? 'Últimos' : 'The Latest';
+	const title = siteUi.labels.latestProjects;
 	const prevLabel = locale === 'pt' ? 'Projetos anteriores' : 'Previous projects';
 	const nextLabel = locale === 'pt' ? 'Próximos projetos' : 'Next projects';
 

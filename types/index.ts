@@ -3,6 +3,7 @@ export type Projects = Array<Project>
 export interface Category {
   id: number;
   title: string;
+  slug?: string;
 }
 
 export interface Meta {
@@ -76,17 +77,44 @@ export type FooterContent = {
 
 export type CapabilitySection = {
   title: string;
-  lead?: string;
   body: string;
+  image?: string;
+  /** Campos legados (defaults do código) */
+  lead?: string;
   servicesTitle?: string;
   services?: string[];
   imageProjectSlug?: string;
-  image?: string;
 };
 
 export type CapabilitiesContent = {
   headline: string;
   sections: CapabilitySection[];
+};
+
+export type SiteUiLabels = {
+  selectedProjects: string;
+  latestProjects: string;
+  brandsMarquee: string;
+  seeMoreProjects: string;
+  seeMoreWork: string;
+  whatsNewLabel: string;
+  whatsNewTitle: string;
+  whatsNewSubtitle: string;
+};
+
+export type SiteUiNavLink = {
+  label: string;
+  href: string;
+};
+
+export type SiteUiLocale = {
+  labels: SiteUiLabels;
+  nav: SiteUiNavLink[];
+};
+
+export type SiteUiContent = {
+  en: SiteUiLocale;
+  pt: SiteUiLocale;
 };
 
 export type ProjectStructuredImage = {

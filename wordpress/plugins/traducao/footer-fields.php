@@ -143,10 +143,7 @@ function rs_footer_render_meta_box(WP_Post $post): void {
         foreach ($keys as $key) {
             $label = RS_FOOTER_META_KEYS[$key];
             $value = $meta[$key] ?? '';
-            echo '<p style="margin:0 0 10px;">';
-            echo '<label for="' . esc_attr($key) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
-            echo '<input type="text" style="width:100%;" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '" />';
-            echo '</p>';
+            rs_render_admin_text_field($key, $key, $label, $value);
         }
 
         echo '</fieldset>';
@@ -167,7 +164,7 @@ add_action('save_post_footer', function (int $post_id) {
     }
 
     foreach (array_keys(RS_FOOTER_META_KEYS) as $key) {
-        $value = isset($_POST[$key]) ? sanitize_text_field(wp_unslash($_POST[$key])) : '';
-        update_post_meta($post_id, $key, $value);
+        $raw = isset($_POST[$key]) ? wp_unslash($_POST[$key]) : '';
+        update_post_meta($post_id, $key, rs_sanitize_admin_text_field($key, $raw));
     }
 });

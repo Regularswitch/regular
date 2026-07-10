@@ -1,7 +1,7 @@
 <?php
 
 function rs_translate_same_type_cpts(): array {
-    return ['footer', 'intro', 'brand', 'project', 'capabilities'];
+    return ['footer', 'intro', 'brand', 'project', 'capabilities', 'site-ui'];
 }
 
 function rs_translate_target_post_type(WP_Post $source): string {
@@ -66,6 +66,11 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
         return;
     }
 
+    if ($post_type === 'site-ui' && function_exists('rs_copy_site_ui_fields')) {
+        rs_copy_site_ui_fields($from_id, $to_id);
+        return;
+    }
+
     if ($post_type === 'intro') {
         $from = get_post($from_id);
         if ($from) {
@@ -105,6 +110,7 @@ function translate_proxy($request) {
     $post_translate_id = rs_translate_find_existing($source_id, $lang, $target_type);
 
     if ($post_translate_id === 0) {
+        $locale_slug = strtolower($lang);
         $new_post_id = wp_insert_post([
             'post_title'   => wp_strip_all_tags($the_post->post_title),
             'post_content' => $the_post->post_content,
@@ -112,6 +118,7 @@ function translate_proxy($request) {
             'post_status'  => 'publish',
             'post_author'  => (int) $the_post->post_author ?: 1,
             'post_type'    => $target_type,
+            'post_name'    => $locale_slug,
         ]);
 
         if (is_wp_error($new_post_id)) {
@@ -120,6 +127,10 @@ function translate_proxy($request) {
 
         rs_copy_translation_fields($source_id, $new_post_id, $target_type);
         rs_translate_link_pair($source_id, $lang, $new_post_id);
+
+        if (function_exists('rs_apply_locale_slug')) {
+            rs_apply_locale_slug($new_post_id);
+        }
 
         $parans['go'] = get_site_url() . "/wp-admin/post.php?post={$new_post_id}&action=edit";
         $parans['action'] = 'create';

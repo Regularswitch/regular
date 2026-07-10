@@ -198,22 +198,7 @@ function rs_project_register_meta_box(): void {
 
 add_action('add_meta_boxes_project', 'rs_project_register_meta_box', 5);
 
-// Editor clássico: meta boxes do tema ("Project") e deste plugin ficam vazias no Gutenberg.
-add_filter('use_block_editor_for_post_type', function ($use, string $post_type) {
-    if ($post_type === 'project') {
-        return false;
-    }
-
-    return $use;
-}, 999, 2);
-
-add_filter('use_block_editor_for_post', function ($use, WP_Post $post) {
-    if ($post->post_type === 'project') {
-        return false;
-    }
-
-    return $use;
-}, 999, 2);
+// Editor clássico para meta boxes com rich text (filtro central em rich-text-fields.php).
 
 function rs_project_render_media_field(string $name, string $label, int $attachment_id): void {
     $url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';
@@ -258,10 +243,11 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Acordeão (direita)</strong></legend>';
 
     foreach (RS_PROJECT_ACCORDION_LABELS as $index => $label) {
-        $value = (string) get_post_meta($post->ID, "rs_project_acc_{$index}_body", true);
+        $key = 'rs_project_acc_' . $index . '_body';
+        $value = (string) get_post_meta($post->ID, $key, true);
         echo '<p style="margin:0 0 12px;">';
-        echo '<label for="rs_project_acc_' . esc_attr((string) $index) . '_body" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
-        echo '<textarea style="width:100%;min-height:90px;" id="rs_project_acc_' . esc_attr((string) $index) . '_body" name="rs_project_acc_' . esc_attr((string) $index) . '_body">' . esc_textarea($value) . '</textarea>';
+        echo '<label for="' . esc_attr($key) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
+        rs_render_rich_text_field($key, $key, $value, 'paragraph');
         echo '</p>';
     }
 
@@ -309,7 +295,7 @@ add_action('save_post_project', function (int $post_id) {
 
     foreach (array_keys(RS_PROJECT_ACCORDION_LABELS) as $index) {
         $key = "rs_project_acc_{$index}_body";
-        $value = isset($_POST[$key]) ? sanitize_textarea_field(wp_unslash($_POST[$key])) : '';
+        $value = isset($_POST[$key]) ? wp_kses_post(wp_unslash($_POST[$key])) : '';
         update_post_meta($post_id, $key, $value);
     }
 

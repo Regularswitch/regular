@@ -3,7 +3,9 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import Header from '../components/Header';
 import FooterComponents from '../components/FooterComponents';
-import { GetFooterApi } from '../components/ApiWp';
+import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
+import { GetFooterApi, GetHeaderNavApi, GetSiteUiApi } from '../components/ApiWp';
+import { buildSiteUiWithHeaderNav } from '../lib/resolveSiteUi';
 
 export const metadata = {
 	title: 'Regular Switch',
@@ -11,7 +13,12 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
-	const [footerEn, footerPt] = await Promise.all([GetFooterApi(), GetFooterApi({ translate: 'PT' })]);
+	const [footerEn, footerPt, siteUi, headerNav] = await Promise.all([
+		GetFooterApi({ slug: 'en' }),
+		GetFooterApi({ slug: 'pt' }),
+		GetSiteUiApi(),
+		GetHeaderNavApi(),
+	]);
 
 	return (
 		<html lang="en" className={theme === 'dark' ? 'dark' : undefined}>
@@ -37,11 +44,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				/>
 			</head>
 			<body>
-				<Header />
-				<main className="pt-20 px-7 sm:pt-24 lg:pt-28">{children}</main>
-				<FooterComponents footerEn={footerEn} footerPt={footerPt} />
+				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
+					<Header />
+					<main className="pt-20 px-7 sm:pt-24 lg:pt-28">{children}</main>
+					<FooterComponents footerEn={footerEn} footerPt={footerPt} />
+				</SiteUiProvider>
 			</body>
 		</html>
 	);
 }
-

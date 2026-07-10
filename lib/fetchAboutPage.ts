@@ -5,6 +5,8 @@ import {
 	type AboutAccordionSection,
 	type AboutContent,
 } from './aboutDefaults';
+import { fetchWpPageByLocale } from './fetchWpPageByLocale';
+import { ABOUT_WP_BASE_SLUG } from './pageSlugs';
 import {
 	extractHeroImageFromHtml,
 	mergeAboutAccordionSections,
@@ -12,7 +14,6 @@ import {
 	parsePageHeadline,
 	parsePageAccordionFromHeadings,
 } from './parsePageContent';
-import { getBaseUrl } from './getBaseUrl';
 import { sortProjectsByDate } from './sortProjects';
 import type { Projects } from '../types';
 
@@ -57,17 +58,13 @@ function buildAboutContent(
 	};
 }
 
-async function fetchAboutFromWp(translate?: string) {
+async function fetchAboutFromWp(locale: 'en' | 'pt') {
 	const query: Record<string, string | number> = { _embed: '' };
-	if (translate) query.translate = translate;
 
-	const [pages, projects] = await Promise.all([
-		GetApi('/pages', { slug: 'about', ...query }),
+	const [page, projects] = await Promise.all([
+		fetchWpPageByLocale(ABOUT_WP_BASE_SLUG, locale, query),
 		GetApi('/project/', { per_page: 100, ...query }),
 	]);
-
-	const page = pages[0];
-	const locale = translate === 'PT' ? 'pt' : 'en';
 
 	return {
 		content: buildAboutContent(page?.content, page?.image_full, locale, projects),
@@ -76,36 +73,11 @@ async function fetchAboutFromWp(translate?: string) {
 }
 
 export async function fetchAboutPage(locale: 'en' | 'pt'): Promise<AboutPageData> {
-	if (locale === 'en') {
-		return fetchAboutFromWp().catch((error) => {
-			console.error('Error fetching about page', error);
-			return {
-				content: buildAboutContent(undefined, undefined, 'en', []),
-				latestProjects: [],
-			};
-		});
-	}
-
-	const base = getBaseUrl();
-	const headers = { Cookie: 'language=PT' };
-
-	try {
-		const [pages, projects] = await Promise.all([
-			fetch(`${base}/api/about`, { headers }).then((r) => r.json() as Promise<Projects>),
-			fetch(`${base}/api/project`, { headers }).then((r) => r.json() as Promise<Projects>),
-		]);
-
-		const page = pages[0];
-
+	return fetchAboutFromWp(locale).catch((error) => {
+		console.error('Error fetching about page', error);
 		return {
-			content: buildAboutContent(page?.content, page?.image_full, 'pt', projects),
-			latestProjects: sortProjectsByDate(projects),
-		};
-	} catch (error) {
-		console.error('Error fetching PT about page', error);
-		return {
-			content: buildAboutContent(undefined, undefined, 'pt', []),
+			content: buildAboutContent(undefined, undefined, locale, []),
 			latestProjects: [],
 		};
-	}
+	});
 }

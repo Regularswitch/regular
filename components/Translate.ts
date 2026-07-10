@@ -14,6 +14,7 @@ export default function translate(text: string, language?: string): string {
 }
 
 export function getCookie(name: string) : string {
+    if (typeof document === 'undefined') return '';
     const value = `; ${document.cookie}`
     const parts = value.split(`; ${name}=`)
     return parts?.pop()?.split(';')?.shift() || ''

@@ -9,9 +9,14 @@
 
 include __DIR__ . "/custon_post.php";
 include __DIR__ . "/intro-fields.php";
+include __DIR__ . "/rich-text-fields.php";
+include __DIR__ . "/media-fields.php";
 include __DIR__ . "/footer-fields.php";
 include __DIR__ . "/capabilities-fields.php";
+include __DIR__ . "/site-ui-fields.php";
+include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
+include __DIR__ . "/slug-language.php";
 include __DIR__ . "/rest-translate.php";
 include __DIR__ . "/proxy.php";
 include __DIR__ . "/mult-language.php";
@@ -63,7 +68,7 @@ function rs_link_translate_script(): void {
     <?php
 }
 
-foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities'] as $post_type) {
+foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'site-ui'] as $post_type) {
     add_filter("manage_{$post_type}_posts_columns", 'rs_add_language_column');
     add_action("manage_{$post_type}_posts_custom_column", 'rs_render_language_column', 10, 2);
 }

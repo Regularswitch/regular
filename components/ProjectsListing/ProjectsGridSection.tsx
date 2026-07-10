@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import type { Category, Projects } from '../../types';
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import { getGridSpan, PROJECTS_BATCH_SIZE } from './constants';
 import ProjectGridCard from './ProjectGridCard';
 
@@ -32,7 +33,8 @@ export default function ProjectsGridSection({
 
 	const visible = sorted.slice(0, visibleCount);
 	const hasMore = visibleCount < sorted.length;
-	const buttonLabel = cta ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
+	const siteUi = useSiteUiLocale(locale);
+	const buttonLabel = cta ?? siteUi.labels.seeMoreProjects;
 
 	if (!sorted.length) return null;
 

@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
-import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
-import FontVariante from './FontVariante';
-import { getCookie } from './Translate';
 import type { FooterContent, FooterLink } from '../types';
+import FontVariante from './FontVariante';
+import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
+import { getCookie } from './Translate';
 
 type FooterLocale = 'en' | 'pt';
 
@@ -16,10 +16,13 @@ type FooterComponentsProps = {
 	footerPt: FooterContent | null;
 };
 
+function localeFromPathname(pathname: string): FooterLocale {
+	return pathname.startsWith('/PT') ? 'pt' : 'en';
+}
+
 function resolveLocale(pathname: string): FooterLocale {
 	if (pathname.startsWith('/PT')) return 'pt';
-	const cookie = getCookie('language');
-	return cookie === 'PT' ? 'pt' : 'en';
+	return getCookie('language') === 'PT' ? 'pt' : 'en';
 }
 
 function withPrefix(href: string, locale: FooterLocale) {
@@ -34,7 +37,7 @@ function isExternal(href: string) {
 
 export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
 	const pathname = usePathname() ?? '';
-	const [locale, setLocale] = useState<FooterLocale>('en');
+	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
 
 	useEffect(() => {
 		setLocale(resolveLocale(pathname));
@@ -65,8 +68,14 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 							? { target: '_blank', rel: 'noopener noreferrer' }
 							: {})}
 					>
-						<p className="font-hk text-base font-extrabold text-(--fg) md:text-lg">{item.title}</p>
-						<p className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80">{item.subtitle}</p>
+						<p
+							className="font-hk text-base font-extrabold text-(--fg) md:text-lg"
+							dangerouslySetInnerHTML={{ __html: item.title }}
+						/>
+						<p
+							className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80"
+							dangerouslySetInnerHTML={{ __html: item.subtitle }}
+						/>
 					</Link>
 				))}
 			</div>

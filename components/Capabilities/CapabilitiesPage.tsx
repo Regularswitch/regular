@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { CapabilitiesContent } from '../../lib/capabilitiesDefaults';
 import type { Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import CapabilitiesAccordion from './CapabilitiesAccordion';
 import CapabilitiesHero from './CapabilitiesHero';
 
@@ -17,7 +18,8 @@ type CapabilitiesPageProps = {
 export default function CapabilitiesPage({ content, latestProjects, locale = 'en' }: CapabilitiesPageProps) {
 	const prefix = locale === 'pt' ? '/PT' : '';
 	const workHref = `${prefix}/work`.replace(/^\/\//, '/') || '/work';
-	const cta = locale === 'pt' ? 'Veja mais projetos' : 'See more work';
+	const siteUi = useSiteUiLocale(locale);
+	const cta = siteUi.labels.seeMoreWork;
 
 	return (
 		<article className="capabilities-page">

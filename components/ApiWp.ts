@@ -1,12 +1,15 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects } from '../types';
+import { type Brand, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
+import { wpLangSlug, type WpLocale } from '../lib/wpLocaleSlug';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
+import type { HeaderNavContent } from '../lib/resolveSiteUi';
 
 export type data = {
     translate?: tipoLinguagens | string
     _links?: string
     _embed?: string
     slug?: string
+    parent?: number
     per_page?: number
     more?: string
     categories?: string
@@ -60,7 +63,9 @@ export type responseWp = {
         "wp:attachment"?: attachment[]
     }
     footer_data?: FooterContent
+    intro_data?: Intro
     capabilities_data?: CapabilitiesContent
+    site_ui_data?: SiteUiContent
     project_data?: ProjectStructuredData
     meta?: Record<string, string>
 }
@@ -89,6 +94,7 @@ export function porterCategories(payloadWp: listResponseWp): Category[] {
     return payloadWp.map((p) => ({
         id: p.id,
         title: p?.title?.rendered || p.name || '',
+        slug: p.slug || '',
     }));
 }
 
@@ -236,6 +242,14 @@ export function porterIntro(payloadWp: listResponseWp): Intro | null {
     const item = payloadWp[0];
     if (!item) return null;
 
+    const fromRest = item.intro_data;
+    if (fromRest?.headline?.trim()) {
+        return {
+            headline: fromRest.headline.trim(),
+            body: fromRest.body?.trim() ?? '',
+        };
+    }
+
     const headline = item.content?.rendered?.trim();
     if (!headline) return null;
 
@@ -253,8 +267,7 @@ export async function GetIntroApi(data: Record<string, string> = {}): Promise<In
         const fullPath = new URL(`${api}/wp-json/wp/v2/intro`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            orderby: 'date',
-            order: 'asc',
+            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -336,13 +349,21 @@ export function porterFooter(payloadWp: listResponseWp): FooterContent | null {
     }
 }
 
+export async function GetIntroByLocale(locale: WpLocale): Promise<Intro | null> {
+    return GetIntroApi({ slug: wpLangSlug(locale) });
+}
+
 export async function GetFooterApi(data: Record<string, string> = {}): Promise<FooterContent | null> {
     const api = process.env?.API;
     if (!api) return null;
 
     try {
         const fullPath = new URL(`${api}/wp-json/wp/v2/footer`);
-        fullPath.search = new URLSearchParams({ per_page: '1', ...data }).toString();
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
 
         const response = await fetch(fullPath, { cache: 'no-store' });
         if (!response.ok) return null;
@@ -356,10 +377,14 @@ export async function GetFooterApi(data: Record<string, string> = {}): Promise<F
     }
 }
 
+export async function GetFooterByLocale(locale: WpLocale): Promise<FooterContent | null> {
+    return GetFooterApi({ slug: wpLangSlug(locale) });
+}
+
 function isCapabilitySection(value: unknown): value is CapabilitiesContent['sections'][number] {
     if (!value || typeof value !== 'object') return false;
     const item = value as Record<string, unknown>;
-    return typeof item.title === 'string';
+    return typeof item.title === 'string' && typeof item.body === 'string';
 }
 
 function isCapabilitiesContent(value: unknown): value is CapabilitiesContent {
@@ -395,8 +420,7 @@ export async function GetCapabilitiesApi(data: Record<string, string> = {}): Pro
         const fullPath = new URL(`${api}/wp-json/wp/v2/capabilities`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            orderby: 'date',
-            order: 'asc',
+            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -407,6 +431,101 @@ export async function GetCapabilitiesApi(data: Record<string, string> = {}): Pro
         if (!Array.isArray(payload)) return null;
 
         return porterCapabilities(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetCapabilitiesByLocale(locale: WpLocale): Promise<CapabilitiesContent | null> {
+    return GetCapabilitiesApi({ slug: wpLangSlug(locale) });
+}
+
+function isSiteUiLabels(value: unknown): value is SiteUiContent['en']['labels'] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.selectedProjects === 'string';
+}
+
+function isSiteUiNavLink(value: unknown): value is SiteUiContent['en']['nav'][number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.label === 'string' && typeof item.href === 'string';
+}
+
+function isSiteUiLocale(value: unknown): value is SiteUiContent['en'] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    if (!isSiteUiLabels(item.labels)) return false;
+    if (item.nav === undefined) return true;
+    if (!Array.isArray(item.nav)) return false;
+    return item.nav.every(isSiteUiNavLink);
+}
+
+function porterSiteUiLabelsPayload(data: unknown): SiteUiContent | null {
+    if (!data || typeof data !== 'object') return null;
+    const item = data as Record<string, unknown>;
+    if (!isSiteUiLocale(item.en) || !isSiteUiLocale(item.pt)) return null;
+
+    return {
+        en: {
+            labels: item.en.labels,
+            nav: Array.isArray(item.en.nav) ? item.en.nav.filter(isSiteUiNavLink) : [],
+        },
+        pt: {
+            labels: item.pt.labels,
+            nav: Array.isArray(item.pt.nav) ? item.pt.nav.filter(isSiteUiNavLink) : [],
+        },
+    };
+}
+
+export function porterSiteUi(payloadWp: listResponseWp): SiteUiContent | null {
+    const item = payloadWp[0];
+    if (!item?.site_ui_data) return null;
+    return porterSiteUiLabelsPayload(item.site_ui_data);
+}
+
+export function porterHeaderNav(value: unknown): HeaderNavContent | null {
+    if (!value || typeof value !== 'object') return null;
+    const item = value as Record<string, unknown>;
+    if (!Array.isArray(item.en) || !Array.isArray(item.pt)) return null;
+    if (!item.en.every(isSiteUiNavLink) || !item.pt.every(isSiteUiNavLink)) return null;
+    return { en: item.en, pt: item.pt };
+}
+
+export async function GetHeaderNavApi(): Promise<HeaderNavContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const response = await fetch(`${api}/wp-json/rs/v1/header-nav`, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        return porterHeaderNav(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetSiteUiApi(data: Record<string, string> = {}): Promise<SiteUiContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/site-ui`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterSiteUi(payload);
     } catch {
         return null;
     }

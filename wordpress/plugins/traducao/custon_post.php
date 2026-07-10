@@ -49,7 +49,7 @@ add_action('init', function () {
             'has_archive'  => false,
             'menu_icon'    => 'dashicons-text-page',
             'show_in_rest' => true,
-            'supports'     => array('title'),
+            'supports'     => array('title', 'editor', 'excerpt'),
             'rewrite'      => array('slug' => 'intro'),
         ]
     );
@@ -87,6 +87,24 @@ add_action('init', function () {
             'show_in_rest' => true,
             'supports'     => array('title'),
             'rewrite'      => array('slug' => 'capabilities'),
+        ]
+    );
+
+    register_post_type(
+        'site-ui',
+        [
+            'labels'      => [
+                'name'          => 'Interface do site',
+                'singular_name' => 'Interface do site',
+                'add_new_item'  => 'Adicionar interface',
+                'edit_item'     => 'Editar interface',
+            ],
+            'public'       => true,
+            'has_archive'  => false,
+            'menu_icon'    => 'dashicons-admin-generic',
+            'show_in_rest' => true,
+            'supports'     => array('title'),
+            'rewrite'      => array('slug' => 'site-ui'),
         ]
     );
 });

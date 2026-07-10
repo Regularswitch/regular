@@ -6,8 +6,10 @@ import { gsap } from 'gsap';
 import { usePathname, useRouter } from 'next/navigation';
 
 import LogoMark from './LogoMark';
+import { useSiteUi } from './SiteUi/SiteUiProvider';
 import translate, { getCookie, setCookie } from './Translate';
 import ThemeToggle from './ThemeToggle';
+import { withLocalePrefix } from '../lib/resolveSiteUi';
 
 type HeaderProps = {
 	isLight?: boolean;
@@ -151,27 +153,18 @@ export default function Header({ isLight = false }: HeaderProps) {
 	}, [pathname]);
 
 	const prefix = language === 'PT' ? 'PT' : '';
+	const locale = language === 'PT' ? 'pt' : 'en';
+	const siteUi = useSiteUi();
 
 	const textColor = isLight ? 'text-white' : 'text-[color:var(--fg)]';
 
 	const links = useMemo<NavLink[]>(
 		() =>
-			language === 'PT'
-				? [
-						{ label: 'Projetos', href: `/${prefix}/work`.replace('//', '/') },
-						{ label: 'Capacidades', href: `/${prefix}/capacidades`.replace('//', '/') },
-						{ label: 'Educação', href: `/${prefix}/education`.replace('//', '/') },
-						{ label: 'Sobre Nós', href: `/${prefix}/about`.replace('//', '/') },
-						{ label: 'Contato', href: `/${prefix}/contact-3`.replace('//', '/') },
-					]
-				: [
-						{ label: 'Projects', href: `/${prefix}/work`.replace('//', '/') },
-						{ label: 'Capabilities', href: `/${prefix}/capacidades`.replace('//', '/') },
-						{ label: 'Education', href: `/${prefix}/education`.replace('//', '/') },
-						{ label: 'About', href: `/${prefix}/about`.replace('//', '/') },
-						{ label: 'Contact', href: `/${prefix}/contact-3`.replace('//', '/') },
-					],
-		[prefix, language],
+			siteUi.nav.map((item) => ({
+				label: item.label,
+				href: withLocalePrefix(item.href, locale),
+			})),
+		[siteUi.nav, locale],
 	);
 
 	function setTabbables(enabled: boolean) {
@@ -450,12 +443,13 @@ export default function Header({ isLight = false }: HeaderProps) {
 						}}
 						className="w-full max-w-[700px] rounded-[10px] bg-linear-to-r from-purple-600 via-pink-500 to-yellow-400 text-black p-6"
 					>
-						<div className="text-(--fg) text-[0.65rem] uppercase tracking-widest opacity-60 mb-3">What's New</div>
+						<div className="text-(--fg) text-[0.65rem] uppercase tracking-widest opacity-60 mb-3">
+							{siteUi.labels.whatsNewLabel}
+						</div>
 						<div className="flex items-center gap-4">
-							{/* <div className="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center">↯</div> */}
 							<div>
-								<div className="text-(--fg) font-semibold text-lg leading-tight">Regular Switch</div>
-								<div className="text-(--fg) text-sm opacity-70">New website</div>
+								<div className="text-(--fg) font-semibold text-lg leading-tight">{siteUi.labels.whatsNewTitle}</div>
+								<div className="text-(--fg) text-sm opacity-70">{siteUi.labels.whatsNewSubtitle}</div>
 							</div>
 						</div>
 					</div>

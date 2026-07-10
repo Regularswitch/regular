@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import type { Brand } from '../../types';
 
 type BrandsMarqueeProps = {
 	title?: string;
 	brands: Brand[];
+	locale?: 'en' | 'pt';
 };
 
 const AUTO_PX_PER_SEC = 48;
@@ -50,7 +52,9 @@ function BrandMark({ name, logo }: { name: string; logo?: string }) {
 	);
 }
 
-export default function BrandsMarquee({ title = 'Marcas que confiam na gente', brands }: BrandsMarqueeProps) {
+export default function BrandsMarquee({ title, brands, locale = 'en' }: BrandsMarqueeProps) {
+	const siteUi = useSiteUiLocale(locale);
+	const heading = title ?? siteUi.labels.brandsMarquee;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const trackRef = useRef<HTMLDivElement>(null);
 	const offsetRef = useRef(0);
@@ -143,10 +147,10 @@ export default function BrandsMarquee({ title = 'Marcas que confiam na gente', b
 	if (!brands.length) return null;
 
 	return (
-		<section className="py-12 md:py-20" aria-label={title}>
+		<section className="py-12 md:py-20" aria-label={heading}>
 			<div className="mb-8 flex items-end justify-between px-7 md:mb-12">
 				<h2 className="text-base font-medium text-(--fg) md:text-lg">
-					{title} <span aria-hidden>↘</span>
+					{heading} <span aria-hidden>↘</span>
 				</h2>
 			</div>
 

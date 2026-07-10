@@ -14,23 +14,6 @@ function attachProjectImages(sections: CapabilitySection[], projects: Projects):
 	});
 }
 
-function mergeCapabilitySections(
-	parsed: CapabilitySection[],
-	defaults: CapabilitySection[],
-): CapabilitySection[] {
-	if (!parsed.length) return defaults;
-
-	return parsed.map((section, index) => {
-		const fallback = defaults.find((item) => item.title === section.title) ?? defaults[index];
-
-		return {
-			...section,
-			servicesTitle: section.servicesTitle || fallback?.servicesTitle,
-			imageProjectSlug: section.imageProjectSlug || fallback?.imageProjectSlug,
-		};
-	});
-}
-
 export function buildCapabilitiesContent(
 	wp: CapabilitiesContent | null | undefined,
 	locale: 'en' | 'pt',
@@ -45,8 +28,11 @@ export function buildCapabilitiesContent(
 		};
 	}
 
+	const sections =
+		wp.sections?.length > 0 ? wp.sections : attachProjectImages(defaults.sections, projects);
+
 	return {
 		headline: wp.headline || defaults.headline,
-		sections: attachProjectImages(mergeCapabilitySections(wp.sections, defaults.sections), projects),
+		sections,
 	};
 }

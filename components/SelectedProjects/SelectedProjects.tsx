@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import type { Category, Projects } from '../../types';
-import { HOME_PROJECTS_CATEGORY_ID } from '../../lib/projectCategories';
+import type { Category, Projects, SiteUiLabels } from '../../types';
+import { isHomeProject } from '../../lib/projectCategories';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import { getGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
@@ -12,19 +12,20 @@ type SelectedProjectsProps = {
 	projects: Projects;
 	categories: Category[];
 	locale?: 'en' | 'pt';
+	labels?: Pick<SiteUiLabels, 'selectedProjects' | 'seeMoreProjects'>;
 };
 
-export default function SelectedProjects({ projects, categories, locale = 'en' }: SelectedProjectsProps) {
+export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
 	const selected = sortProjectsByDate(projects)
-		.filter((p) => (p.category ?? []).includes(HOME_PROJECTS_CATEGORY_ID))
+		.filter((p) => isHomeProject(p, categories))
 		.slice(0, MAX_PROJECTS);
 
 	if (!selected.length) return null;
 
 	const prefix = locale === 'pt' ? '/PT' : '';
 	const workHref = `${prefix}/work`.replace(/^\/\//, '/') || '/work';
-	const title = locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects';
-	const cta = locale === 'pt' ? 'Veja mais projetos' : 'See more projects';
+	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
+	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
 
 	return (
 		<section className="selected-projects py-12 md:py-20" aria-label={title}>
