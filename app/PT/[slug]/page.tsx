@@ -3,11 +3,13 @@ import Image from 'next/image';
 
 import AboutPage from '../../../components/About/AboutPage';
 import CapabilitiesPage from '../../../components/Capabilities/CapabilitiesPage';
+import ContactPage from '../../../components/Contact/ContactPage';
 import EducationPage from '../../../components/Education/EducationPage';
 import { GetIntroApi } from '../../../components/ApiWp';
 import ProjectsListing from '../../../components/ProjectsListing/ProjectsListing';
 import { fetchAboutPage } from '../../../lib/fetchAboutPage';
 import { fetchCapabilitiesPage } from '../../../lib/fetchCapabilitiesPage';
+import { fetchContactPage } from '../../../lib/fetchContactPage';
 import { fetchEducationPage } from '../../../lib/fetchEducationPage';
 import { getVisibleCategoryIds } from '../../../lib/projectCategories';
 import { getBaseUrl } from '../../../lib/getBaseUrl';
@@ -67,6 +69,12 @@ export default async function PtSlugPage({ params }: PageProps) {
 		const { content, latestProjects } = await fetchAboutPage('pt');
 
 		return <AboutPage content={content} latestProjects={latestProjects} locale="pt" />;
+	}
+
+	if (slug === 'contact-3') {
+		const { content } = await fetchContactPage('pt');
+
+		return <ContactPage content={content} locale="pt" />;
 	}
 
 	const base = getBaseUrl();

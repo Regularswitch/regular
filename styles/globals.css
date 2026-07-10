@@ -69,6 +69,21 @@ html:not(.dark) .brand-mark {
 	margin-bottom: 0;
 }
 
+.contact-block-body p {
+	margin: 0;
+}
+
+.contact-block-body a {
+	color: var(--fg);
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+	transition: opacity 0.2s ease;
+}
+
+.contact-block-body a:hover {
+	opacity: 0.7;
+}
+
 /* Selected projects — grid bento na home */
 .selected-projects-grid {
 	display: grid;

@@ -3,11 +3,13 @@ import { cookies } from 'next/headers';
 import { GetApi, GetCategoriesApi, GetIntroApi } from '../../components/ApiWp';
 import AboutPage from '../../components/About/AboutPage';
 import CapabilitiesPage from '../../components/Capabilities/CapabilitiesPage';
+import ContactPage from '../../components/Contact/ContactPage';
 import EducationPage from '../../components/Education/EducationPage';
 import ProjectsListing from '../../components/ProjectsListing/ProjectsListing';
 import SlugPageClient from '../../components/SlugPageClient';
 import { fetchAboutPage } from '../../lib/fetchAboutPage';
 import { fetchCapabilitiesPage } from '../../lib/fetchCapabilitiesPage';
+import { fetchContactPage } from '../../lib/fetchContactPage';
 import { fetchEducationPage } from '../../lib/fetchEducationPage';
 import { getBaseUrl } from '../../lib/getBaseUrl';
 import type { Category, Intro, Projects } from '../../types';
@@ -88,6 +90,14 @@ export default async function SlugPage({ params }: PageProps) {
 		const { content, latestProjects } = await fetchAboutPage(locale);
 
 		return <AboutPage content={content} latestProjects={latestProjects} locale={locale} />;
+	}
+
+	if (slug === 'contact-3') {
+		const lang = (await cookies()).get('language')?.value ?? '';
+		const locale = lang === 'PT' ? 'pt' : 'en';
+		const { content } = await fetchContactPage(locale);
+
+		return <ContactPage content={content} locale={locale} />;
 	}
 
 	const base = getBaseUrl();
