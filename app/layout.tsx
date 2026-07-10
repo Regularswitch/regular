@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { GetFooterApi, GetHeaderNavApi, GetSiteUiApi } from '../components/ApiWp';
 import FooterComponents from '../components/FooterComponents';
 import Header from '../components/Header';
-import StickyCursor from '../components/StickyCursor/StickyCursor';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient } from '../lib/blobDefaults';
 import { buildSiteUiWithHeaderNav } from '../lib/resolveSiteUi';
@@ -51,7 +50,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				/>
 			</head>
 			<body>
-				<StickyCursor />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
 					<Header />
 					<main className="pt-16 px-7 sm:pt-12 lg:pt-14">{children}</main>
