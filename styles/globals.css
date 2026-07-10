@@ -468,6 +468,32 @@ html:not(.dark) .brand-mark {
 	cursor: pointer;
 }
 
+.custom-cursor {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 99999;
+	border-radius: 50%;
+	background: #fff;
+	mix-blend-mode: difference;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateZ(0);
+	transition: opacity 0.15s ease;
+	will-change: left, top, width, height;
+}
+
+.custom-cursor.is-visible {
+	opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	html.has-custom-cursor,
+	html.has-custom-cursor * {
+		cursor: none !important;
+	}
+}
+
 .accordion-trigger:hover .accordion-trigger-title:not(.is-open) {
 	color: color-mix(in srgb, var(--fg) 72%, var(--muted));
 }
