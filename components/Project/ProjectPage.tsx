@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 
 import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
+import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
+import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
 import {
 	buildGalleryRows,
@@ -48,8 +50,7 @@ function structuredAccordion(structured: ProjectStructuredData | null | undefine
 }
 
 export default function ProjectPage({ project, meta, latestProjects, locale = 'en' }: ProjectPageProps) {
-	const prefix = locale === 'pt' ? '/PT' : '';
-	const workHref = `${prefix}/work`.replace(/^\/\//, '/') || '/work';
+	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const siteUi = useSiteUiLocale(locale);
 	const cta = siteUi.labels.seeMoreProjects;
 
@@ -108,7 +109,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 				<ProjectGallery rows={galleryRows} title={project.title ?? project.slug} />
 
 				<div className="flex justify-center">
-					<Link href={workHref} className="selected-projects-cta font-hk">
+					<Link href={projectsHref} className="selected-projects-cta font-hk">
 						{cta}
 					</Link>
 				</div>

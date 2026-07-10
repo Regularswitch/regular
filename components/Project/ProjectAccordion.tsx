@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import BezierDivider from '../BezierDivider/BezierDivider';
 import type { ProjectAccordionSection } from '../../lib/parseProjectContent';
 
 type ProjectAccordionProps = {
@@ -17,7 +18,8 @@ export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: Pro
 	if (!visibleSections.length) return null;
 
 	return (
-		<div className="project-accordion divide-y divide-white/10 border-y border-white/10">
+		<div className="project-accordion">
+			<BezierDivider />
 			{visibleSections.map((section, index) => {
 				const isOpen = openIndex === index;
 
@@ -29,10 +31,13 @@ export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: Pro
 							onClick={() => setOpenIndex(isOpen ? -1 : index)}
 							aria-expanded={isOpen}
 						>
-							<span className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm">
+							<span className={`accordion-trigger-title font-hk${isOpen ? ' is-open' : ''}`}>
 								{section.title}
 							</span>
-							<span className="text-lg leading-none text-(--muted)" aria-hidden>
+							<span
+								className={`text-lg leading-none transition-colors${isOpen ? ' text-(--fg)' : ' text-(--muted)'}`}
+								aria-hidden
+							>
 								{isOpen ? '−' : '+'}
 							</span>
 						</button>
@@ -43,6 +48,7 @@ export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: Pro
 								dangerouslySetInnerHTML={{ __html: section.body }}
 							/>
 						) : null}
+						<BezierDivider />
 					</div>
 				);
 			})}

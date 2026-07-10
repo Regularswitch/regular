@@ -1,5 +1,19 @@
 /** Rotas Next.js (slug na URL pública). */
-export const WORK_PAGE_SLUG = 'work';
+export const PROJECTS_PAGE_SLUG = 'projects';
+
+/** Alias legado (ex.: /work). */
+export const PROJECTS_PAGE_LEGACY_SLUGS = ['work'] as const;
+
+/** @deprecated Use PROJECTS_PAGE_SLUG */
+export const WORK_PAGE_SLUG = PROJECTS_PAGE_SLUG;
+
+export function isProjectsPageSlug(slug: string): boolean {
+	return slug === PROJECTS_PAGE_SLUG || (PROJECTS_PAGE_LEGACY_SLUGS as readonly string[]).includes(slug);
+}
+
+/** @deprecated Use isProjectsPageSlug */
+export const isWorkPageSlug = isProjectsPageSlug;
+
 export const EDUCATION_PAGE_SLUG = 'education';
 export const CAPABILITIES_PAGE_SLUG = 'capabilities';
 export const ABOUT_PAGE_SLUG = 'about-us';

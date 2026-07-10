@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import { fragmentShader, vertexShader } from './shaders';
 
@@ -15,6 +15,10 @@ type BlobMeshProps = {
 	scrollProgress: number;
 	pointer: { x: number; y: number };
 	paused: boolean;
+	opacity?: number;
+	opacityArray?: MutableRefObject<number[]>;
+	opacityIndex?: number;
+	blendAdditive?: boolean;
 };
 
 type Uniforms = {
@@ -23,6 +27,7 @@ type Uniforms = {
 	u_pointer: { value: THREE.Vector2 };
 	u_color1: { value: THREE.Color };
 	u_color2: { value: THREE.Color };
+	u_opacity: { value: number };
 };
 
 function pickNextIndex(length: number, current: number) {
@@ -32,7 +37,21 @@ function pickNextIndex(length: number, current: number) {
 	return next;
 }
 
-export default function BlobMesh({ color1, color2, palette, intensity, radius, detail, scrollProgress, pointer, paused }: BlobMeshProps) {
+export default function BlobMesh({
+	color1,
+	color2,
+	palette,
+	intensity,
+	radius,
+	detail,
+	scrollProgress,
+	pointer,
+	paused,
+	opacity = 1,
+	opacityArray,
+	opacityIndex,
+	blendAdditive = false,
+}: BlobMeshProps) {
 	const meshRef = useRef<THREE.Mesh>(null);
 	const pointerTarget = useMemo(() => new THREE.Vector2(0, 0), []);
 	const paletteColors = useMemo(() => (palette.length ? palette : [color1, color2]), [palette, color1, color2]);
@@ -48,8 +67,9 @@ export default function BlobMesh({ color1, color2, palette, intensity, radius, d
 			u_pointer: { value: new THREE.Vector2(0, 0) },
 			u_color1: { value: new THREE.Color(color1) },
 			u_color2: { value: new THREE.Color(color2) },
+			u_opacity: { value: opacity },
 		}),
-		[color1, color2, intensity],
+		[color1, color2, intensity, opacity],
 	);
 
 	useFrame((state) => {
@@ -85,12 +105,24 @@ export default function BlobMesh({ color1, color2, palette, intensity, radius, d
 		meshRef.current.scale.setScalar(s);
 
 		uniforms.u_intensity.value = intensity + Math.sin(t * 0.8) * 0.06 + scrollProgress * 0.1;
+		const liveOpacity =
+			opacityArray && opacityIndex !== undefined
+				? (opacityArray.current[opacityIndex] ?? opacity)
+				: opacity;
+		uniforms.u_opacity.value = liveOpacity;
 	});
 
 	return (
 		<mesh ref={meshRef} rotation={[-0.2, 0.6, 0]}>
 			<icosahedronGeometry args={[radius, detail]} />
-			<shaderMaterial uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} transparent />
+			<shaderMaterial
+				uniforms={uniforms}
+				vertexShader={vertexShader}
+				fragmentShader={fragmentShader}
+				transparent
+				depthWrite={!blendAdditive && opacity >= 1}
+				blending={blendAdditive || opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending}
+			/>
 		</mesh>
 	);
 }

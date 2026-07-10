@@ -26,7 +26,7 @@ add_action('after_setup_theme', function () {
 function rs_header_nav_default_items(string $locale): array {
     if ($locale === 'pt') {
         return [
-            ['label' => 'Projetos', 'href' => '/work'],
+            ['label' => 'Projetos', 'href' => '/projects'],
             ['label' => 'Capacidades', 'href' => '/capabilities'],
             ['label' => 'Educação', 'href' => '/education'],
             ['label' => 'Sobre Nós', 'href' => '/about-us'],
@@ -35,7 +35,7 @@ function rs_header_nav_default_items(string $locale): array {
     }
 
     return [
-        ['label' => 'Projects', 'href' => '/work'],
+        ['label' => 'Projects', 'href' => '/projects'],
         ['label' => 'Capabilities', 'href' => '/capabilities'],
         ['label' => 'Education', 'href' => '/education'],
         ['label' => 'About', 'href' => '/about-us'],
@@ -69,8 +69,13 @@ function rs_header_nav_normalize_href(string $url): string {
 
     if (str_starts_with($url, '/PT/')) {
         $url = substr($url, 3) ?: '/';
-    } elseif ($url === '/PT') {
+    } else    if ($url === '/PT') {
         $url = '/';
+    }
+
+    // Alias legado: rotas antigas usavam /work
+    if ($url === '/work') {
+        $url = '/projects';
     }
 
     return $url;
@@ -291,7 +296,7 @@ add_action('admin_notices', function () {
         } else {
             echo 'Header PT (será criado ao recarregar)';
         }
-        echo '<br /><span style="color:#646970;">Use <em>Links personalizados</em> com paths como <code>/work</code>, <code>/capabilities</code> — sem prefixo <code>/PT</code>.</span>';
+        echo '<br /><span style="color:#646970;">Use <em>Links personalizados</em> com paths como <code>/projects</code>, <code>/capabilities</code> — sem prefixo <code>/PT</code>.</span>';
         echo '</p></div>';
         return;
     }

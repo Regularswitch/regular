@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
+import BezierDivider from '../BezierDivider/BezierDivider';
 import type { CapabilitySection } from '../../lib/capabilitiesDefaults';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
@@ -13,14 +14,15 @@ type CapabilitiesAccordionProps = {
 
 export default function CapabilitiesAccordion({
 	sections,
-	defaultOpenIndex = -1,
+	defaultOpenIndex = 0,
 }: CapabilitiesAccordionProps) {
 	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
 	if (!sections.length) return null;
 
 	return (
-		<div className="capabilities-accordion divide-y divide-white/10 border-y border-white/10">
+		<div className="capabilities-accordion">
+			<BezierDivider />
 			{sections.map((section, index) => {
 				const isOpen = openIndex === index;
 				const imageSrc = section.image ? (wpMediaUrl(section.image) ?? section.image) : undefined;
@@ -34,10 +36,13 @@ export default function CapabilitiesAccordion({
 							aria-expanded={isOpen}
 						>
 							<span
-								className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm"
+								className={`accordion-trigger-title font-hk${isOpen ? ' is-open' : ''}`}
 								dangerouslySetInnerHTML={{ __html: section.title }}
 							/>
-							<span className="text-lg leading-none text-(--muted)" aria-hidden>
+							<span
+								className={`text-lg leading-none transition-colors${isOpen ? ' text-(--fg)' : ' text-(--muted)'}`}
+								aria-hidden
+							>
 								{isOpen ? '−' : '+'}
 							</span>
 						</button>
@@ -91,6 +96,7 @@ export default function CapabilitiesAccordion({
 								</div>
 							</div>
 						) : null}
+						<BezierDivider />
 					</div>
 				);
 			})}

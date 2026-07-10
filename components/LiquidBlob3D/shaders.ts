@@ -36,6 +36,7 @@ export const fragmentShader = /* glsl */ `
   uniform float u_time;
   uniform vec3 u_color1;
   uniform vec3 u_color2;
+  uniform float u_opacity;
   void main(){
     float tBase = smoothstep(-0.2, 0.45, vNoise);
     float tShift = 0.5 + 0.5 * sin(u_time * 0.5 + vNoise * 3.0);
@@ -43,7 +44,7 @@ export const fragmentShader = /* glsl */ `
     vec3 col = mix(u_color1, u_color2, t);
     float rim = pow(clamp(vRim, 0.0, 1.0), 1.5);
     col = mix(col, vec3(1.0), rim * 0.25);
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, u_opacity);
   }
 `;
 

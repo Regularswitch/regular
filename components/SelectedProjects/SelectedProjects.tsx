@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
+import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import type { Category, Projects, SiteUiLabels } from '../../types';
 import { isHomeProject } from '../../lib/projectCategories';
 import { sortProjectsByDate } from '../../lib/sortProjects';
@@ -22,8 +24,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 
 	if (!selected.length) return null;
 
-	const prefix = locale === 'pt' ? '/PT' : '';
-	const workHref = `${prefix}/work`.replace(/^\/\//, '/') || '/work';
+	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
 
@@ -42,13 +43,13 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						project={project}
 						categories={categories}
 						span={getGridSpan(index)}
-						href={`${prefix}/project/${project.slug}`.replace(/^\/\//, '/') || `/project/${project.slug}`}
+						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}
 			</div>
 
 			<div className="mt-12 flex justify-center px-7 md:mt-16">
-				<Link href={workHref} className="selected-projects-cta font-hk">
+				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>
 			</div>

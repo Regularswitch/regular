@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
+import BezierDivider from '../BezierDivider/BezierDivider';
 import type { AboutAccordionSection } from '../../lib/aboutDefaults';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
@@ -11,7 +12,7 @@ type AboutAccordionPanelProps = {
 };
 
 export default function AboutAccordionPanel({ sections }: AboutAccordionPanelProps) {
-	const [openIndex, setOpenIndex] = useState(-1);
+	const [openIndex, setOpenIndex] = useState(0);
 
 	const visibleSections = useMemo(
 		() => sections.filter((section) => section.body.trim()),
@@ -29,7 +30,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 	return (
 		<section className="about-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
 			{activeImage ? (
-				<div className="about-side-image relative mb-10 aspect-square overflow-hidden rounded-xl bg-(--surface) md:sticky md:top-28 md:mb-0">
+				<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-xl bg-(--surface) md:sticky md:top-28 md:mb-0">
 					<Image
 						key={activeImage}
 						src={activeImage}
@@ -41,7 +42,8 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 				</div>
 			) : null}
 
-			<div className="project-accordion divide-y divide-white/10 border-y border-white/10">
+			<div className="project-accordion min-w-0">
+				<BezierDivider />
 				{visibleSections.map((section, index) => {
 					const isOpen = openIndex === index;
 
@@ -53,10 +55,13 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 								onClick={() => setOpenIndex(isOpen ? -1 : index)}
 								aria-expanded={isOpen}
 							>
-								<span className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm">
+								<span className={`accordion-trigger-title font-hk${isOpen ? ' is-open' : ''}`}>
 									{section.title}
 								</span>
-								<span className="text-lg leading-none text-(--muted)" aria-hidden>
+								<span
+									className={`text-lg leading-none transition-colors${isOpen ? ' text-(--fg)' : ' text-(--muted)'}`}
+									aria-hidden
+								>
 									{isOpen ? '−' : '+'}
 								</span>
 							</button>
@@ -67,6 +72,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 									dangerouslySetInnerHTML={{ __html: section.body }}
 								/>
 							) : null}
+							<BezierDivider />
 						</div>
 					);
 				})}

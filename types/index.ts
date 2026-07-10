@@ -117,6 +117,12 @@ export type SiteUiContent = {
   pt: SiteUiLocale;
 };
 
+export type BlobVisual = {
+  color1: string;
+  color2: string;
+  palette: string[];
+};
+
 export type ProjectStructuredImage = {
   url?: string | false;
   width?: number;

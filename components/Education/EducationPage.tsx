@@ -28,7 +28,7 @@ export default function EducationPage({
 			<EducationHero image={content.heroImage} headline={content.headline} />
 
 			<section className="px-7 py-10 md:py-14">
-				<ProjectAccordion sections={content.accordionSections} defaultOpenIndex={-1} />
+				<ProjectAccordion sections={content.accordionSections} />
 			</section>
 
 			<ProjectsGridSection

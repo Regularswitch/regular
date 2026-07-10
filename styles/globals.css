@@ -7,6 +7,14 @@
 	--fg: #e8ebf1;
 	--surface: #11131a;
 	--muted: rgba(232, 235, 241, 0.72);
+	--blob-nav-gradient: linear-gradient(
+		90deg,
+		#7b00ff 0%,
+		#d400ff 25%,
+		#ff5faf 50%,
+		#304ffe 75%,
+		#7b00ff 100%
+	);
 }
 
 /* Light theme */
@@ -29,6 +37,68 @@ body {
 	font-family: 'Hanken Grotesk' !important;
 }
 
+/* Header — indicador ativo com gradiente do blob */
+@layer components {
+	.header-nav-link {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.header-nav-active-line {
+		display: block;
+		flex-shrink: 0;
+		width: 100%;
+		border-radius: 999px;
+		background: linear-gradient(
+			90deg,
+			#7b00ff 0%,
+			#d400ff 25%,
+			#ff5faf 50%,
+			#304ffe 75%,
+			#7b00ff 100%
+		);
+		background: var(--blob-nav-gradient);
+		background-size: 200% 100%;
+		background-repeat: repeat;
+		animation: header-nav-gradient-flow 4.5s linear infinite;
+	}
+
+	.header-nav-active-line--desktop {
+		height: 3px;
+		margin-top: 4px;
+	}
+
+	.header-nav-link--mobile {
+		width: fit-content;
+		max-width: 100%;
+	}
+
+	.header-nav-active-line--mobile {
+		height: 4px;
+		margin-top: 6px;
+		width: 100%;
+	}
+}
+
+@keyframes header-nav-gradient-flow {
+	from {
+		background-position: 0% 50%;
+	}
+
+	to {
+		background-position: 200% 50%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.header-nav-active-line {
+		animation: none !important;
+		background-size: 100% 100% !important;
+		background-position: 0% 50% !important;
+	}
+}
+
 .font-home {
 	font-family: 'HK-home', sans-serif;
 }
@@ -46,6 +116,7 @@ html:not(.dark) .brand-mark {
 /* Intro — destaque com <strong> no conteúdo do WordPress */
 .intro-headline {
 	color: var(--muted);
+	overflow-wrap: break-word;
 }
 
 .intro-headline strong {
@@ -67,6 +138,17 @@ html:not(.dark) .brand-mark {
 
 .about-body p:last-child {
 	margin-bottom: 0;
+}
+
+.about-body .wp-block-columns,
+.capabilities-accordion-body .wp-block-columns {
+	display: block !important;
+}
+
+.about-body .wp-block-column,
+.capabilities-accordion-body .wp-block-column {
+	width: 100% !important;
+	flex-basis: 100% !important;
 }
 
 .contact-block-body p {
@@ -142,6 +224,148 @@ html:not(.dark) .brand-mark {
 	border-color: color-mix(in srgb, var(--fg) 55%, transparent);
 }
 
+/* 404 — blob no lugar do zero */
+.not-found-page {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	min-height: min(88vh, 920px);
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2rem;
+	padding: 1rem 0 3rem;
+	isolation: isolate;
+}
+
+.not-found-stage {
+	position: relative;
+	z-index: 3;
+	width: min(100%, 72rem);
+	min-height: clamp(18rem, 58vw, 28rem);
+	display: grid;
+	place-items: center;
+}
+
+.not-found-code {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: clamp(0.15rem, 1.5vw, 0.75rem);
+}
+
+.not-found-digit {
+	font-family: 'Hanken Grotesk', sans-serif;
+	font-size: clamp(6.5rem, 30vw, 15rem);
+	font-weight: 900;
+	line-height: 0.82;
+	letter-spacing: -0.05em;
+	color: var(--fg);
+	user-select: none;
+}
+
+.not-found-blob-slot {
+	position: relative;
+	z-index: 3;
+	width: clamp(7.5rem, 30vw, 15rem);
+	height: clamp(7.5rem, 30vw, 15rem);
+	flex-shrink: 0;
+	margin: 0 clamp(-0.5rem, -1.5vw, -0.15rem);
+	filter: drop-shadow(0 0 42px color-mix(in srgb, #4af117 35%, transparent))
+		drop-shadow(0 0 64px color-mix(in srgb, #fe4857 22%, transparent));
+}
+
+.not-found-center-blob {
+	position: absolute;
+	inset: -8%;
+}
+
+.not-found-center-blob canvas {
+	width: 100% !important;
+	height: 100% !important;
+}
+
+.not-found-label {
+	position: absolute;
+	z-index: 2;
+	margin: 0;
+	font-size: clamp(0.6875rem, 1.5vw, 0.875rem);
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	color: var(--muted);
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.not-found-label--tl {
+	top: 6%;
+	left: 10%;
+}
+
+.not-found-label--tr {
+	top: 6%;
+	right: 10%;
+}
+
+.not-found-label--ml {
+	top: 50%;
+	left: 2%;
+	transform: translateY(-50%);
+}
+
+.not-found-label--mr {
+	top: 50%;
+	right: 2%;
+	transform: translateY(-50%);
+}
+
+.not-found-label--br {
+	right: 10%;
+	bottom: 6%;
+}
+
+.not-found-label--bl {
+	bottom: 6%;
+	left: 10%;
+}
+
+.not-found-cta {
+	position: relative;
+	z-index: 3;
+	margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+	.not-found-page {
+		min-height: min(82vh, 720px);
+	}
+
+	.not-found-label--ml,
+	.not-found-label--mr {
+		display: none;
+	}
+
+	.not-found-label--tl {
+		top: 2%;
+		left: 0;
+	}
+
+	.not-found-label--tr {
+		top: 2%;
+		right: 0;
+	}
+
+	.not-found-label--bl {
+		left: 0;
+		bottom: 2%;
+	}
+
+	.not-found-label--br {
+		right: 0;
+		bottom: 2%;
+	}
+}
+
 /* Latest projects — carrossel horizontal */
 .latest-projects-scroll {
 	display: flex;
@@ -172,12 +396,6 @@ html:not(.dark) .brand-mark {
 .latest-projects-card-image {
 	aspect-ratio: 4 / 3;
 	border-radius: 16px;
-	transition: box-shadow 0.25s ease;
-}
-
-.latest-projects-card:hover .latest-projects-card-image,
-.latest-projects-card:focus-visible .latest-projects-card-image {
-	box-shadow: 0 0 0 2px #3b82f6;
 }
 
 .latest-projects-nav-btn {
@@ -239,6 +457,64 @@ html:not(.dark) .brand-mark {
 	content: '·';
 	margin-right: 0.5rem;
 	color: var(--muted);
+}
+
+.capabilities-accordion,
+.project-accordion {
+	overflow: visible;
+}
+
+.accordion-trigger-title {
+	font-size: clamp(1.25rem, 3vw, 2rem);
+	font-weight: 400;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	text-transform: uppercase;
+	color: var(--muted);
+	transition: color 0.2s ease;
+}
+
+.accordion-trigger-title.is-open {
+	color: var(--fg);
+}
+
+.accordion-trigger-title strong {
+	font-weight: inherit;
+}
+
+.bezier-divider {
+	position: relative;
+	width: 100%;
+	height: 1px;
+	overflow: visible;
+}
+
+.bezier-divider-hit {
+	position: absolute;
+	z-index: 2;
+	top: -24px;
+	left: 0;
+	width: 100%;
+	height: 48px;
+}
+
+.bezier-divider-svg {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	z-index: 1;
+	width: 100%;
+	height: 60px;
+	overflow: visible;
+	pointer-events: none;
+	transform: translateY(-50%);
+}
+
+.bezier-divider-path {
+	stroke: color-mix(in srgb, var(--fg) 55%, transparent);
+	stroke-width: 1;
+	vector-effect: non-scaling-stroke;
+	fill: none;
 }
 
 .project-gallery-row {

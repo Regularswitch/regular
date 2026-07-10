@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      { source: '/work', destination: '/projects', permanent: true },
+      { source: '/PT/work', destination: '/PT/projects', permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'regularswitch.com' },

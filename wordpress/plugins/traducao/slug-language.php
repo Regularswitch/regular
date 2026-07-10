@@ -15,12 +15,14 @@ const RS_LOCALE_CPT_TYPES = [
     'intro',
     'footer',
     'capabilities',
+    'about',
+    'education',
+    'contact',
+    'projects-page',
     'site-ui',
 ];
 
 const RS_LOCALE_PAGE_BASES = [
-    'contact',
-    'about',
     'education',
 ];
 

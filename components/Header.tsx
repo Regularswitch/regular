@@ -10,6 +10,7 @@ import { useSiteUi } from './SiteUi/SiteUiProvider';
 import translate, { getCookie, setCookie } from './Translate';
 import ThemeToggle from './ThemeToggle';
 import { withLocalePrefix } from '../lib/resolveSiteUi';
+import { isNavLinkActive } from '../lib/isNavLinkActive';
 
 type HeaderProps = {
 	isLight?: boolean;
@@ -293,11 +294,6 @@ export default function Header({ isLight = false }: HeaderProps) {
 		buildClose();
 	}
 
-	function toggleMenu() {
-		if (isOpen) closeMenu();
-		else openMenu();
-	}
-
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
 			if (e.key === 'Escape' && isOpen) closeMenu();
@@ -323,12 +319,60 @@ export default function Header({ isLight = false }: HeaderProps) {
 		router.replace(nextPath);
 	}
 
+	function navLinkClassName(href: string, variant: 'desktop' | 'mobile' = 'desktop') {
+		const active = isNavLinkActive(pathname, href);
+
+		if (variant === 'mobile') {
+			return [
+				'header-nav-link header-nav-link--mobile w-fit py-2 text-[clamp(1.5rem,4vw,1.8rem)] font-semibold leading-[1.1] tracking-[-0.03em] transition-opacity',
+				active ? 'opacity-100' : 'opacity-55 hover:opacity-85',
+			].join(' ');
+		}
+
+		return [
+			'header-nav-link transition-opacity',
+			active ? 'opacity-100' : 'opacity-60 hover:opacity-90',
+			textColor,
+		].join(' ');
+	}
+
+	function renderNavLink(
+		link: NavLink,
+		variant: 'desktop' | 'mobile',
+		options?: { onNavigate?: () => void },
+	) {
+		const active = isNavLinkActive(pathname, link.href);
+
+		return (
+			<Link
+				key={link.href}
+				href={link.href}
+				onClick={options?.onNavigate}
+				className={navLinkClassName(link.href, variant)}
+				aria-current={active ? 'page' : undefined}
+			>
+				{link.label}
+				{active ? (
+					<span
+						className={`header-nav-active-line header-nav-active-line--${variant}`}
+						style={{
+							background: 'var(--blob-nav-gradient)',
+							backgroundSize: '200% 100%',
+							animation: 'header-nav-gradient-flow 4.5s linear infinite',
+						}}
+						aria-hidden
+					/>
+				) : null}
+			</Link>
+		);
+	}
+
 	return (
 		<>
 			<div
 				ref={headerBarRef}
-				className={`fixed top-0 left-0 right-0 z-600 flex items-center justify-between px-7 py-4 lg:pb-8 will-change-transform transition-[background-color,backdrop-filter,border-color] duration-300 ease-out ${
-					scrolled ? 'bg-(--bg)/85 backdrop-blur-md border-b border-black/5 dark:border-white/10' : 'border-b border-transparent'
+				className={`fixed top-0 left-0 right-0 z-600 flex items-center justify-between overflow-visible px-7 py-4 will-change-transform transition-[background-color,backdrop-filter,border-color] duration-300 ease-out ${
+					scrolled ? 'bg-(--bg)/50 backdrop-blur-md border-b border-black/5 dark:border-white/10' : 'border-b border-transparent'
 				}`}
 			>
 				<span className={`z-310 ${isOpen && isMobileMenu ? 'opacity-0 pointer-events-none' : ''}`}>
@@ -343,13 +387,8 @@ export default function Header({ isLight = false }: HeaderProps) {
 				</span>
 
 				{/* Desktop nav */}
-				<nav className={`hidden lg:flex items-center gap-6 text-[15px] leading-[20px] ${textColor}`}>
-					{links.map((l) => (
-						<Link key={l.href} href={l.href} className={`hover:opacity-70 ${textColor}`}>
-							{l.label}
-						</Link>
-					))}
-
+				<nav className={`hidden lg:flex items-center gap-6 overflow-visible text-[15px] leading-[20px] ${textColor}`}>
+					{links.map((l) => renderNavLink(l, 'desktop'))}
 				</nav>
 				<div className="hidden lg:flex items-center gap-3">
 					<button
@@ -363,23 +402,25 @@ export default function Header({ isLight = false }: HeaderProps) {
 					<ThemeToggle />
 				</div>
 
-				{/* Mobile toggle */}
-				<button
-					type="button"
-					onClick={toggleMenu}
-					aria-expanded={isOpen}
-					aria-label={isOpen ? 'Close menu' : 'Open menu'}
-					className={`lg:hidden relative z-10 w-11 h-11 flex items-center justify-center ${isOpen ? 'text-black' : textColor}`}
-				>
-					<svg width="40" height="40" viewBox="0 0 20 20" fill="none">
-						<line ref={barTopRef} x1="3" y1="7" x2="17" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-						<line ref={barBotRef} x1="3" y1="13" x2="17" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-					</svg>
-				</button>
+				{/* Mobile toggle — hamburger no header (menu fechado) */}
+				{!isOpen && !isClosing ? (
+					<button
+						type="button"
+						onClick={openMenu}
+						aria-expanded={false}
+						aria-label="Open menu"
+						className={`lg:hidden relative z-10 w-11 h-11 flex items-center justify-center ${textColor}`}
+					>
+						<svg width="40" height="40" viewBox="0 0 20 20" fill="none" aria-hidden>
+							<line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+							<line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+						</svg>
+					</button>
+				) : null}
 			</div>
 
 			{/* Mobile overlay */}
-			<div ref={navRef} className="fixed inset-0 z-500 p-4 pointer-events-none" style={{ visibility: 'hidden' }}>
+			<div ref={navRef} className="fixed inset-0 z-700 p-4 pointer-events-none" style={{ visibility: 'hidden' }}>
 				<div
 					ref={bgRef}
 					className="absolute inset-0 bg-black/40 opacity-0"
@@ -395,12 +436,41 @@ export default function Header({ isLight = false }: HeaderProps) {
 						}}
 						className="w-full max-w-[700px] rounded-[10px] bg-white text-black overflow-y-auto"
 					>
-						<div className="md:hidden px-10 pt-8">
+						<div className="flex items-center justify-between px-10 pt-8">
 							<Link href={`/${prefix}`.replace('//', '/')} onClick={() => closeMenu()} aria-label="RSW — início">
 								<LogoMark className="h-8 w-auto text-black" />
 							</Link>
+							<button
+								type="button"
+								onClick={closeMenu}
+								aria-label="Close menu"
+								className="flex h-11 w-11 items-center justify-center text-black"
+							>
+								<svg width="40" height="40" viewBox="0 0 20 20" fill="none" aria-hidden>
+									<line
+										ref={barTopRef}
+										x1="3"
+										y1="7"
+										x2="17"
+										y2="7"
+										stroke="currentColor"
+										strokeWidth="1.5"
+										strokeLinecap="round"
+									/>
+									<line
+										ref={barBotRef}
+										x1="3"
+										y1="13"
+										x2="17"
+										y2="13"
+										stroke="currentColor"
+										strokeWidth="1.5"
+										strokeLinecap="round"
+									/>
+								</svg>
+							</button>
 						</div>
-						<ul className="list-none flex flex-col p-10 pt-14">
+						<ul className="list-none flex flex-col px-10 pb-4 pt-6">
 							{links
 								.filter((l) => !l.external)
 								.map((l, idx) => (
@@ -411,13 +481,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 										}}
 										className="overflow-hidden"
 									>
-										<Link
-											href={l.href}
-											onClick={() => closeMenu()}
-											className="block py-2 text-[clamp(1.5rem,4vw,1.8rem)] font-semibold leading-[1.1] tracking-[-0.03em]"
-										>
-											{l.label}
-										</Link>
+										{renderNavLink(l, 'mobile', { onNavigate: () => closeMenu() })}
 									</li>
 								))}
 						</ul>

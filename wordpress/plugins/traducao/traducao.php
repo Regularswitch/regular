@@ -13,7 +13,13 @@ include __DIR__ . "/rich-text-fields.php";
 include __DIR__ . "/media-fields.php";
 include __DIR__ . "/footer-fields.php";
 include __DIR__ . "/capabilities-fields.php";
+include __DIR__ . "/about-fields.php";
+include __DIR__ . "/education-fields.php";
+include __DIR__ . "/contact-fields.php";
+include __DIR__ . "/projects-page-fields.php";
 include __DIR__ . "/site-ui-fields.php";
+include __DIR__ . "/blob-visual-fields.php";
+include __DIR__ . "/page-heroes-fields.php";
 include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
 include __DIR__ . "/slug-language.php";
@@ -31,16 +37,7 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
         return;
     }
 
-    $file = __DIR__ . '/config.json';
-    $data = [
-        'type'      => 'TEXT',
-        'languages' => [],
-    ];
-    if (file_exists($file)) {
-        $data = json_decode(file_get_contents($file), true);
-    }
-
-    foreach ($data['languages'] as $slug) {
+    foreach (['en', 'pt'] as $slug) {
         $slug = strtoupper($slug);
         $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$slug}";
         echo "<a href=\"#\" data-href=\"{$url}\" onclick=\"rs_link_translate(event, this)\" title=\"Translate {$slug}\">{$slug}</a> ";
@@ -68,24 +65,52 @@ function rs_link_translate_script(): void {
     <?php
 }
 
-foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'site-ui'] as $post_type) {
+foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'projects-page', 'site-ui'] as $post_type) {
     add_filter("manage_{$post_type}_posts_columns", 'rs_add_language_column');
     add_action("manage_{$post_type}_posts_custom_column", 'rs_render_language_column', 10, 2);
 }
 
 add_action('admin_footer', 'rs_link_translate_script');
 
-add_action( 'admin_menu', function() {
-    add_menu_page(
-        'Tradutor',
-        'Tradutor',
-        'manage_options',
-        'traducao/admin.php',
-        '',
-        'dashicons-translation',
-        6
-    );
-} );
+/**
+ * Separadores no menu admin: antes e depois dos CPTs do site.
+ */
+function rs_admin_menu_separator(int $position, string $slug): void {
+    global $menu;
+
+    $menu[$position] = ['', 'read', 'separator' . $slug, '', 'wp-menu-separator rs-admin-menu-separator'];
+}
+
+add_action('admin_menu', function () {
+    rs_admin_menu_separator(26, 'rs-before-site-content');
+    rs_admin_menu_separator(37, 'rs-after-site-content');
+}, PHP_INT_MAX);
+
+add_action('admin_head', function () {
+    ?>
+    <style>
+        #adminmenu .wp-menu-separator.rs-admin-menu-separator {
+            display: block;
+            height: 1px;
+            margin: 8px 0;
+            padding: 0;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        #adminmenu .wp-menu-separator.rs-admin-menu-separator .separator {
+            display: block;
+            height: 1px;
+            margin: 0 8px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        #adminmenu.folded .wp-menu-separator.rs-admin-menu-separator .separator {
+            margin: 0 4px;
+        }
+    </style>
+    <?php
+});
 
 add_filter( 'the_content', function( $content ) {
     if( _getLang() ) {

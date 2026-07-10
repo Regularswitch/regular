@@ -2,8 +2,9 @@
 
 import { useMemo } from 'react';
 
+import type { ProjectsPageContent } from '../../lib/projectsPageDefaults';
 import { sortProjectsByDate } from '../../lib/sortProjects';
-import type { Category, Intro, Projects } from '../../types';
+import type { Category, Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
 import { INITIAL_PROJECTS_COUNT } from './constants';
 import ProjectsGridSection from './ProjectsGridSection';
@@ -12,7 +13,7 @@ import ProjectsListingHero from './ProjectsListingHero';
 type ProjectsListingProps = {
 	projects: Projects;
 	categories: Category[];
-	intro: Intro | null;
+	content: ProjectsPageContent;
 	locale?: 'en' | 'pt';
 };
 
@@ -21,23 +22,21 @@ function projectHref(slug: string, locale: 'en' | 'pt') {
 	return `${prefix}/project/${slug}`.replace(/^\/\//, '/') || `/project/${slug}`;
 }
 
-export default function ProjectsListing({ projects, categories, intro, locale = 'en' }: ProjectsListingProps) {
+export default function ProjectsListing({ projects, categories, content, locale = 'en' }: ProjectsListingProps) {
 	const sorted = useMemo(() => sortProjectsByDate(projects), [projects]);
 
 	if (!sorted.length) {
 		return (
 			<>
-				<ProjectsListingHero intro={intro} locale={locale} />
-				<p className="px-7 py-12 text-(--muted)">
-					{locale === 'pt' ? 'Nenhum projeto encontrado.' : 'No projects found.'}
-				</p>
+				<ProjectsListingHero content={content} />
+				<p className="px-7 py-12 text-(--muted)">{content.emptyMessage}</p>
 			</>
 		);
 	}
 
 	return (
 		<>
-			<ProjectsListingHero intro={intro} locale={locale} />
+			<ProjectsListingHero content={content} />
 
 			<ProjectsGridSection
 				projects={sorted}

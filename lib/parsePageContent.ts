@@ -1,7 +1,5 @@
 import type { AboutAccordionSection } from './aboutDefaults';
 import type { ContactBlock } from './contactDefaults';
-import type { EducationContent } from './educationDefaults';
-import { DEFAULT_EDUCATION_EN, DEFAULT_EDUCATION_PT } from './educationDefaults';
 import type { ProjectAccordionSection } from './parseProjectContent';
 import { removeImagesFromHtml } from './parseProjectContent';
 
@@ -111,23 +109,4 @@ export function mergeAboutAccordionSections(
 			imageProjectSlug: fallback?.imageProjectSlug,
 		};
 	});
-}
-
-export function buildEducationContent(
-	pageContent: string | undefined,
-	pageImage: string | undefined,
-	locale: 'en' | 'pt',
-): EducationContent {
-	const defaults = locale === 'pt' ? DEFAULT_EDUCATION_PT : DEFAULT_EDUCATION_EN;
-	const html = pageContent ?? '';
-
-	const heroImage = pageImage || extractHeroImageFromHtml(html) || defaults.heroImage;
-	const headline = parsePageHeadline(html) ?? defaults.headline;
-	const parsedAccordion = parsePageAccordionFromHeadings(html, ['h3']);
-
-	return {
-		heroImage,
-		headline,
-		accordionSections: parsedAccordion.length ? parsedAccordion : defaults.accordionSections,
-	};
 }

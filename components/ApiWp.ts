@@ -1,5 +1,9 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
+import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
+import type { AboutContent } from '../lib/aboutDefaults';
+import type { ContactContent } from '../lib/contactDefaults';
+import type { EducationContent } from '../lib/educationDefaults';
+import type { ProjectsPageContent } from '../lib/projectsPageDefaults';
 import { wpLangSlug, type WpLocale } from '../lib/wpLocaleSlug';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
 import type { HeaderNavContent } from '../lib/resolveSiteUi';
@@ -65,6 +69,10 @@ export type responseWp = {
     footer_data?: FooterContent
     intro_data?: Intro
     capabilities_data?: CapabilitiesContent
+    about_data?: AboutContent
+    education_data?: EducationContent
+    contact_data?: ContactContent
+    projects_page_data?: ProjectsPageContent
     site_ui_data?: SiteUiContent
     project_data?: ProjectStructuredData
     meta?: Record<string, string>
@@ -440,6 +448,236 @@ export async function GetCapabilitiesByLocale(locale: WpLocale): Promise<Capabil
     return GetCapabilitiesApi({ slug: wpLangSlug(locale) });
 }
 
+function isAboutAccordionSection(value: unknown): value is AboutContent['accordionSections'][number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.title === 'string' && typeof item.body === 'string';
+}
+
+function isAboutContent(value: unknown): value is AboutContent {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    if (typeof item.headline !== 'string') return false;
+    if (typeof item.body !== 'string') return false;
+    if (!Array.isArray(item.accordionSections)) return false;
+    return item.accordionSections.every(isAboutAccordionSection);
+}
+
+export function porterAbout(payloadWp: listResponseWp): AboutContent | null {
+    const item = payloadWp[0];
+    if (!item?.about_data || !isAboutContent(item.about_data)) return null;
+
+    const data = item.about_data;
+    const sections = data.accordionSections.filter((section) => section.title);
+
+    if (!data.headline && !data.body && !data.heroImage && sections.length === 0) {
+        return null;
+    }
+
+    return {
+        heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+        headline: data.headline,
+        body: data.body,
+        accordionSections: sections,
+    };
+}
+
+export async function GetAboutApi(data: Record<string, string> = {}): Promise<AboutContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/about`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterAbout(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetAboutByLocale(locale: WpLocale): Promise<AboutContent | null> {
+    return GetAboutApi({ slug: wpLangSlug(locale) });
+}
+
+function isEducationAccordionSection(value: unknown): value is EducationContent['accordionSections'][number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.title === 'string' && typeof item.body === 'string';
+}
+
+function isEducationContent(value: unknown): value is EducationContent {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    if (typeof item.headline !== 'string') return false;
+    if (!Array.isArray(item.accordionSections)) return false;
+    return item.accordionSections.every(isEducationAccordionSection);
+}
+
+export function porterEducation(payloadWp: listResponseWp): EducationContent | null {
+    const item = payloadWp[0];
+    if (!item?.education_data || !isEducationContent(item.education_data)) return null;
+
+    const data = item.education_data;
+    const sections = data.accordionSections.filter((section) => section.title);
+
+    if (!data.headline && !data.heroImage && sections.length === 0) {
+        return null;
+    }
+
+    return {
+        heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+        headline: data.headline,
+        accordionSections: sections,
+    };
+}
+
+export async function GetEducationApi(data: Record<string, string> = {}): Promise<EducationContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/education`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterEducation(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetEducationByLocale(locale: WpLocale): Promise<EducationContent | null> {
+    return GetEducationApi({ slug: wpLangSlug(locale) });
+}
+
+function isContactBlock(value: unknown): value is ContactContent['blocks'][number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.title === 'string' && typeof item.body === 'string';
+}
+
+function isContactContent(value: unknown): value is ContactContent {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    if (typeof item.headline !== 'string') return false;
+    if (!Array.isArray(item.blocks)) return false;
+    return item.blocks.every(isContactBlock);
+}
+
+export function porterContact(payloadWp: listResponseWp): ContactContent | null {
+    const item = payloadWp[0];
+    if (!item?.contact_data || !isContactContent(item.contact_data)) return null;
+
+    const data = item.contact_data;
+    const blocks = data.blocks.filter((block) => block.title);
+
+    if (!data.headline && !data.heroImage && blocks.length === 0) {
+        return null;
+    }
+
+    return {
+        heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+        headline: data.headline,
+        blocks,
+    };
+}
+
+export async function GetContactApi(data: Record<string, string> = {}): Promise<ContactContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/contact`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterContact(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetContactByLocale(locale: WpLocale): Promise<ContactContent | null> {
+    return GetContactApi({ slug: wpLangSlug(locale) });
+}
+
+function isProjectsPageContent(value: unknown): value is ProjectsPageContent {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return (
+        typeof item.title === 'string' &&
+        typeof item.headline === 'string' &&
+        typeof item.emptyMessage === 'string'
+    );
+}
+
+export function porterProjectsPage(payloadWp: listResponseWp): ProjectsPageContent | null {
+    const item = payloadWp[0];
+    if (!item?.projects_page_data || !isProjectsPageContent(item.projects_page_data)) return null;
+
+    const data = item.projects_page_data;
+    if (!data.title && !data.headline && !data.emptyMessage) return null;
+
+    return data;
+}
+
+export async function GetProjectsPageApi(data: Record<string, string> = {}): Promise<ProjectsPageContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/projects-page`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterProjectsPage(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetProjectsPageByLocale(locale: WpLocale): Promise<ProjectsPageContent | null> {
+    return GetProjectsPageApi({ slug: wpLangSlug(locale) });
+}
+
 function isSiteUiLabels(value: unknown): value is SiteUiContent['en']['labels'] {
     if (!value || typeof value !== 'object') return false;
     const item = value as Record<string, unknown>;
@@ -526,6 +764,36 @@ export async function GetSiteUiApi(data: Record<string, string> = {}): Promise<S
         if (!Array.isArray(payload)) return null;
 
         return porterSiteUi(payload);
+    } catch {
+        return null;
+    }
+}
+
+function isBlobVisual(value: unknown): value is BlobVisual {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return (
+        typeof item.color1 === 'string' &&
+        typeof item.color2 === 'string' &&
+        Array.isArray(item.palette) &&
+        item.palette.every((color) => typeof color === 'string')
+    );
+}
+
+export function porterBlobVisual(value: unknown): BlobVisual | null {
+    return isBlobVisual(value) ? value : null;
+}
+
+export async function GetBlobVisualApi(): Promise<BlobVisual | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const response = await fetch(`${api}/wp-json/rs/v1/blob-visual`, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        return porterBlobVisual(payload);
     } catch {
         return null;
     }

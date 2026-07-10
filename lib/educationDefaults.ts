@@ -55,3 +55,7 @@ export const DEFAULT_EDUCATION_EN: EducationContent = {
 		'We believe education is a space for exchange and creative experimentation. <strong>Between</strong> France and Brazil, <strong>we develop</strong> workshops, talks and collaborative projects <strong>that connect</strong> cultures and new ways of thinking about <strong>contemporary design</strong>.',
 	accordionSections: EDUCATION_ACCORDION_EN,
 };
+
+export function getDefaultEducationContent(locale: 'en' | 'pt'): EducationContent {
+	return locale === 'pt' ? { ...DEFAULT_EDUCATION_PT } : { ...DEFAULT_EDUCATION_EN };
+}

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
+import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import type { AboutContent } from '../../lib/aboutDefaults';
 import type { Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
@@ -16,8 +18,7 @@ type AboutPageProps = {
 };
 
 export default function AboutPage({ content, latestProjects, locale = 'en' }: AboutPageProps) {
-	const prefix = locale === 'pt' ? '/PT' : '';
-	const workHref = `${prefix}/work`.replace(/^\/\//, '/') || '/work';
+	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const siteUi = useSiteUiLocale(locale);
 	const cta = siteUi.labels.seeMoreWork;
 
@@ -25,14 +26,14 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 		<article className="about-page">
 			<AboutHero image={content.heroImage} />
 
-			<section className="about-intro px-7 py-10 md:grid md:grid-cols-2 md:gap-12 md:py-14 lg:gap-16">
+			<section className="about-intro px-7 py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
 				<div
-					className="intro-headline font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-extrabold leading-[1.05] tracking-[-0.02em]"
+					className="intro-headline min-w-0 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-extrabold leading-[1.05] tracking-[-0.02em]"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>
 
 				<div
-					className="about-body intro-body mt-8 font-hk text-base leading-relaxed md:mt-0 md:text-lg"
+					className="about-body intro-body mt-8 min-w-0 max-w-none font-hk text-base leading-relaxed md:mt-0 md:text-lg"
 					dangerouslySetInnerHTML={{ __html: content.body }}
 				/>
 			</section>
@@ -42,7 +43,7 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 			</div>
 
 			<div className="flex justify-center px-7 pb-12 md:pb-16">
-				<Link href={workHref} className="selected-projects-cta font-hk">
+				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>
 			</div>

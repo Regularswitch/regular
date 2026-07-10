@@ -1,7 +1,7 @@
 <?php
 
 function rs_translate_same_type_cpts(): array {
-    return ['footer', 'intro', 'brand', 'project', 'capabilities', 'site-ui'];
+    return ['footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'projects-page', 'site-ui'];
 }
 
 function rs_translate_target_post_type(WP_Post $source): string {
@@ -63,6 +63,26 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
 
     if ($post_type === 'capabilities' && function_exists('rs_copy_capabilities_fields')) {
         rs_copy_capabilities_fields($from_id, $to_id);
+        return;
+    }
+
+    if ($post_type === 'about' && function_exists('rs_copy_about_fields')) {
+        rs_copy_about_fields($from_id, $to_id);
+        return;
+    }
+
+    if ($post_type === 'education' && function_exists('rs_copy_education_fields')) {
+        rs_copy_education_fields($from_id, $to_id);
+        return;
+    }
+
+    if ($post_type === 'contact' && function_exists('rs_copy_contact_fields')) {
+        rs_copy_contact_fields($from_id, $to_id);
+        return;
+    }
+
+    if ($post_type === 'projects-page' && function_exists('rs_copy_projects_page_fields')) {
+        rs_copy_projects_page_fields($from_id, $to_id);
         return;
     }
 
