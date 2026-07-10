@@ -464,6 +464,73 @@ html:not(.dark) .brand-mark {
 	overflow: visible;
 }
 
+.accordion-trigger {
+	cursor: pointer;
+}
+
+.sticky-cursor {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 99999;
+	border-radius: 50%;
+	background: #fff;
+	mix-blend-mode: difference;
+	pointer-events: none;
+	will-change: transform, width, height, left, top;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	html.has-custom-cursor,
+	html.has-custom-cursor * {
+		cursor: none !important;
+	}
+}
+
+.accordion-trigger:hover .accordion-trigger-title:not(.is-open) {
+	color: color-mix(in srgb, var(--fg) 72%, var(--muted));
+}
+
+.accordion-trigger-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.25rem;
+	transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.accordion-trigger-icon.is-open {
+	transform: rotate(45deg);
+}
+
+.accordion-panel {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-panel.is-open {
+	grid-template-rows: 1fr;
+}
+
+.accordion-panel-inner {
+	overflow: hidden;
+	min-height: 0;
+}
+
+.accordion-panel-content {
+	opacity: 0;
+	transform: translateY(-6px);
+	transition:
+		opacity 0.3s ease,
+		transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-panel.is-open .accordion-panel-content {
+	opacity: 1;
+	transform: translateY(0);
+}
+
 .accordion-trigger-title {
 	font-size: clamp(1.25rem, 3vw, 2rem);
 	font-weight: 400;

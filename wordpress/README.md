@@ -49,4 +49,5 @@ Gera `wordpress/dist/wp-plugins.zip` — extraia em `wp-content/plugins/` no ser
 | **Staging** | `https://staging-wp.regularswitch.com` |
 | Produção | `https://wp.regularswitch.com` |
 
-Guia completo: [docs/wordpress-staging.md](../docs/wordpress-staging.md)
+- Guia de staging: [docs/wordpress-staging.md](../docs/wordpress-staging.md)
+- **Guia do admin (como editar o site):** [docs/wordpress-admin-guia.md](../docs/wordpress-admin-guia.md)

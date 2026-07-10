@@ -51,7 +51,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 						<div key={section.title}>
 							<button
 								type="button"
-								className="flex w-full items-center justify-between gap-4 py-5 text-left"
+								className="accordion-trigger flex w-full items-center justify-between gap-4 py-5 text-left"
 								onClick={() => setOpenIndex(isOpen ? -1 : index)}
 								aria-expanded={isOpen}
 							>
@@ -59,19 +59,21 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 									{section.title}
 								</span>
 								<span
-									className={`text-lg leading-none transition-colors${isOpen ? ' text-(--fg)' : ' text-(--muted)'}`}
+									className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
 									aria-hidden
 								>
-									{isOpen ? '−' : '+'}
+									+
 								</span>
 							</button>
 
-							{isOpen ? (
-								<div
-									className="project-accordion-body pb-5 text-sm leading-relaxed text-(--muted) md:text-base"
-									dangerouslySetInnerHTML={{ __html: section.body }}
-								/>
-							) : null}
+							<div className={`accordion-panel${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
+								<div className="accordion-panel-inner">
+									<div
+										className="accordion-panel-content project-accordion-body pb-5 text-sm leading-relaxed text-(--muted) md:text-base"
+										dangerouslySetInnerHTML={{ __html: section.body }}
+									/>
+								</div>
+							</div>
 							<BezierDivider />
 						</div>
 					);
