@@ -24,6 +24,11 @@ function getLanguage(): 'PT' | 'EN' {
 	return c === 'EN' ? 'EN' : 'PT';
 }
 
+const SCROLL_TOP_THRESHOLD = 24;
+const HIDE_AFTER_SCROLL = 72;
+const SCROLL_DELTA = 8;
+const TOP_HOVER_ZONE = 16;
+
 export default function Header({ isLight = false }: HeaderProps) {
 	const router = useRouter();
 	const pathname = usePathname() ?? '';
@@ -32,8 +37,15 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const [isClosing, setIsClosing] = useState(false);
 	const [isMobileMenu, setIsMobileMenu] = useState(false);
 	const [language, setLanguage] = useState<'PT' | 'EN'>('PT');
+	const [scrolled, setScrolled] = useState(false);
+	const [isHeaderHidden, setIsHeaderHidden] = useState(false);
 
 	const tl = useRef<gsap.core.Timeline | null>(null);
+	const lastScrollY = useRef(0);
+	const isOpenRef = useRef(false);
+	const isTopHoverRef = useRef(false);
+	const headerBarRef = useRef<HTMLDivElement | null>(null);
+	const headerHideTween = useRef<gsap.core.Tween | null>(null);
 	const navRef = useRef<HTMLDivElement | null>(null);
 	const bgRef = useRef<HTMLDivElement | null>(null);
 	const panelsRef = useRef<Array<HTMLDivElement | null>>([]);
@@ -59,6 +71,84 @@ export default function Header({ isLight = false }: HeaderProps) {
 			document.body.style.overflow = '';
 		};
 	}, [isOpen]);
+
+	useEffect(() => {
+		isOpenRef.current = isOpen;
+		if (isOpen) setIsHeaderHidden(false);
+	}, [isOpen]);
+
+	useEffect(() => {
+		const onScroll = () => {
+			const y = window.scrollY;
+			const atTop = y <= SCROLL_TOP_THRESHOLD;
+
+			setScrolled(!atTop);
+
+			if (isOpenRef.current || atTop || isTopHoverRef.current) {
+				setIsHeaderHidden(false);
+				lastScrollY.current = y;
+				return;
+			}
+
+			if (y < HIDE_AFTER_SCROLL) {
+				setIsHeaderHidden(false);
+			} else {
+				const delta = y - lastScrollY.current;
+				if (delta > SCROLL_DELTA) setIsHeaderHidden(true);
+				else if (delta < -SCROLL_DELTA) setIsHeaderHidden(false);
+			}
+
+			lastScrollY.current = y;
+		};
+
+		const onMouseMove = (e: MouseEvent) => {
+			const hover = e.clientY <= TOP_HOVER_ZONE;
+			if (hover === isTopHoverRef.current) return;
+			isTopHoverRef.current = hover;
+			if (hover) setIsHeaderHidden(false);
+		};
+
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('mousemove', onMouseMove);
+		};
+	}, []);
+
+	useEffect(() => {
+		const bar = headerBarRef.current;
+		if (!bar) return;
+
+		const shouldHide = isHeaderHidden && !isOpen;
+
+		headerHideTween.current?.kill();
+
+		if (shouldHide) {
+			headerHideTween.current = gsap.to(bar, {
+				yPercent: -100,
+				duration: 0.38,
+				ease: 'power2.in',
+				overwrite: true,
+			});
+			return;
+		}
+
+		headerHideTween.current = gsap.to(bar, {
+			yPercent: 0,
+			duration: 0.72,
+			ease: 'power4.out',
+			overwrite: true,
+		});
+	}, [isHeaderHidden, isOpen]);
+
+	useEffect(() => {
+		const bar = headerBarRef.current;
+		if (!bar) return;
+		gsap.set(bar, { yPercent: 0 });
+	}, [pathname]);
 
 	const prefix = language === 'PT' ? 'PT' : '';
 
@@ -226,6 +316,10 @@ export default function Header({ isLight = false }: HeaderProps) {
 	useEffect(() => {
 		// close overlay on route change
 		closeMenu();
+		setIsHeaderHidden(false);
+		lastScrollY.current = 0;
+		setScrolled(false);
+		isTopHoverRef.current = false;
 	}, [pathname]);
 
 	function setLanguageCookie(next: 'PT' | 'EN') {
@@ -238,7 +332,12 @@ export default function Header({ isLight = false }: HeaderProps) {
 
 	return (
 		<>
-			<div className="fixed top-0 left-0 right-0 z-600 flex items-center justify-between px-7 py-4 lg:pb-8">
+			<div
+				ref={headerBarRef}
+				className={`fixed top-0 left-0 right-0 z-600 flex items-center justify-between px-7 py-4 lg:pb-8 will-change-transform transition-[background-color,backdrop-filter,border-color] duration-300 ease-out ${
+					scrolled ? 'bg-(--bg)/85 backdrop-blur-md border-b border-black/5 dark:border-white/10' : 'border-b border-transparent'
+				}`}
+			>
 				<span className={`z-310 ${isOpen && isMobileMenu ? 'opacity-0 pointer-events-none' : ''}`}>
 					<Link href={`/${prefix}`.replace('//', '/')}>
 						<LogoMark
@@ -264,8 +363,9 @@ export default function Header({ isLight = false }: HeaderProps) {
 						type="button"
 						onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
 						className={`rounded w-[34px] h-[28px] text-xs border border-black/10 dark:border-white/15 bg-(--surface) ${textColor} hover:opacity-80`}
+						aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
 					>
-						{language}
+						{language === 'PT' ? 'EN' : 'PT'}
 					</button>
 					<ThemeToggle />
 				</div>
@@ -334,8 +434,9 @@ export default function Header({ isLight = false }: HeaderProps) {
 								type="button"
 								onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
 								className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-black/15"
+								aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
 							>
-								{language}
+								{language === 'PT' ? 'EN' : 'PT'}
 							</button>
 							<span className="inline-flex align-middle">
 								<ThemeToggle />
