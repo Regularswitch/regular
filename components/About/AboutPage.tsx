@@ -26,9 +26,9 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 		<article className="about-page">
 			<AboutHero image={content.heroImage} />
 
-			<section className="about-intro px-7 py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
+			<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
 				<div
-					className="intro-headline min-w-0 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-extrabold leading-[1.05] tracking-[-0.02em]"
+					className="intro-headline min-w-0 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>
 
@@ -38,11 +38,11 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 				/>
 			</section>
 
-			<div className="px-7 pb-10 md:pb-14">
+			<div className="pb-10 md:pb-14">
 				<AboutAccordionPanel sections={content.accordionSections} />
 			</div>
 
-			<div className="flex justify-center px-7 pb-12 md:pb-16">
+			<div className="flex justify-center pb-12 md:pb-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>

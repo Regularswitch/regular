@@ -26,11 +26,11 @@ export default function CapabilitiesPage({ content, latestProjects, locale = 'en
 		<article className="capabilities-page">
 			<CapabilitiesHero headline={content.headline} />
 
-			<section className="px-7 py-10 md:py-14">
+			<section className="py-10 md:py-14">
 				<CapabilitiesAccordion sections={content.sections} />
 			</section>
 
-			<div className="flex justify-center px-7 pb-12 md:pb-16">
+			<div className="flex justify-center pb-12 md:pb-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>

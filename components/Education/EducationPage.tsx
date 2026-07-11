@@ -27,7 +27,7 @@ export default function EducationPage({
 		<article className="education-page">
 			<EducationHero image={content.heroImage} headline={content.headline} />
 
-			<section className="px-7 py-10 md:py-14">
+			<section className="py-10 md:py-14">
 				<ProjectAccordion sections={content.accordionSections} />
 			</section>
 

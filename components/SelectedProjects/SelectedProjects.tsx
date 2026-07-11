@@ -1,12 +1,13 @@
 import Link from 'next/link';
 
-import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
-import { withLocalePrefix } from '../../lib/resolveSiteUi';
-import type { Category, Projects, SiteUiLabels } from '../../types';
+import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/pageSlugs';
 import { isHomeProject } from '../../lib/projectCategories';
+import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/sortProjects';
+import type { Category, Projects, SiteUiLabels } from '../../types';
 import { getGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
+import { SectionHeadingArrow } from '../SiteIcons';
 
 const MAX_PROJECTS = INITIAL_PROJECTS_COUNT;
 
@@ -29,14 +30,15 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
 
 	return (
-		<section className="selected-projects py-12 md:py-20" aria-label={title}>
-			<div className="mb-8 px-7 md:mb-12">
-				<h2 className="text-base font-medium text-(--fg) md:text-lg">
-					{title} <span aria-hidden>↘</span>
+		<section className="selected-projects py-6 md:py-10" aria-label={title}>
+			<div className="mb-8 md:mb-12">
+				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+					{title}
+					<SectionHeadingArrow />
 				</h2>
 			</div>
 
-			<div className="selected-projects-grid px-7">
+			<div className="selected-projects-grid">
 				{selected.map((project, index) => (
 					<ProjectGridCard
 						key={project.id}
@@ -48,7 +50,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 				))}
 			</div>
 
-			<div className="mt-12 flex justify-center px-7 md:mt-16">
+			<div className="mt-12 flex justify-center md:mt-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>

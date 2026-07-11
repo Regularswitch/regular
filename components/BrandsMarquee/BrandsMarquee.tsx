@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import type { Brand } from '../../types';
+import { SectionHeadingArrow } from '../SiteIcons';
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 
 type BrandsMarqueeProps = {
 	title?: string;
@@ -42,12 +43,12 @@ function BrandMark({ name, logo }: { name: string; logo?: string }) {
 		<img
 			src={logo}
 			alt={name}
-			width={180}
-			height={48}
+			width={184}
+			height={64}
 			loading="lazy"
 			decoding="async"
 			onError={() => setFailed(true)}
-			className="brand-mark h-8 w-auto max-w-[140px] object-contain opacity-90 md:h-10 md:max-w-[180px]"
+			className="brand-mark h-auto w-[150px] max-w-[150px] object-contain object-center opacity-90 md:w-[184px] md:max-w-[184px]"
 		/>
 	);
 }
@@ -147,10 +148,11 @@ export default function BrandsMarquee({ title, brands, locale = 'en' }: BrandsMa
 	if (!brands.length) return null;
 
 	return (
-		<section className="py-12 md:py-20" aria-label={heading}>
-			<div className="mb-8 flex items-end justify-between px-7 md:mb-12">
-				<h2 className="text-base font-medium text-(--fg) md:text-lg">
-					{heading} <span aria-hidden>↘</span>
+		<section className="py-6 md:py-10" aria-label={heading}>
+			<div className="mb-8 flex items-end justify-between md:mb-12">
+				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+					{heading}
+					<SectionHeadingArrow />
 				</h2>
 			</div>
 

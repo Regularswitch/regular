@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
+import { AccordionPlusIcon } from '../SiteIcons';
 import type { CapabilitySection } from '../../lib/capabilitiesDefaults';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
@@ -14,7 +15,7 @@ type CapabilitiesAccordionProps = {
 
 export default function CapabilitiesAccordion({
 	sections,
-	defaultOpenIndex = 0,
+	defaultOpenIndex = -1,
 }: CapabilitiesAccordionProps) {
 	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
@@ -43,7 +44,7 @@ export default function CapabilitiesAccordion({
 								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
 								aria-hidden
 							>
-								+
+								<AccordionPlusIcon />
 							</span>
 						</button>
 

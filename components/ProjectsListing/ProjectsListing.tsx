@@ -29,7 +29,7 @@ export default function ProjectsListing({ projects, categories, content, locale 
 		return (
 			<>
 				<ProjectsListingHero content={content} />
-				<p className="px-7 py-12 text-(--muted)">{content.emptyMessage}</p>
+				<p className="py-12 text-(--muted)">{content.emptyMessage}</p>
 			</>
 		);
 	}

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
+import { AccordionPlusIcon } from '../SiteIcons';
 import type { AboutAccordionSection } from '../../lib/aboutDefaults';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
@@ -12,15 +13,14 @@ type AboutAccordionPanelProps = {
 };
 
 export default function AboutAccordionPanel({ sections }: AboutAccordionPanelProps) {
-	const [openIndex, setOpenIndex] = useState(0);
+	const [openIndex, setOpenIndex] = useState(-1);
 
 	const visibleSections = useMemo(
 		() => sections.filter((section) => section.body.trim()),
 		[sections],
 	);
 
-	const activeIndex = openIndex >= 0 ? openIndex : 0;
-	const activeSection = visibleSections[activeIndex];
+	const activeSection = openIndex >= 0 ? visibleSections[openIndex] : undefined;
 	const activeImage = activeSection?.image
 		? (wpMediaUrl(activeSection.image) ?? activeSection.image)
 		: undefined;
@@ -62,7 +62,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 									className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
 									aria-hidden
 								>
-									+
+									<AccordionPlusIcon />
 								</span>
 							</button>
 

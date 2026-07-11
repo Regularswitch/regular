@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import DateTimeComponent from './DateTimeComponent';
+// import DateTimeComponent from './DateTimeComponent';
 import parse, { DOMNode } from 'html-react-parser';
 import BackgroundProject from './BackgroundProject';
 import type { Category, Meta, Projects } from '../types';
@@ -46,7 +46,7 @@ export default function SlugPageClient({ allPosts, allPostCat, allCat, slug, all
 		const options = {
 			replace: (domNode: DOMNode) => {
 				if (domNode?.type === 'comment' && String(domNode?.data ?? '').trim() === 'DATETIME_COMPONENT') {
-					return <DateTimeComponent />;
+					// return <DateTimeComponent />;
 				}
 				return undefined;
 			},
@@ -150,7 +150,7 @@ export default function SlugPageClient({ allPosts, allPostCat, allCat, slug, all
 			) : null}
 
 			<div className="lg:w-[90vw] mx-auto px-4">
-				<h1 className=" text-[20px] lg:text-[70px] font-hk leading-[1em] font-extrabold py-4  lg:py-[50px]">{allPosts?.[0]?.title}</h1>
+				<h1 className=" text-[20px] lg:text-[70px] font-hk leading-[1em] font-medium py-4  lg:py-[50px]">{allPosts?.[0]?.title}</h1>
 				<div>{renderContent()}</div>
 
 				<div className="columns-1 md:columns-3 gap-8 font-hk">

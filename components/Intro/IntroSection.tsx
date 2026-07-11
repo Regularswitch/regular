@@ -22,9 +22,9 @@ export default function IntroSection({ intro, locale = 'en' }: IntroSectionProps
 	const { headline, body } = intro ?? fallback;
 
 	return (
-		<section className="intro-section container mx-auto px-7 py-12 md:py-20 lg:py-[150px]" aria-label="Intro">
+		<section className="intro-section container mx-0 px-0 py-6 md:py-10 lg:py-[80px]" aria-label="Intro">
 			<div
-				className="intro-headline font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-extrabold leading-[1.05] tracking-[-0.02em]"
+				className="intro-headline font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
 				dangerouslySetInnerHTML={{ __html: headline }}
 			/>
 			{body ? (

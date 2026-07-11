@@ -132,7 +132,7 @@ export type ProjectStructuredImage = {
 export type ProjectStructuredData = {
   heroImage?: ProjectStructuredImage | null;
   logoImage?: ProjectStructuredImage | null;
-  accordion?: Array<{ index: number; body: string }>;
+  accordion?: Array<{ index: number; title?: string; body: string }>;
   gallery?: string[];
 };
 

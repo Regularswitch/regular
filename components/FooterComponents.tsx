@@ -57,7 +57,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	);
 
 	return (
-		<footer className="site-footer mt-20 border-t border-white/10 pt-12 md:mt-28 md:pt-16">
+		<footer className="site-footer mt-10 border-t border-white/10 pt-12 md:mt-14 md:pt-16">
 			<div className="grid gap-10 px-7 md:w-1/2 md:grid-cols-3 md:gap-8">
 				{links.map((item: FooterLink) => (
 					<Link
@@ -69,7 +69,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 							: {})}
 					>
 						<p
-							className="font-hk text-base font-extrabold text-(--fg) md:text-lg"
+							className="font-hk text-base font-bold text-(--fg) md:text-lg"
 							dangerouslySetInnerHTML={{ __html: item.title }}
 						/>
 						<p

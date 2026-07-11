@@ -231,16 +231,18 @@ Cada projeto tem **slug próprio** (não é `en`/`pt`). Para versão em portugu�
 
 | Campo | Função |
 |-------|--------|
-| **Foto de fundo (hero)** | Imagem grande no topo da página do projeto |
-| **Logo** | Logo sobre a foto |
-| **Acordeão** | Contexto, Direção criativa, Solução, Impacto |
-| **Galeria** | Até 8 imagens abaixo do conteúdo |
+| **Imagem de fundo (hero)** | Topo da página — 1:1 no mobile, 16:9 no desktop |
+| **Logo** | Sobre a imagem no desktop (canto inferior esquerdo); no mobile fica oculta |
+| **Acordeão** | Seções com **título editável** + texto (adicione/remova seções) |
+| **Galeria** | Fotos abaixo do conteúdo — use **+ Adicionar imagem** (quantas quiser) |
 
 **Barra lateral:**
 
 - **Resumo** — texto à esquerda na página do projeto
-- **Imagem destacada** — pode ser usada como logo se não houver logo na caixa
+- **Imagem destacada** — só usada como fallback se o campo Logo estiver vazio
 - **Categorias** — ex.: Education, Motion Design (filtram listagens)
+
+> O editor principal do WordPress foi desativado para projetos. Use apenas a caixa **Conteúdo do Projeto (site)** e o **Resumo** na barra lateral.
 
 ---
 
@@ -357,7 +359,7 @@ Detalhes de staging: [wordpress-staging.md](./wordpress-staging.md).
 | Educação | `/education` | Educação + Heroes |
 | Sobre | `/about-us` | Sobre Nós + Heroes |
 | Contato | `/contact` | Contato + Heroes |
-| Projeto individual | `/projects/{slug}` | Projects |
+| Projeto individual | `/project/{slug}` | Projects |
 
 ---
 

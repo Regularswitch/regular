@@ -5,6 +5,7 @@ import type { ContactContent } from '../lib/contactDefaults';
 import type { EducationContent } from '../lib/educationDefaults';
 import type { ProjectsPageContent } from '../lib/projectsPageDefaults';
 import { wpLangSlug, type WpLocale } from '../lib/wpLocaleSlug';
+import { getProjectHeroImage, normalizeProjectData } from '../lib/projectImages';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
 import type { HeaderNavContent } from '../lib/resolveSiteUi';
 
@@ -81,21 +82,32 @@ export type responseWp = {
 export type listResponseWp = Array<responseWp>
 
 export function porter(payloadWp: listResponseWp): Projects {
-    return payloadWp.map(p => ({
-        id: p.id,
-        title: p?.title?.rendered || p.name,
-        slug: p.slug,
-        link: p.link,
-        image_medium: wpMediaUrl(p._embedded?.["wp:featuredmedia"]?.[0]?.media_details?.sizes?.medium?.source_url),
-        image_full: wpMediaUrl(p._embedded?.["wp:featuredmedia"]?.[0]?.media_details?.sizes.full?.source_url),
-        content: p?.content?.rendered ,
-        more: p?.excerpt?.rendered,
-        category: p["project-category"],
-        description: p.description,
-        created_at: p.date,
-        image: wpMediaUrl(p?._links?.["wp:attachment"]?.[0]?.href),
-        project_data: p.project_data ?? null,
-    }))
+    return payloadWp.map((p) => {
+        const featuredFull = wpMediaUrl(
+            p._embedded?.['wp:featuredmedia']?.[0]?.media_details?.sizes.full?.source_url,
+        );
+        const featuredMedium = wpMediaUrl(
+            p._embedded?.['wp:featuredmedia']?.[0]?.media_details?.sizes?.medium?.source_url,
+        );
+        const project_data = normalizeProjectData(p.project_data ?? null);
+        const cardImage = getProjectHeroImage({ project_data, image_full: featuredFull });
+
+        return {
+            id: p.id,
+            title: p?.title?.rendered || p.name,
+            slug: p.slug,
+            link: p.link,
+            image_medium: cardImage ?? featuredMedium,
+            image_full: cardImage ?? featuredFull,
+            content: p?.content?.rendered,
+            more: p?.excerpt?.rendered,
+            category: p['project-category'],
+            description: p.description,
+            created_at: p.date,
+            image: wpMediaUrl(p?._links?.['wp:attachment']?.[0]?.href),
+            project_data,
+        };
+    });
 }
 
 export function porterCategories(payloadWp: listResponseWp): Category[] {

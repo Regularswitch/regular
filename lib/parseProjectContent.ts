@@ -3,11 +3,6 @@ export type ProjectAccordionSection = {
 	body: string;
 };
 
-export type ProjectGalleryRow = {
-	columns: 2 | 3;
-	images: string[];
-};
-
 const ACCORDION_PATTERN = /^(contexto|context|dire[cç][aã]o\s*creativa|creative\s*direction|solu[cç][aã]o|solution|impacto|impact)/i;
 
 function normalizeImageUrl(url: string) {
@@ -72,23 +67,4 @@ export function parseAccordionSections(
 	}
 
 	return [{ title: defaults[0], body: fallbackBody }];
-}
-
-export function buildGalleryRows(images: string[]): ProjectGalleryRow[] {
-	if (!images.length) return [];
-
-	const pattern: Array<2 | 3> = [2, 3, 2];
-	const rows: ProjectGalleryRow[] = [];
-	let index = 0;
-	let patternIndex = 0;
-
-	while (index < images.length) {
-		const columns = pattern[patternIndex % pattern.length];
-		const slice = images.slice(index, index + columns);
-		rows.push({ columns, images: slice });
-		index += slice.length;
-		patternIndex += 1;
-	}
-
-	return rows;
 }

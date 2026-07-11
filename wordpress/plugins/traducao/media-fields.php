@@ -13,7 +13,9 @@ function rs_render_media_field(string $name, string $label, int $attachment_id, 
     $url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';
     ?>
     <p class="rs-media-field" style="margin:0 0 14px;">
-        <label style="display:block;font-weight:500;margin-bottom:6px;"><?php echo esc_html($label); ?></label>
+        <?php if ($label !== '') : ?>
+            <label style="display:block;font-weight:500;margin-bottom:6px;"><?php echo esc_html($label); ?></label>
+        <?php endif; ?>
         <input
             type="hidden"
             <?php if ($include_name) : ?>name="<?php echo esc_attr($name); ?>"<?php endif; ?>

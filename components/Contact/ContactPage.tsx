@@ -16,14 +16,14 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 		<article className="contact-page">
 			<ContactHero image={content.heroImage} />
 
-			<section className="contact-intro px-7 py-10 md:py-14">
+			<section className="contact-intro py-10 md:py-14">
 				<div
-					className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-extrabold leading-[1.05] tracking-[-0.02em]"
+					className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>
 			</section>
 
-			<section className="contact-blocks px-7 pb-12 md:pb-16">
+			<section className="contact-blocks pb-12 md:pb-16">
 				<div className="grid gap-10 sm:grid-cols-2 lg:gap-14">
 					{content.blocks.map((block) => (
 						<div key={block.title} className="contact-block">
@@ -39,7 +39,7 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 				</div>
 			</section>
 
-			<section className="contact-datetime border-t border-white/10 px-7 py-12 md:py-16" aria-label={cityLabel}>
+			<section className="contact-datetime border-t border-white/10 py-12 md:py-16" aria-label={cityLabel}>
 				<DateTimeComponent locale={locale} />
 			</section>
 

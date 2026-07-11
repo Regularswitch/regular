@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 
 import { sortProjectsByDate } from '../../lib/sortProjects';
-import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
+import { getProjectHeroImage } from '../../lib/projectImages';
 import type { Project, Projects } from '../../types';
+import { NavChevronLeft, NavChevronRight, SectionHeadingArrow } from '../SiteIcons';
+import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 
 const MAX_LATEST = 12;
 
@@ -43,10 +45,11 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 	const nextLabel = locale === 'pt' ? 'Próximos projetos' : 'Next projects';
 
 	return (
-		<section className="latest-projects py-12 md:py-20" aria-label={title}>
-			<div className="mb-8 flex items-center justify-between px-7 md:mb-10">
-				<h2 className="text-base font-medium text-(--fg) md:text-lg">
-					{title} <span aria-hidden>↘</span>
+		<section className="latest-projects py-6 md:py-10" aria-label={title}>
+			<div className="mb-8 flex items-center justify-between md:mb-10">
+				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+					{title}
+					<SectionHeadingArrow />
 				</h2>
 
 				<div className="flex items-center gap-2">
@@ -56,7 +59,7 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 						className="latest-projects-nav-btn"
 						aria-label={prevLabel}
 					>
-						<span aria-hidden>←</span>
+						<NavChevronLeft />
 					</button>
 					<button
 						type="button"
@@ -64,12 +67,12 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 						className="latest-projects-nav-btn"
 						aria-label={nextLabel}
 					>
-						<span aria-hidden>→</span>
+						<NavChevronRight />
 					</button>
 				</div>
 			</div>
 
-			<div ref={scrollRef} className="latest-projects-scroll px-7">
+			<div ref={scrollRef} className="latest-projects-scroll">
 				{latest.map((project) => (
 					<LatestProjectCard
 						key={project.id}
@@ -83,12 +86,14 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 }
 
 function LatestProjectCard({ project, href }: { project: Project; href: string }) {
+	const cardImage = getProjectHeroImage(project);
+
 	return (
 		<Link href={href} data-latest-card className="latest-projects-card group block shrink-0">
 			<div className="latest-projects-card-image relative overflow-hidden bg-(--surface)">
-				{project.image_full ? (
+				{cardImage ? (
 					<Image
-						src={project.image_full}
+						src={cardImage}
 						alt={project.title ?? project.slug}
 						width={640}
 						height={480}

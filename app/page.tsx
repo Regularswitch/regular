@@ -29,7 +29,7 @@ export default async function HomePage() {
 	return (
 		<>
 			<LiquidBlob3D
-				className="rounded-xl relative h-[70svh] min-h-[520px] md:h-[78vh] grid place-items-center overflow-hidden bg-black"
+				className="rounded-xl relative h-[50svh] min-h-[420px] md:h-[85vh] grid place-items-center overflow-hidden bg-black"
 				intensity={0.5}
 				blobRadius={1.45}
 				color1={blob.color1}
@@ -49,7 +49,7 @@ export default async function HomePage() {
 
 			<LatestProjects projects={projects} locale="en" />
 
-			<div className="h-10" />
+			{/* <div className="h-10" /> */}
 		</>
 	);
 }

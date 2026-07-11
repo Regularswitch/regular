@@ -40,7 +40,7 @@ export default function ProjectsGridSection({
 
 	return (
 		<section className={className} aria-label={ariaLabel ?? (locale === 'pt' ? 'Projetos' : 'Projects')}>
-			<div className="selected-projects-grid px-7">
+			<div className="selected-projects-grid">
 				{visible.map((project, index) => (
 					<ProjectGridCard
 						key={project.id}
@@ -53,7 +53,7 @@ export default function ProjectsGridSection({
 			</div>
 
 			{hasMore ? (
-				<div className="mt-12 flex justify-center px-7 md:mt-16">
+				<div className="mt-12 flex justify-center md:mt-16">
 					<button
 						type="button"
 						onClick={() => setVisibleCount((count) => count + PROJECTS_BATCH_SIZE)}

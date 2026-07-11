@@ -9,7 +9,6 @@ import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
 import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
 import {
-	buildGalleryRows,
 	extractImagesFromHtml,
 	parseAccordionSections,
 } from '../../lib/parseProjectContent';
@@ -39,11 +38,15 @@ function mediaUrl(value?: { url?: string | false } | string | false | null) {
 function structuredAccordion(structured: ProjectStructuredData | null | undefined, locale: 'en' | 'pt') {
 	if (!structured?.accordion?.length) return null;
 
-	const titles = ACCORDION_TITLES[locale];
+	const fallbackTitles = ACCORDION_TITLES[locale];
 
 	return structured.accordion
-		.map((section) => ({
-			title: titles[section.index - 1] ?? titles[0],
+		.map((section, i) => ({
+			title:
+				section.title?.trim() ||
+				fallbackTitles[section.index - 1] ||
+				fallbackTitles[i] ||
+				fallbackTitles[0],
 			body: section.body,
 		}))
 		.filter((section) => section.body.trim());
@@ -64,7 +67,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 	const summary = project.more?.trim() || '';
 	const contentHtml = project.content || '';
 
-	const { accordionSections, galleryRows } = useMemo(() => {
+	const { accordionSections, galleryImages } = useMemo(() => {
 		const fromStructured = structuredAccordion(structured, locale);
 		const images =
 			structured?.gallery && structured.gallery.length > 0
@@ -75,7 +78,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 			accordionSections: fromStructured?.length
 				? fromStructured
 				: parseAccordionSections(contentHtml, locale),
-			galleryRows: buildGalleryRows(images),
+			galleryImages: images,
 		};
 	}, [contentHtml, locale, structured]);
 
@@ -83,33 +86,36 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 	const showLogo = Boolean(logoImage && logoImage !== heroImage);
 
 	return (
-		<article className="project-page -mt-8 md:-mt-12">
+		<article className="project-page">
 			<ProjectHero
 				image={heroImage}
 				logo={showLogo ? logoImage : undefined}
 				title={project.title ?? project.slug}
 			/>
 
-			<div className="project-page-content space-y-16 py-12 md:space-y-20 md:py-16">
+			<div className="project-page-content space-y-10 py-8 md:space-y-16 md:py-14">
 				{(summary || accordionSections.length > 0) && (
-					<section className="grid gap-10 md:grid-cols-2 md:gap-16">
+					<section className="project-intro grid gap-8 md:grid-cols-2 md:items-start md:gap-16 lg:gap-20">
 						{summary ? (
 							<div
-								className="project-summary font-hk text-xl leading-snug text-(--fg) md:text-[clamp(1.5rem,2.5vw,2.25rem)] md:leading-tight"
+								className="project-summary intro-headline min-w-0 font-hk text-[clamp(1.35rem,4.5vw,2.5rem)] font-medium leading-[1.08] tracking-[-0.02em]"
 								dangerouslySetInnerHTML={{ __html: summary }}
 							/>
 						) : (
-							<div />
+							<div className="hidden md:block" />
 						)}
 
 						<ProjectAccordion sections={accordionSections} />
 					</section>
 				)}
 
-				<ProjectGallery rows={galleryRows} title={project.title ?? project.slug} />
+				<ProjectGallery images={galleryImages} title={project.title ?? project.slug} locale={locale} />
 
 				<div className="flex justify-center">
-					<Link href={projectsHref} className="selected-projects-cta font-hk">
+					<Link
+						href={projectsHref}
+						className="selected-projects-cta selected-projects-cta--full-mobile font-hk"
+					>
 						{cta}
 					</Link>
 				</div>

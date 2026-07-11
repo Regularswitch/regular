@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { getProjectHeroImage } from '../../lib/projectImages';
 import type { Category, Project } from '../../types';
 import { getVisibleCategoryTags } from '../../lib/projectCategories';
 import type { GridSpan } from './constants';
@@ -14,14 +15,15 @@ type ProjectGridCardProps = {
 
 export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
+	const cardImage = getProjectHeroImage(project);
 
 	return (
 		<article className={`selected-projects-item${span === 'full' ? ' selected-projects-item--full' : ''}`}>
 			<Link href={href} className="group block">
 				<div className="selected-projects-card-image relative overflow-hidden bg-(--surface)">
-					{project.image_full ? (
+					{cardImage ? (
 						<Image
-							src={project.image_full}
+							src={cardImage}
 							alt={project.title ?? project.slug}
 							width={1200}
 							height={span === 'full' ? 600 : 800}
@@ -35,7 +37,7 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 					) : null}
 				</div>
 
-				<h3 className="selected-projects-card-title mt-4 font-hk text-lg font-extrabold uppercase tracking-tight text-(--fg) md:mt-5 md:text-xl">
+				<h3 className="selected-projects-card-title mt-4 font-hk text-lg font-medium uppercase tracking-tight text-(--fg) md:mt-5 md:text-xl">
 					{project.title}
 				</h3>
 

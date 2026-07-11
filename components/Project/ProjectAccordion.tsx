@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
+import { AccordionPlusIcon } from '../SiteIcons';
 import type { ProjectAccordionSection } from '../../lib/parseProjectContent';
 
 type ProjectAccordionProps = {
@@ -10,7 +11,7 @@ type ProjectAccordionProps = {
 	defaultOpenIndex?: number;
 };
 
-export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: ProjectAccordionProps) {
+export default function ProjectAccordion({ sections, defaultOpenIndex = -1 }: ProjectAccordionProps) {
 	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
 	const visibleSections = sections.filter((section) => section.body.trim());
@@ -38,7 +39,7 @@ export default function ProjectAccordion({ sections, defaultOpenIndex = 0 }: Pro
 								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
 								aria-hidden
 							>
-								+
+								<AccordionPlusIcon />
 							</span>
 						</button>
 
