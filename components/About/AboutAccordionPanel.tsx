@@ -13,7 +13,7 @@ type AboutAccordionPanelProps = {
 };
 
 export default function AboutAccordionPanel({ sections }: AboutAccordionPanelProps) {
-	const [openIndex, setOpenIndex] = useState(-1);
+	const [openIndex, setOpenIndex] = useState(0);
 
 	const visibleSections = useMemo(
 		() => sections.filter((section) => section.body.trim()),
