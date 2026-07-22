@@ -18,7 +18,7 @@ export default function ProjectHero({ image, logo, title }: ProjectHeroProps) {
 
 	return (
 		<section className="project-hero" aria-label={title}>
-			<div className="project-hero-image relative aspect-square overflow-hidden rounded-xl bg-(--surface) md:aspect-video">
+			<div className="project-hero-image relative aspect-square overflow-hidden rounded-md bg-(--surface) md:aspect-video">
 				<Image
 					src={heroSrc}
 					alt={title}

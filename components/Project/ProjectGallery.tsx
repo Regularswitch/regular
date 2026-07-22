@@ -197,7 +197,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 									aria-label={`${openLabel} ${index + 1}`}
 								>
 									<div
-										className={`project-gallery-image relative overflow-hidden rounded-xl bg-(--surface)${isFull ? ' project-gallery-image--full' : ''}`}
+										className={`project-gallery-image relative overflow-hidden rounded-md bg-(--surface)${isFull ? ' project-gallery-image--full' : ''}`}
 									>
 										<Image
 											src={src}

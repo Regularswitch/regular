@@ -30,7 +30,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 	return (
 		<section className="about-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
 			{activeImage ? (
-				<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-xl bg-(--surface) md:sticky md:top-28 md:mb-0">
+				<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-md bg-(--surface) md:sticky md:top-28 md:mb-0">
 					<Image
 						key={activeImage}
 						src={activeImage}

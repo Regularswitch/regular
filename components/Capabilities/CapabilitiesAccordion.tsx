@@ -53,7 +53,7 @@ export default function CapabilitiesAccordion({
 								<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
 									<div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
 										{imageSrc ? (
-											<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-xl bg-(--surface)">
+											<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-md bg-(--surface)">
 												<Image
 													src={imageSrc}
 													alt=""

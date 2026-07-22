@@ -191,7 +191,7 @@ html:not(.dark) .brand-mark {
 
 .selected-projects-card-image {
 	aspect-ratio: 4 / 3;
-	border-radius: 12px;
+	border-radius: 6px;
 }
 
 .selected-projects-item--full .selected-projects-card-image {

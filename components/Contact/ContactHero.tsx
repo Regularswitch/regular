@@ -13,7 +13,7 @@ export default function ContactHero({ image }: ContactHeroProps) {
 
 	return (
 		<section className="contact-hero" aria-label="Contact">
-			<div className="contact-hero-image relative aspect-square overflow-hidden rounded-xl bg-(--surface) md:aspect-6/3">
+			<div className="contact-hero-image relative aspect-square overflow-hidden rounded-md bg-(--surface) md:aspect-6/3">
 				<Image
 					src={heroSrc}
 					alt=""

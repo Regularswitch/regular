@@ -1,119 +1,173 @@
-# Guia do WordPress Admin — Regular Switch
+# Tutorial — novo admin WordPress (Regular Switch)
 
-Este documento ensina como usar o painel do WordPress para atualizar o conteúdo do site **Regular Switch**. O WordPress funciona como **CMS** (banco de conteúdo); o site público é o Next.js, que lê os dados via API.
+Guia para editar o conteúdo do site no WordPress. O WP é só o **CMS**; o site público é o Next.js, que lê tudo pela API.
+
+**Plugin:** Tradução **v1.1.0** (e Api Rest Etc Extension)  
+**Para quem:** quem edita textos, imagens, projetos e menus no painel.
+
+---
 
 ## Ambientes
 
-| Ambiente | URL do admin | Quando usar |
-|----------|--------------|-------------|
-| **Local** | `http://regularswitch-wp.local/wp-admin` | Desenvolvimento no seu computador |
-| **Staging** | `https://staging-wp.regularswitch.com/wp-admin` | Testar antes de publicar |
-| **Produção** | `https://wp.regularswitch.com/wp-admin` | Site ao vivo |
+| Ambiente | Admin | Site para conferir |
+|----------|-------|--------------------|
+| **Local** | `http://regularswitch-wp.local/wp-admin` | Next local |
+| **Staging** | `https://staging-wp.regularswitch.com/wp-admin` | Preview (ex.: `dev.regularswitch.com.br`) |
+| **Produção** | `https://wp.regularswitch.com/wp-admin` | `regularswitch.com` |
 
-**Regra de ouro:** edite primeiro no **staging**, confira o preview do site, e só depois repita em **produção**.
+**Regra de ouro:** edite no **staging**, confira o preview, depois repita em **produção**.
 
 ---
 
-## Visão geral do menu lateral
+## O que mudou no admin novo
 
-Os itens customizados do Regular Switch aparecem agrupados no menu (entre separadores). Ordem típica:
+Antes havia fluxos legados (item **Tradutor**, JSON no editor, campos soltos). Agora:
 
-| Menu | O que edita |
-|------|-------------|
-| **Intro** | Texto grande da home (título + parágrafo) |
-| **Visual da home** | Cores do blob 3D da home (EN + PT) |
-| **Interface do site** | Labels de seções (“Últimos”, “Projetos Selecionados”…) |
-| **Heroes** | Imagens de topo de Sobre, Educação e Contato (compartilhadas EN/PT) |
+1. Cada página do site tem um **menu próprio** no lateral (Intro, Sobre Nós, Capacidades…).
+2. Conteúdo editável fica em **caixas com campos nomeados** — não edite JSON no editor clássico.
+3. Inglês e português são **dois posts** (`en` / `pt`), ligados pela coluna **Language**.
+4. Imagens de topo (Sobre, Educação, Contato) ficam num lugar só: **Heroes**.
+5. Projetos têm caixa **Conteúdo do Projeto (site)** (hero, logo, acordeão, galeria). O editor principal do WP está **desligado** nos projetos.
+
+Se o admin não bater com este guia, o plugin **Tradução** no servidor provavelmente está desatualizado — faça deploy do ZIP (`./scripts/wp-package-plugins.sh`). Detalhes: [wordpress-staging.md](./wordpress-staging.md).
+
+---
+
+## Menu lateral (mapa rápido)
+
+Ordem típica (entre separadores):
+
+| Menu | O que controla no site |
+|------|------------------------|
+| **Intro** | Texto grande da home |
+| **Visual da home** | Cores do blob 3D (vale EN + PT) |
+| **Interface do site** | Labels (“Projetos Selecionados”, “Últimos”…) |
+| **Heroes** | Imagens de topo de Sobre, Educação e Contato |
 | **Sobre Nós** | Página About |
-| **Página de projetos** | Título/headline da listagem `/projects` |
+| **Página de projetos** | Título da listagem `/projects` |
 | **Capacidades** | Página Capabilities |
 | **Educação** | Página Education |
-| **Marcas** | Logos do carrossel de marcas |
+| **Marcas** | Logos do carrossel |
 | **Contato** | Página Contact |
-| **Footer** | Rodapé do site |
-| **Projects** | Cada projeto individual |
-| **Aparência → Menus** | Links do menu do header (EN e PT) |
+| **Footer** | Rodapé |
+| **Projects** | Cada projeto (`/project/{slug}`) |
+| **Aparência → Menus** | Links do header (EN e PT) |
 
-> **Heroes** abre direto a tela de edição das imagens — não há listagem separada.
+> **Heroes** abre direto a tela de edição — não há listagem.
 
 ---
 
-## Conceitos importantes
+## Conceitos que você precisa saber
 
 ### Dois idiomas (EN / PT)
 
-A maioria das páginas tem **dois posts**: um com slug `en` e outro com `pt`.
+Na maioria das páginas existem **dois posts**:
 
-- O post **EN** alimenta o site em inglês (`regularswitch.com/...`)
-- O post **PT** alimenta o site em português (`regularswitch.com/PT/...`)
+| Post | Alimenta |
+|------|----------|
+| slug `en` | site em inglês (`/…`) |
+| slug `pt` | site em português (`/PT/…`) |
 
-Na lista de posts, a coluna **Language** mostra links **EN** e **PT**. Clique em **PT** para abrir a versão em português vinculada (ou criar/editar a tradução).
+Na lista, a coluna **Language** mostra **EN** e **PT**. Clique para abrir (ou criar) a tradução vinculada.
+
+**Importante em Projects:** cada projeto EN deve apontar para a **sua** tradução PT. Se vários projetos tiverem PT ligado ao mesmo post (ex.: Terrô), o site em português mostra o **mesmo título** em cards diferentes. Sempre confira o vínculo.
 
 ### Slug automático
 
-Não altere manualmente o slug para algo diferente de `en` ou `pt` nos CPTs de página. Ao salvar, o plugin define o permalink automaticamente (ex.: `/about/en/`, `/capabilities/pt/`). Um box lateral **Slug / idioma (automático)** confirma o permalink.
+Nos CPTs de página, **não** mude o slug para algo diferente de `en` ou `pt`. Ao salvar, o plugin define o permalink (ex.: `/about/en/`). O box lateral **Slug / idioma (automático)** confirma isso.
+
+Projetos individuais **não** usam `en`/`pt` no slug — cada um tem o próprio (ex.: `piktiz`).
 
 ### Campos vazios
 
-Se um campo ficar vazio, o site usa um **texto padrão** definido no código Next.js. Para “limpar” um override do WP e voltar ao padrão, apague o conteúdo e salve.
+Campo vazio → o site usa o **texto padrão** do Next.js. Para voltar ao padrão, apague o conteúdo e salve.
 
 ### Imagens compartilhadas vs. por idioma
 
-| Tipo | Onde editar |
-|------|-------------|
-| Hero de Sobre, Educação, Contato | **Heroes** (uma imagem para EN e PT) |
+| O quê | Onde |
+|-------|------|
+| Hero Sobre / Educação / Contato | **Heroes** (uma imagem para EN e PT) |
 | Textos, acordeões, headlines | Post `en` ou `pt` de cada página |
-| Cores do blob da home | **Visual da home** (único para EN e PT) |
+| Cores do blob | **Visual da home** (único) |
+| Hero e galeria de um projeto | No próprio projeto (e na tradução PT, se existir) |
 
-### Editor rich text
+### Editor com negrito (botão **B**)
 
-Campos com formatação usam um editor compacto com botão **B** para negrito. **Não cole HTML** copiado do site — digite ou formate pelo editor.
+Campos rich text têm toolbar com **B**. Digite e formate ali — **não cole HTML** copiado do site.
 
-### Acordeões com várias seções
+### Acordeões e blocos
 
-Em Sobre, Capacidades, Educação e Contato, use **+ Adicionar seção** (ou **+ Adicionar bloco**) para novos itens e **Remover** para excluir. Sempre clique em **Atualizar** / **Publicar** ao terminar — as seções são salvas no envio do formulário.
+Em Sobre, Capacidades, Educação, Contato e Projetos:
+
+- **+ Adicionar seção** (ou **+ Adicionar bloco** / **+ Adicionar imagem**)
+- **Remover** para excluir
+- Sempre **Atualizar** / **Publicar** no final — as listas só salvam no envio do formulário
 
 ---
 
-## Passo a passo por área
+## Fluxo padrão (qualquer alteração)
+
+```
+1. Login no staging (ou local)
+2. Abra o menu certo (tabela acima)
+3. Escolha o post en ou pt
+4. Edite os campos da caixa
+5. Atualizar / Publicar
+6. Confira no site (EN e /PT)
+7. Se ok → repita em produção
+```
+
+### Criar / editar tradução PT
+
+1. Salve a versão **EN**
+2. Na lista, coluna **Language** → clique **PT**
+3. Preencha os campos em português
+4. Salve
+5. Visite `/PT/...` no site
+
+---
+
+## Tutorial por área
 
 ### 1. Home — Intro
 
-**Menu:** Intro → abra o post `en` ou `pt`
+**Menu:** Intro → post `en` ou `pt`
 
-| Campo | Aparece no site |
-|-------|-----------------|
-| **Título grande (headline)** | Texto principal abaixo do blob na home |
+Caixa **Conteúdo da Intro (home):**
+
+| Campo | No site |
+|-------|---------|
+| **Título grande (headline)** | Texto principal abaixo do blob |
 | **Parágrafo abaixo (body)** | Texto menor sob o título |
 
-Use **B** para destacar palavras. Salve e confira a home no idioma correspondente.
+Use **B** para destacar palavras.
 
 ---
 
-### 2. Home — Cores do blob
+### 2. Home — cores do blob
 
 **Menu:** Visual da home
 
 | Campo | Função |
 |-------|--------|
 | Cor principal 1 / 2 | Cores dominantes da animação |
-| Paleta | Lista de cores (uma por linha ou separadas por vírgula) |
+| Paleta | Uma cor por linha (ou separadas por vírgula) |
 
-Vale para **inglês e português** ao mesmo tempo.
+Vale para **inglês e português** ao mesmo tempo. Não há posts `en`/`pt` aqui.
 
 ---
 
-### 3. Heroes das páginas
+### 3. Heroes (Sobre, Educação, Contato)
 
 **Menu:** Heroes
 
-Três imagens:
+Três campos:
 
-- **Sobre Nós**
-- **Educação**
-- **Contato**
+- **Hero — Sobre Nós**
+- **Hero — Educação**
+- **Hero — Contato**
 
-Clique em **Selecionar imagem** → escolha na biblioteca ou envie nova → **Atualizar**. A mesma imagem aparece nos dois idiomas.
+**Selecionar imagem** → biblioteca ou upload → **Atualizar**. A mesma imagem aparece nos dois idiomas.
 
 ---
 
@@ -121,12 +175,12 @@ Clique em **Selecionar imagem** → escolha na biblioteca ou envie nova → **At
 
 **Menu:** Aparência → Menus
 
-Dois menus registrados:
+Dois locais:
 
 - **Header — English**
 - **Header — Português**
 
-Arraste páginas ou **Links personalizados** para montar a ordem. URLs devem ser caminhos do site Next.js, por exemplo:
+Monte a ordem com páginas ou **Links personalizados**. Use caminhos do Next.js **sem** prefixo `/PT` (o site resolve o idioma):
 
 - `/projects`
 - `/capabilities`
@@ -134,23 +188,23 @@ Arraste páginas ou **Links personalizados** para montar a ordem. URLs devem ser
 - `/about-us`
 - `/contact`
 
-Salve o menu. Labels e textos de botões em outras partes do site ficam em **Interface do site**.
+Labels de seções (“Últimos”, “Veja mais…”) **não** ficam aqui — vão em **Interface do site**.
 
 ---
 
 ### 5. Interface do site (labels)
 
-**Menu:** Interface do site → post `en` ou `pt`
+**Menu:** Interface do site → `en` ou `pt`
 
-Cada post edita **só um idioma**. Campos típicos:
+Cada post edita **só um idioma**. Exemplos:
 
-- Projetos Selecionados / Selected Projects
-- Últimos / The Latest
-- Marcas / Brands marquee
-- Veja mais projetos / See more projects
-- Novidades (label, título, subtítulo)
-
-O menu de navegação **não** é editado aqui — use **Aparência → Menus**.
+| PT | EN |
+|----|-----|
+| Projetos Selecionados | Selected Projects |
+| Últimos | The Latest |
+| Marcas | Brands marquee |
+| Veja mais projetos / trabalhos | See more projects / work |
+| Novidades (label, título, subtítulo) | What's New (…) |
 
 ---
 
@@ -160,11 +214,11 @@ O menu de navegação **não** é editado aqui — use **Aparência → Menus**.
 
 | Campo | Função |
 |-------|--------|
-| **Headline** | Título da página (rich text) |
-| **Texto introdutório** | Bloco de texto ao lado do título (layout desktop) |
-| **Seções do acordeão** | Título, texto e imagem lateral por seção |
+| **Headline** | Título da página |
+| **Texto introdutório** | Texto ao lado do título (desktop) |
+| **Seções do acordeão** | Título, texto e **imagem lateral** por seção |
 
-Hero: edite em **Heroes**. A página também exibe **Últimos projetos** — os projetos vêm do CPT **Projects**, não desta tela.
+Hero: só em **Heroes**. A grade de “últimos projetos” vem de **Projects**, não desta tela.
 
 ---
 
@@ -175,9 +229,9 @@ Hero: edite em **Heroes**. A página também exibe **Últimos projetos** — os 
 | Campo | Função |
 |-------|--------|
 | **Headline** | Título no topo |
-| **Seções do acordeão** | Título, texto e imagem por seção |
+| **Seções** | Título, texto e imagem por item do acordeão |
 
-Sem hero de imagem — só headline + acordeão.
+Sem hero de página — só headline + acordeão.
 
 ---
 
@@ -188,9 +242,9 @@ Sem hero de imagem — só headline + acordeão.
 | Campo | Função |
 |-------|--------|
 | **Headline** | Título abaixo do hero |
-| **Seções do acordeão** | Título e texto (sem imagem lateral) |
+| **Seções** | Título e texto (sem imagem lateral) |
 
-Hero: **Heroes**. A grade de projetos na página vem de projetos na categoria **education** em **Projects**.
+Hero: **Heroes**. A grade de projetos usa itens de **Projects** na categoria **education**.
 
 ---
 
@@ -201,48 +255,58 @@ Hero: **Heroes**. A grade de projetos na página vem de projetos na categoria **
 | Campo | Função |
 |-------|--------|
 | **Headline** | Título da página |
-| **Blocos** | Colunas de informação (título + conteúdo cada) |
+| **Blocos** | Colunas (título + conteúdo) — **+ Adicionar bloco** |
 
 Hero: **Heroes**.
 
 ---
 
-### 10. Página de projetos
+### 10. Página de projetos (listagem)
 
 **Menu:** Página de projetos → `en` ou `pt`
 
 | Campo | Função |
 |-------|--------|
-| **Título** | Título da página `/projects` |
-| **Headline** | Subtítulo / destaque |
-| **Mensagem vazia** | Texto quando não há projetos |
+| **Título da seção** | Título em `/projects` |
+| **Headline** | Destaque / subtítulo |
+| **Mensagem quando não há projetos** | Estado vazio |
 
-Os projetos em si são geridos em **Projects**.
+Os cards vêm de **Projects**.
 
 ---
 
-### 11. Projects (projetos)
+### 11. Projects (cada projeto)
 
 **Menu:** Projects → abra um projeto
 
-Cada projeto tem **slug próprio** (não é `en`/`pt`). Para versão em português, use a coluna **Language → PT** na lista (vincula tradução).
+Cada um tem **slug próprio**. Para português: coluna **Language → PT** (confira se o vínculo é o post certo).
 
-**Caixa “Conteúdo do Projeto (site)”:**
+#### Caixa “Conteúdo do Projeto (site)”
+
+| Grupo | Campos |
+|-------|--------|
+| **Hero (topo)** | **Imagem de fundo** (1:1 mobile, 16:9 desktop) · **Logo** (sobre a imagem no desktop; oculta no mobile) |
+| **Acordeão (coluna direita)** | Seções com **título** + texto — **+ Adicionar seção** |
+| **Galeria (fotos abaixo)** | **+ Adicionar imagem** (ordem = ordem no site) |
+
+#### Barra lateral
 
 | Campo | Função |
 |-------|--------|
-| **Imagem de fundo (hero)** | Topo da página — 1:1 no mobile, 16:9 no desktop |
-| **Logo** | Sobre a imagem no desktop (canto inferior esquerdo); no mobile fica oculta |
-| **Acordeão** | Seções com **título editável** + texto (adicione/remova seções) |
-| **Galeria** | Fotos abaixo do conteúdo — use **+ Adicionar imagem** (quantas quiser) |
+| **Resumo** | Texto à esquerda na página do projeto |
+| **Imagem destacada** | Fallback do logo, se o campo Logo estiver vazio |
+| **Categorias** | Education, Motion Design, etc. (filtram listagens) |
 
-**Barra lateral:**
+> Não use o editor principal do WordPress nos projetos — ele está desativado. Tudo que aparece no site está na caixa acima + Resumo.
 
-- **Resumo** — texto à esquerda na página do projeto
-- **Imagem destacada** — só usada como fallback se o campo Logo estiver vazio
-- **Categorias** — ex.: Education, Motion Design (filtram listagens)
+#### Checklist de um projeto novo
 
-> O editor principal do WordPress foi desativado para projetos. Use apenas a caixa **Conteúdo do Projeto (site)** e o **Resumo** na barra lateral.
+1. Crie o projeto em EN (título + slug)
+2. Preencha hero, logo, resumo, acordeão, galeria, categorias
+3. Publique
+4. Language → **PT** → preencha a tradução (título PT + campos)
+5. Confira `/project/{slug}` e `/PT/project/{slug}`
+6. Confira se o card na home mostra o **título correto** em PT (não o de outro projeto)
 
 ---
 
@@ -250,7 +314,7 @@ Cada projeto tem **slug próprio** (não é `en`/`pt`). Para versão em portugu�
 
 **Menu:** Marcas
 
-Cadastre cada marca com **título** e **imagem destacada** (logo). A ordem pode ser ajustada pelo campo de ordem (atributos de página), se disponível.
+Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atributos de página, se disponível.
 
 ---
 
@@ -260,52 +324,28 @@ Cadastre cada marca com **título** e **imagem destacada** (logo). A ordem pode 
 
 | Grupo | Campos |
 |-------|--------|
-| Marca grande | Texto tipo “REGULARSWITCH” |
-| Colunas 1–3 | Título, subtítulo, link (Contact, Newsletter, Join Us…) |
-| Legal | Marca, textos e links de Privacidade e Cookies |
+| **Marca** | Texto grande (ex.: REGULARSWITCH) |
+| **Coluna 1–3** | Título, subtítulo, link |
+| **Links legais** | Marca legal, privacidade (texto + link), cookies (texto + link) |
 
 ---
 
-## Fluxo recomendado para uma alteração
-
-```
-1. Faça login no staging (ou local)
-2. Edite o post / campo desejado
-3. Clique em Atualizar ou Publicar
-4. Abra o site Next.js (preview ou local) e confira EN e PT
-5. Se estiver ok, repita a mesma edição em produção
-```
-
-### Conferir tradução PT
-
-1. Salve a versão **EN**
-2. Na lista, coluna **Language**, clique **PT**
-3. Preencha os campos em português
-4. Salve
-5. Visite `/PT/...` no site
-
----
-
-## Mídia (imagens)
+## Mídia
 
 - **Selecionar imagem** abre a biblioteca do WordPress
-- **Enviar** novas imagens em Mídia → Adicionar
-- Prefira JPG/WebP otimizados; heroes panorâmicos funcionam melhor em proporção larga
+- Upload: **Mídia → Adicionar**
+- Prefira JPG/WebP otimizados; heroes de página funcionam melhor em proporção larga
 
 ---
 
-## Atualizar o WordPress (core e plugins)
-
-Para atualizar a versão do WordPress, plugins ou tema no servidor:
+## Atualizar core / plugins do WordPress
 
 1. **Backup** (All-in-One WP Migration → Exportar)
-2. **Atualizações** no menu lateral
-3. Atualize **core** → **plugins** → **tema**
-4. Teste REST API e páginas do site
+2. Menu **Atualizações**
+3. Core → plugins → tema
+4. Teste a API e algumas páginas do site
 
-Detalhes de staging: [wordpress-staging.md](./wordpress-staging.md).
-
-> Atualizar o WordPress **não** envia automaticamente o plugin **Tradução** do repositório de código. Mudanças no plugin exigem deploy manual do ZIP (`./scripts/wp-package-plugins.sh`).
+> Atualizar o WordPress **não** envia o plugin **Tradução** do repositório. Mudanças no código exigem deploy do ZIP (`./scripts/wp-package-plugins.sh`).
 
 ---
 
@@ -313,57 +353,67 @@ Detalhes de staging: [wordpress-staging.md](./wordpress-staging.md).
 
 | Não faça | Motivo |
 |----------|--------|
-| Editar produção sem testar no staging | Risco de quebrar o site ao vivo |
-| Colar HTML do front no editor | Duplica markup e quebra layout |
-| Criar posts `en`/`pt` duplicados manualmente | Use sempre a coluna **Language** |
-| Mudar slug de páginas bilíngues para outro valor | O sistema espera `en` ou `pt` |
-| Confiar no item **Tradutor** (legado) | Fluxo atual usa posts EN/PT e coluna Language |
+| Editar produção sem testar no staging | Risco no site ao vivo |
+| Colar HTML do front no editor | Quebra o layout |
+| Criar posts `en`/`pt` duplicados na mão | Use a coluna **Language** |
+| Mudar slug de páginas bilíngues | O sistema espera `en` ou `pt` |
+| Confiar no item **Tradutor** (legado) | Fluxo atual = posts EN/PT + Language |
+| Ligar vários projetos EN ao mesmo PT | Títulos errados na home PT |
 
 ---
 
 ## Problemas comuns
 
-**Salvei mas não aparece no site**
+**Salvei e não aparece no site**
 
-- Confirme que salvou o post **Publicado** (não Rascunho)
-- Confirme o idioma (`en` vs `pt`)
-- No staging, o preview Vercel precisa apontar `API` para o WP correto
-- Limpe cache (LiteSpeed Cache → Purge All), se instalado
+- Post **Publicado** (não rascunho)?
+- Idioma certo (`en` vs `pt`)?
+- Preview Vercel apontando `API` para o WP certo?
+- Cache (LiteSpeed → Purge All), se houver
 
-**Seções do acordeão não salvaram**
+**Acordeão / galeria não salvou**
 
-- Clique em **Atualizar** depois de editar todas as seções
+- Clique em **Atualizar** depois de editar
 - Não feche a aba antes do salvamento terminar
 
-**Hero não mudou**
+**Hero de Sobre / Educação / Contato não mudou**
 
-- Imagens de Sobre/Educação/Contato vêm de **Heroes**, não do post da página
+- Edite em **Heroes**, não no post da página
 
-**Footer vazio no site**
+**Na home PT vários projetos mostram o mesmo título (ex.: Terrô)**
 
-- Crie/edite posts **Footer** com slugs `en` e `pt` e preencha os campos
+- Em **Projects**, abra cada projeto EN e confira **Language → PT**
+- O PT deve ser a tradução **daquele** projeto; corrija ou recrie o vínculo
+
+**Footer vazio**
+
+- Posts Footer com slugs `en` e `pt` preenchidos?
 
 **Menu do header desatualizado**
 
-- Edite em **Aparência → Menus**, não em Interface do site
+- **Aparência → Menus**, não Interface do site
+
+**Admin diferente deste tutorial**
+
+- Confira se o plugin Tradução é **v1.1.0** (Plugins no WP, ou texto de ajuda na caixa do projeto)
 
 ---
 
-## Referência rápida — URL pública ↔ menu WP
+## Referência rápida — URL ↔ menu WP
 
-| Página no site | Rota Next.js | Menu WP |
-|----------------|--------------|---------|
-| Home | `/` e `/PT` | Intro, Visual da home |
+| Página | Rota Next.js | Menu WP |
+|--------|--------------|---------|
+| Home | `/` e `/PT` | Intro, Visual da home, Interface |
 | Projetos | `/projects` | Página de projetos + Projects |
 | Capacidades | `/capabilities` | Capacidades |
 | Educação | `/education` | Educação + Heroes |
 | Sobre | `/about-us` | Sobre Nós + Heroes |
 | Contato | `/contact` | Contato + Heroes |
-| Projeto individual | `/project/{slug}` | Projects |
+| Projeto | `/project/{slug}` | Projects |
 
 ---
 
 ## Mais documentação
 
 - Deploy e staging: [wordpress-staging.md](./wordpress-staging.md)
-- Plugins versionados: [wordpress/README.md](../wordpress/README.md)
+- Plugins no repositório: [wordpress/README.md](../wordpress/README.md)

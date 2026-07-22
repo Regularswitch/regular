@@ -13,7 +13,7 @@ export default function EducationHero({ image, headline }: EducationHeroProps) {
 	return (
 		<section className="education-hero" aria-label="Education">
 			{heroSrc ? (
-				<div className="education-hero-image relative aspect-square overflow-hidden rounded-xl bg-(--surface) md:aspect-6/3">
+				<div className="education-hero-image relative aspect-square overflow-hidden rounded-md bg-(--surface) md:aspect-6/3">
 					<Image
 						src={heroSrc}
 						alt=""
