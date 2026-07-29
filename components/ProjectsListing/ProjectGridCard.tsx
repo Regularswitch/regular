@@ -16,9 +16,10 @@ type ProjectGridCardProps = {
 export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
+	const isFeatured = span === 'featured';
 
 	return (
-		<article className={`selected-projects-item${span === 'full' ? ' selected-projects-item--full' : ''}`}>
+		<article className={`selected-projects-item${isFeatured ? ' selected-projects-item--featured' : ''}`}>
 			<Link href={href} className="group block">
 				<div className="selected-projects-card-image relative overflow-hidden bg-(--surface)">
 					{cardImage ? (
@@ -26,11 +27,11 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 							src={cardImage}
 							alt={project.title ?? project.slug}
 							width={1200}
-							height={span === 'full' ? 600 : 800}
+							height={isFeatured ? 900 : 800}
 							sizes={
-								span === 'full'
+								isFeatured
 									? '(max-width: 768px) 100vw, 90vw'
-									: '(max-width: 768px) 100vw, 45vw'
+									: '(max-width: 768px) 50vw, 45vw'
 							}
 							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 						/>

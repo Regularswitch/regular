@@ -8,6 +8,7 @@ export type AboutAccordionSection = ProjectAccordionSection & {
 
 export type AboutContent = {
 	heroImage?: string;
+	heroVideo?: string;
 	headline: string;
 	body: string;
 	accordionSections: AboutAccordionSection[];

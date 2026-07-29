@@ -11,6 +11,8 @@
 	--fg: #e8ebf1;
 	--surface: #11131a;
 	--muted: rgba(232, 235, 241, 0.72);
+	--radius: 5px;
+	--cursor-color: rgb(255, 255, 0);
 	--blob-nav-gradient: linear-gradient(
 		90deg,
 		#7b00ff 0%,
@@ -160,6 +162,12 @@ html:not(.dark) .brand-mark {
 	margin: 0;
 }
 
+.contact-block-body br {
+	display: block;
+	content: '';
+	margin-top: 0.45em;
+}
+
 .contact-block-body a {
 	color: var(--fg);
 	text-decoration: underline;
@@ -171,36 +179,36 @@ html:not(.dark) .brand-mark {
 	opacity: 0.7;
 }
 
-/* Selected projects — grid bento na home */
+/* Selected projects — grid */
 .selected-projects-grid {
 	display: grid;
-	grid-template-columns: 1fr;
-	gap: 2rem;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1.25rem 1rem;
 }
 
 @media (min-width: 768px) {
 	.selected-projects-grid {
-		grid-template-columns: repeat(2, 1fr);
 		gap: 2.5rem 2rem;
 	}
 
-	.selected-projects-item--full {
+	.selected-projects-item--featured {
 		grid-column: span 2;
 	}
 }
 
 .selected-projects-card-image {
 	aspect-ratio: 4 / 3;
-	border-radius: 6px;
+	border-radius: var(--radius);
 }
 
-.selected-projects-item--full .selected-projects-card-image {
-	aspect-ratio: 21 / 9;
+/* Destaque home: full width + altura ~2× dos cards padrão (4/3 em largura total) */
+.selected-projects-item--featured .selected-projects-card-image {
+	aspect-ratio: 4 / 3;
 }
 
 .selected-projects-tag {
 	display: inline-block;
-	border-radius: 4px;
+	border-radius: var(--radius);
 	background: var(--surface);
 	padding: 0.35rem 0.65rem;
 	font-size: 0.6875rem;
@@ -400,7 +408,7 @@ html:not(.dark) .brand-mark {
 
 .latest-projects-card-image {
 	aspect-ratio: 4 / 3;
-	border-radius: 16px;
+	border-radius: var(--radius);
 }
 
 .latest-projects-nav-btn {
@@ -478,13 +486,19 @@ html:not(.dark) .brand-mark {
 	left: 0;
 	z-index: 99999;
 	border-radius: 50%;
-	background: #fff;
-	mix-blend-mode: difference;
+	background: var(--cursor-color, #fff);
 	opacity: 0;
 	pointer-events: none;
 	transform: translateZ(0);
 	transition: opacity 0.15s ease;
 	will-change: left, top, width, height;
+}
+
+.custom-cursor--blob {
+	background: var(--blob-nav-gradient);
+	background-size: 200% 200%;
+	background-repeat: repeat;
+	animation: header-nav-gradient-flow 4.5s linear infinite;
 }
 
 .custom-cursor.is-visible {
@@ -550,6 +564,10 @@ html:not(.dark) .brand-mark {
 	text-transform: uppercase;
 	color: var(--muted);
 	transition: color 0.2s ease;
+}
+
+.accordion-trigger-title--sentence {
+	text-transform: none;
 }
 
 .accordion-trigger-title.is-open {

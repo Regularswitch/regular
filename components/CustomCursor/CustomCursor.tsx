@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { getCursorColor, isBlobCursor } from '../../lib/cursorConfig';
+
 const DEFAULT_SIZE = 16;
 const HOVER_SIZE = 44;
 const SMOOTHING = 0.22;
@@ -29,6 +31,13 @@ export default function CustomCursor() {
 	const isHovering = useRef(false);
 	const hasMoved = useRef(false);
 	const reduceMotion = useRef(false);
+
+	useEffect(() => {
+		const color = getCursorColor();
+		if (color) {
+			document.documentElement.style.setProperty('--cursor-color', color);
+		}
+	}, []);
 
 	useEffect(() => {
 		const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -160,7 +169,7 @@ export default function CustomCursor() {
 	return (
 		<div
 			ref={cursorRef}
-			className={`custom-cursor${visible ? ' is-visible' : ''}`}
+			className={`custom-cursor${isBlobCursor() ? ' custom-cursor--blob' : ''}${visible ? ' is-visible' : ''}`}
 			aria-hidden
 		/>
 	);

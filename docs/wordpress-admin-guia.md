@@ -86,7 +86,7 @@ Campo vazio → o site usa o **texto padrão** do Next.js. Para voltar ao padrã
 
 | O quê | Onde |
 |-------|------|
-| Hero Sobre / Educação / Contato | **Heroes** (uma imagem para EN e PT) |
+| Hero Sobre / Educação / Contato | **Heroes** (imagem e/ou vídeo, EN+PT) |
 | Textos, acordeões, headlines | Post `en` ou `pt` de cada página |
 | Cores do blob | **Visual da home** (único) |
 | Hero e galeria de um projeto | No próprio projeto (e na tradução PT, se existir) |
@@ -161,13 +161,12 @@ Vale para **inglês e português** ao mesmo tempo. Não há posts `en`/`pt` aqui
 
 **Menu:** Heroes
 
-Três campos:
+Para cada página (Sobre Nós, Educação, Contato):
 
-- **Hero — Sobre Nós**
-- **Hero — Educação**
-- **Hero — Contato**
+- **Imagem** — poster / fallback
+- **Vídeo (mp4)** — opcional; se preenchido, tem **prioridade** no site (autoplay, muted, loop)
 
-**Selecionar imagem** → biblioteca ou upload → **Atualizar**. A mesma imagem aparece nos dois idiomas.
+A mídia é **compartilhada entre EN e PT**. Em Contato, o hero só aparece se houver imagem ou vídeo.
 
 ---
 

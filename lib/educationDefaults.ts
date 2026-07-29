@@ -2,8 +2,11 @@ import type { ProjectAccordionSection } from './parseProjectContent';
 
 export type EducationContent = {
 	heroImage?: string;
+	heroVideo?: string;
 	headline: string;
 	accordionSections: ProjectAccordionSection[];
+	/** Carrossel do estúdio — preencher via CMS ou assets locais. */
+	studioImages?: string[];
 };
 
 const EDUCATION_ACCORDION_PT: ProjectAccordionSection[] = [
@@ -48,12 +51,14 @@ export const DEFAULT_EDUCATION_PT: EducationContent = {
 	headline:
 		'Acreditamos na educação como espaço de troca e experimentação criativa. <strong>Entre</strong> França e Brasil, <strong>desenvolvemos</strong> workshops, talks e projetos colaborativos <strong>que conectam</strong> culturas e novas formas de pensar <strong>o design contemporâneo</strong>.',
 	accordionSections: EDUCATION_ACCORDION_PT,
+	studioImages: [],
 };
 
 export const DEFAULT_EDUCATION_EN: EducationContent = {
 	headline:
 		'We believe education is a space for exchange and creative experimentation. <strong>Between</strong> France and Brazil, <strong>we develop</strong> workshops, talks and collaborative projects <strong>that connect</strong> cultures and new ways of thinking about <strong>contemporary design</strong>.',
 	accordionSections: EDUCATION_ACCORDION_EN,
+	studioImages: [],
 };
 
 export function getDefaultEducationContent(locale: 'en' | 'pt'): EducationContent {

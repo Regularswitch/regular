@@ -1,17 +1,17 @@
 import type { FooterContent } from '../../types';
 import {
 	ABOUT_PAGE_SLUG,
-	CONTACT_PAGE_SLUG,
 	COOKIES_POLICY_PAGE_SLUG,
 	pagePath,
 	PRIVACY_POLICY_PAGE_SLUG,
 } from '../../lib/pageSlugs';
+import { getContactMailto, getNewsletterHref } from '../../lib/siteLinks';
 
 export const DEFAULT_FOOTER_EN: FooterContent = {
 	brandMark: 'REGULARSWITCH',
 	links: [
-		{ title: 'Contact', subtitle: 'Get in touch.', href: pagePath(CONTACT_PAGE_SLUG) },
-		{ title: 'Newsletter', subtitle: 'Subscribe.', href: 'mailto:contact@regularswitch.com?subject=Newsletter' },
+		{ title: 'Contact', subtitle: 'Get in touch.', href: getContactMailto() },
+		{ title: 'Newsletter', subtitle: 'Subscribe.', href: getNewsletterHref() },
 		{ title: 'Join Us', subtitle: 'Careers.', href: pagePath(ABOUT_PAGE_SLUG) },
 	],
 	legal: {
@@ -26,8 +26,8 @@ export const DEFAULT_FOOTER_EN: FooterContent = {
 export const DEFAULT_FOOTER_PT: FooterContent = {
 	brandMark: 'REGULARSWITCH',
 	links: [
-		{ title: 'Contato', subtitle: 'Fale conosco.', href: pagePath(CONTACT_PAGE_SLUG) },
-		{ title: 'Newsletter', subtitle: 'Inscreva-se.', href: 'mailto:contact@regularswitch.com?subject=Newsletter' },
+		{ title: 'Contato', subtitle: 'Fale conosco.', href: getContactMailto() },
+		{ title: 'Newsletter', subtitle: 'Inscreva-se.', href: getNewsletterHref() },
 		{ title: 'Junte-se', subtitle: 'Carreiras.', href: pagePath(ABOUT_PAGE_SLUG) },
 	],
 	legal: {

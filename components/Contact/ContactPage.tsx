@@ -11,10 +11,11 @@ type ContactPageProps = {
 
 export default function ContactPage({ content, locale = 'en' }: ContactPageProps) {
 	const cityLabel = locale === 'pt' ? 'São Paulo' : 'São Paulo';
+	const hasHero = Boolean(content.heroImage || content.heroVideo);
 
 	return (
 		<article className="contact-page">
-			<ContactHero image={content.heroImage} />
+			{hasHero ? <ContactHero image={content.heroImage} video={content.heroVideo} /> : null}
 
 			<section className="contact-intro py-10 md:py-14">
 				<div
@@ -24,14 +25,14 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 			</section>
 
 			<section className="contact-blocks pb-12 md:pb-16">
-				<div className="grid gap-10 sm:grid-cols-2 lg:gap-14">
+				<div className="grid gap-12 sm:grid-cols-2 lg:gap-16">
 					{content.blocks.map((block) => (
 						<div key={block.title} className="contact-block">
-							<h2 className="font-hk text-xs font-semibold tracking-[0.18em] text-(--fg) md:text-sm">
+							<h2 className="font-hk text-sm font-semibold tracking-[0.18em] text-(--fg) md:text-base">
 								{block.title}
 							</h2>
 							<div
-								className="contact-block-body mt-4 font-hk text-base leading-relaxed text-(--muted) md:mt-5 md:text-lg"
+								className="contact-block-body mt-5 font-hk text-lg leading-[1.65] text-(--muted) md:mt-6 md:text-xl md:leading-[1.7]"
 								dangerouslySetInnerHTML={{ __html: block.body }}
 							/>
 						</div>

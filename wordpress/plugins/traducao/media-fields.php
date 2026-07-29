@@ -8,9 +8,27 @@ if (defined('RS_MEDIA_FIELDS_LOADED')) {
 }
 define('RS_MEDIA_FIELDS_LOADED', true);
 
-function rs_render_media_field(string $name, string $label, int $attachment_id, ?string $field_id = null, bool $include_name = true): void {
+/**
+ * @param 'image'|'video'|'media' $library
+ */
+function rs_render_media_field(
+    string $name,
+    string $label,
+    int $attachment_id,
+    ?string $field_id = null,
+    bool $include_name = true,
+    string $library = 'image'
+): void {
     $field_id = $field_id ?? $name;
     $url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';
+    $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
+    $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+
+    $pick_label = match ($library) {
+        'video' => 'Selecionar vídeo',
+        'media' => 'Selecionar mídia',
+        default => 'Selecionar imagem',
+    };
     ?>
     <p class="rs-media-field" style="margin:0 0 14px;">
         <?php if ($label !== '') : ?>
@@ -22,11 +40,19 @@ function rs_render_media_field(string $name, string $label, int $attachment_id, 
             id="<?php echo esc_attr($field_id); ?>"
             value="<?php echo esc_attr((string) $attachment_id); ?>"
             data-rs-cap-image="1"
+            data-rs-library="<?php echo esc_attr($library); ?>"
         />
-        <button type="button" class="button rs-media-pick" data-target="<?php echo esc_attr($field_id); ?>">Selecionar imagem</button>
+        <button
+            type="button"
+            class="button rs-media-pick"
+            data-target="<?php echo esc_attr($field_id); ?>"
+            data-library="<?php echo esc_attr($library); ?>"
+        ><?php echo esc_html($pick_label); ?></button>
         <button type="button" class="button rs-media-clear" data-target="<?php echo esc_attr($field_id); ?>">Remover</button>
         <span class="rs-media-preview" data-target="<?php echo esc_attr($field_id); ?>" style="display:block;margin-top:8px;">
-            <?php if ($url) : ?>
+            <?php if ($url && $is_video) : ?>
+                <video src="<?php echo esc_url($url); ?>" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>
+            <?php elseif ($url) : ?>
                 <img src="<?php echo esc_url($url); ?>" alt="" style="max-width:220px;height:auto;border-radius:4px;" />
             <?php endif; ?>
         </span>
@@ -61,17 +87,36 @@ jQuery(function ($) {
             preview.empty();
             return;
         }
-        preview.html('<img src="' + attachment.url + '" alt="" style="max-width:220px;height:auto;border-radius:4px;" />');
+
+        const mime = attachment.mime || '';
+        if (mime.indexOf('video/') === 0) {
+            preview.html(
+                '<video src="' + attachment.url + '" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>'
+            );
+            return;
+        }
+
+        const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
+            || attachment.url;
+        preview.html('<img src="' + thumb + '" alt="" style="max-width:220px;height:auto;border-radius:4px;" />');
     }
 
     $(document).on('click', '.rs-media-pick, .rs-project-pick-media', function (event) {
         event.preventDefault();
         const target = $(this).data('target');
-        const frame = wp.media({
-            title: 'Selecionar imagem',
-            button: { text: 'Usar esta imagem' },
+        const library = $(this).data('library') || $('#' + target).data('rs-library') || 'image';
+
+        const frameOptions = {
+            title: library === 'video' ? 'Selecionar vídeo' : (library === 'media' ? 'Selecionar mídia' : 'Selecionar imagem'),
+            button: { text: 'Usar este arquivo' },
             multiple: false
-        });
+        };
+
+        if (library === 'image' || library === 'video') {
+            frameOptions.library = { type: library };
+        }
+
+        const frame = wp.media(frameOptions);
 
         frame.on('select', function () {
             const attachment = frame.state().get('selection').first().toJSON();

@@ -47,6 +47,7 @@ export function buildAboutContent(
 
 	const hasWpContent =
 		Boolean(wp.heroImage) ||
+		Boolean(wp.heroVideo) ||
 		Boolean(wp.headline?.trim()) ||
 		Boolean(wp.body?.trim()) ||
 		(wp.accordionSections?.length ?? 0) > 0;
@@ -68,6 +69,7 @@ export function buildAboutContent(
 			(wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined) ||
 			defaults.heroImage ||
 			DEFAULT_ABOUT_HERO_IMAGE,
+		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : defaults.heroVideo,
 		headline: wp.headline?.trim() ? sanitizeAboutHeadline(wp.headline) : defaults.headline,
 		body: wp.body?.trim() ? sanitizeAboutBody(wp.body) : defaults.body,
 		accordionSections,

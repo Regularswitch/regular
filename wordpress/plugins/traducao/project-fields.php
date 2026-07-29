@@ -12,6 +12,8 @@ const RS_PROJECT_HERO_KEY = 'rs_project_hero_id';
 const RS_PROJECT_LOGO_KEY = 'rs_project_logo_id';
 const RS_PROJECT_ACCORDION_KEY = 'rs_project_accordion';
 const RS_PROJECT_GALLERY_KEY = 'rs_project_gallery';
+const RS_PROJECT_FEATURED_KEY = 'rs_project_featured_home';
+const RS_PROJECT_VIGNETTE_KEY = 'rs_project_show_vignette';
 
 const RS_PROJECT_LEGACY_ACCORDION_LABELS = [
     1 => 'CONTEXTO / CONTEXT',
@@ -212,10 +214,14 @@ function rs_project_meta_to_payload(int $post_id): array {
     }
 
     return [
-        'heroImage' => rs_project_attachment_info(rs_project_get_hero_id($post_id)),
-        'logoImage' => rs_project_attachment_info(rs_project_get_logo_id($post_id)),
-        'accordion' => $accordion,
-        'gallery'   => $gallery,
+        'heroImage'      => rs_project_attachment_info(rs_project_get_hero_id($post_id)),
+        'logoImage'      => rs_project_attachment_info(rs_project_get_logo_id($post_id)),
+        'accordion'      => $accordion,
+        'gallery'        => $gallery,
+        'featuredOnHome' => (bool) get_post_meta($post_id, RS_PROJECT_FEATURED_KEY, true),
+        'showVignette'   => get_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, true) === ''
+            ? true
+            : (bool) get_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, true),
     ];
 }
 
@@ -245,6 +251,8 @@ function rs_copy_project_fields(int $from_id, int $to_id): void {
     }
 
     update_post_meta($to_id, RS_PROJECT_GALLERY_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
 }
 
 add_action('init', function () {
@@ -270,6 +278,17 @@ add_action('init', function () {
         register_post_meta('project', $key, [
             'single'        => true,
             'type'          => 'string',
+            'show_in_rest'  => false,
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+
+    foreach ([RS_PROJECT_FEATURED_KEY, RS_PROJECT_VIGNETTE_KEY] as $key) {
+        register_post_meta('project', $key, [
+            'single'        => true,
+            'type'          => 'boolean',
             'show_in_rest'  => false,
             'auth_callback' => function () {
                 return current_user_can('edit_posts');
@@ -407,6 +426,9 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $logo_id = (int) get_post_meta($post->ID, RS_PROJECT_LOGO_KEY, true);
     $accordion_sections = rs_project_get_accordion_sections($post->ID);
     $gallery_ids = rs_project_get_gallery_ids($post->ID);
+    $featured = (bool) get_post_meta($post->ID, RS_PROJECT_FEATURED_KEY, true);
+    $vignette_meta = get_post_meta($post->ID, RS_PROJECT_VIGNETTE_KEY, true);
+    $show_vignette = $vignette_meta === '' ? true : (bool) $vignette_meta;
 
     if (!$accordion_sections) {
         $accordion_sections = rs_project_default_accordion_sections($locale);
@@ -416,13 +438,19 @@ function rs_project_render_meta_box(WP_Post $post): void {
         $gallery_ids = [];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui tudo que aparece na página <code>/project/{slug}</code>. O <strong>resumo</strong> (coluna esquerda) fica no campo <em>Resumo</em> da barra lateral. Use a coluna <strong>Language</strong> para criar/editar a versão em português. <em>(Plugin Tradução v1.1.0)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui tudo que aparece na página <code>/project/{slug}</code>. O <strong>resumo</strong> (coluna esquerda) fica no campo <em>Resumo</em> da barra lateral. Use a coluna <strong>Language</strong> para criar/editar a versão em português. <em>(Plugin Tradução v1.1.1)</em></p>';
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero (topo)</strong></legend>';
     rs_render_media_field('rs_project_hero_id', 'Imagem de fundo — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id');
-    rs_render_media_field('rs_project_logo_id', 'Logo — aparece sobre a imagem no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
+    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a imagem no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
+    echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
     echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
+    echo '</fieldset>';
+
+    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Home</strong></legend>';
+    echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto deve estar marcado)</label></p>';
     echo '</fieldset>';
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
@@ -552,6 +580,13 @@ add_action('save_post_project', function (int $post_id) {
     } else {
         delete_post_meta($post_id, RS_PROJECT_LOGO_KEY);
     }
+
+    $featured = !empty($_POST['rs_project_featured_home']) ? 1 : 0;
+    update_post_meta($post_id, RS_PROJECT_FEATURED_KEY, $featured);
+
+    // Checkbox: ausente no POST = false.
+    $show_vignette = !empty($_POST['rs_project_show_vignette']) ? 1 : 0;
+    update_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, $show_vignette);
 
     $accordion = rs_project_parse_accordion_from_request();
     update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($accordion, JSON_UNESCAPED_UNICODE));

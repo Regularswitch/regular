@@ -84,6 +84,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 
 	const filteredLatest = latestProjects.filter((item) => item.slug !== project.slug);
 	const showLogo = Boolean(logoImage && logoImage !== heroImage);
+	const showVignette = structured?.showVignette !== false;
 
 	return (
 		<article className="project-page">
@@ -91,6 +92,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 				image={heroImage}
 				logo={showLogo ? logoImage : undefined}
 				title={project.title ?? project.slug}
+				showVignette={showVignette}
 			/>
 
 			<div className="project-page-content space-y-10 py-8 md:space-y-16 md:py-14">

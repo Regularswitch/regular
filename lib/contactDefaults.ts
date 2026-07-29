@@ -5,6 +5,7 @@ export type ContactBlock = {
 
 export type ContactContent = {
 	heroImage?: string;
+	heroVideo?: string;
 	headline: string;
 	blocks: ContactBlock[];
 };

@@ -2,10 +2,11 @@ import Link from 'next/link';
 
 import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/pageSlugs';
 import { isHomeProject } from '../../lib/projectCategories';
+import { orderHomeProjects } from '../../lib/featuredProject';
 import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import type { Category, Projects, SiteUiLabels } from '../../types';
-import { getGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
+import { getHomeGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
 import { SectionHeadingArrow } from '../SiteIcons';
 
@@ -19,9 +20,11 @@ type SelectedProjectsProps = {
 };
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
-	const selected = sortProjectsByDate(projects)
-		.filter((p) => isHomeProject(p, categories))
-		.slice(0, MAX_PROJECTS);
+	const selected = orderHomeProjects(
+		sortProjectsByDate(projects)
+			.filter((p) => isHomeProject(p, categories))
+			.slice(0, MAX_PROJECTS),
+	);
 
 	if (!selected.length) return null;
 
@@ -44,7 +47,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getGridSpan(index)}
+						span={getHomeGridSpan(index, 0)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}

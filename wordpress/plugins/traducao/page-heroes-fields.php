@@ -1,6 +1,7 @@
 <?php
 /**
- * Imagens de hero compartilhadas entre EN e PT (Sobre, Educação, Contato).
+ * Mídia de hero compartilhada entre EN e PT (Sobre, Educação, Contato).
+ * Cada página: imagem e/ou vídeo (vídeo tem prioridade no front).
  */
 
 if (defined('RS_PAGE_HEROES_LOADED')) {
@@ -12,12 +13,25 @@ const RS_PAGE_HERO_ABOUT_IMAGE_KEY = 'rs_page_hero_about_image_id';
 const RS_PAGE_HERO_EDUCATION_IMAGE_KEY = 'rs_page_hero_education_image_id';
 const RS_PAGE_HERO_CONTACT_IMAGE_KEY = 'rs_page_hero_contact_image_id';
 
+const RS_PAGE_HERO_ABOUT_VIDEO_KEY = 'rs_page_hero_about_video_id';
+const RS_PAGE_HERO_EDUCATION_VIDEO_KEY = 'rs_page_hero_education_video_id';
+const RS_PAGE_HERO_CONTACT_VIDEO_KEY = 'rs_page_hero_contact_video_id';
+
 /** @return array<string, string> */
 function rs_page_heroes_meta_keys(): array {
     return [
         'about'     => RS_PAGE_HERO_ABOUT_IMAGE_KEY,
         'education' => RS_PAGE_HERO_EDUCATION_IMAGE_KEY,
         'contact'   => RS_PAGE_HERO_CONTACT_IMAGE_KEY,
+    ];
+}
+
+/** @return array<string, string> */
+function rs_page_heroes_video_meta_keys(): array {
+    return [
+        'about'     => RS_PAGE_HERO_ABOUT_VIDEO_KEY,
+        'education' => RS_PAGE_HERO_EDUCATION_VIDEO_KEY,
+        'contact'   => RS_PAGE_HERO_CONTACT_VIDEO_KEY,
     ];
 }
 
@@ -56,6 +70,20 @@ function rs_page_heroes_get_image_id(string $page_key): int {
     return (int) get_post_meta($post_id, $keys[$page_key], true);
 }
 
+function rs_page_heroes_get_video_id(string $page_key): int {
+    $keys = rs_page_heroes_video_meta_keys();
+    if (!isset($keys[$page_key])) {
+        return 0;
+    }
+
+    $post_id = rs_page_heroes_get_post_id();
+    if ($post_id <= 0) {
+        return 0;
+    }
+
+    return (int) get_post_meta($post_id, $keys[$page_key], true);
+}
+
 function rs_page_heroes_get_image_url(string $page_key, int $locale_post_id = 0): string {
     $image_id = rs_page_heroes_get_image_id($page_key);
 
@@ -73,11 +101,34 @@ function rs_page_heroes_get_image_url(string $page_key, int $locale_post_id = 0)
     return (string) wp_get_attachment_url($image_id);
 }
 
+function rs_page_heroes_get_video_url(string $page_key): string {
+    $video_id = rs_page_heroes_get_video_id($page_key);
+    if ($video_id <= 0) {
+        return '';
+    }
+
+    return (string) wp_get_attachment_url($video_id);
+}
+
+/**
+ * @return array{image: string, video: string}
+ */
+function rs_page_heroes_get_media(string $page_key, int $locale_post_id = 0): array {
+    return [
+        'image' => rs_page_heroes_get_image_url($page_key, $locale_post_id),
+        'video' => rs_page_heroes_get_video_url($page_key),
+    ];
+}
+
 function rs_page_heroes_payload(): array {
     $payload = [];
 
     foreach (array_keys(rs_page_heroes_meta_keys()) as $page_key) {
-        $payload[$page_key] = rs_page_heroes_get_image_url($page_key);
+        $media = rs_page_heroes_get_media($page_key);
+        // Compat: string = URL da imagem (legado).
+        $payload[$page_key] = $media['image'];
+        $payload[$page_key . 'Video'] = $media['video'];
+        $payload[$page_key . 'Media'] = $media;
     }
 
     return $payload;
@@ -152,7 +203,12 @@ function rs_page_heroes_ensure_post(): void {
 }
 
 add_action('init', function () {
-    foreach (rs_page_heroes_meta_keys() as $meta_key) {
+    $all_keys = array_merge(
+        array_values(rs_page_heroes_meta_keys()),
+        array_values(rs_page_heroes_video_meta_keys())
+    );
+
+    foreach ($all_keys as $meta_key) {
         register_post_meta('page-heroes', $meta_key, [
             'single'        => true,
             'type'          => 'string',
@@ -179,7 +235,7 @@ add_action('rest_api_init', function () {
 add_action('add_meta_boxes_page-heroes', function () {
     add_meta_box(
         'rs_page_heroes_fields',
-        'Imagens de hero',
+        'Heroes (imagem ou vídeo)',
         'rs_page_heroes_render_meta_box',
         'page-heroes',
         'normal',
@@ -199,13 +255,27 @@ function rs_page_heroes_render_meta_box(WP_Post $post): void {
     ];
 
     echo '<p style="margin-top:0;color:#646970;">';
-    echo 'Imagens de hero <strong>compartilhadas entre inglês e português</strong>. O texto de cada página continua editável por idioma.';
+    echo 'Mídia de hero <strong>compartilhada entre inglês e português</strong>. ';
+    echo 'Se houver <strong>vídeo</strong>, ele tem prioridade no site; a imagem serve de poster/fallback. ';
+    echo 'O texto de cada página continua editável por idioma.';
     echo '</p>';
 
-    foreach (rs_page_heroes_meta_keys() as $page_key => $meta_key) {
-        $image_id = (int) get_post_meta($post->ID, $meta_key, true);
+    $image_keys = rs_page_heroes_meta_keys();
+    $video_keys = rs_page_heroes_video_meta_keys();
+
+    foreach ($image_keys as $page_key => $image_meta_key) {
         $label = $labels[$page_key] ?? ucfirst($page_key);
-        rs_render_media_field($meta_key, 'Hero — ' . $label, $image_id, $meta_key);
+        $image_id = (int) get_post_meta($post->ID, $image_meta_key, true);
+        $video_meta_key = $video_keys[$page_key] ?? '';
+        $video_id = $video_meta_key !== '' ? (int) get_post_meta($post->ID, $video_meta_key, true) : 0;
+
+        echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+        echo '<legend style="font-weight:600;padding:0 6px;"><strong>' . esc_html($label) . '</strong></legend>';
+        rs_render_media_field($image_meta_key, 'Imagem', $image_id, $image_meta_key, true, 'image');
+        if ($video_meta_key !== '') {
+            rs_render_media_field($video_meta_key, 'Vídeo (mp4) — opcional', $video_id, $video_meta_key, true, 'video');
+        }
+        echo '</fieldset>';
     }
 }
 
@@ -226,13 +296,18 @@ add_action('save_post_page-heroes', function (int $post_id) {
         return;
     }
 
-    foreach (rs_page_heroes_meta_keys() as $meta_key) {
+    $all_keys = array_merge(
+        array_values(rs_page_heroes_meta_keys()),
+        array_values(rs_page_heroes_video_meta_keys())
+    );
+
+    foreach ($all_keys as $meta_key) {
         if (!array_key_exists($meta_key, $_POST)) {
             continue;
         }
 
-        $image_id = (int) $_POST[$meta_key];
-        update_post_meta($post_id, $meta_key, (string) max(0, $image_id));
+        $attachment_id = (int) $_POST[$meta_key];
+        update_post_meta($post_id, $meta_key, (string) max(0, $attachment_id));
     }
 });
 

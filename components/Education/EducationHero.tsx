@@ -1,29 +1,15 @@
-import Image from 'next/image';
-
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import PageHeroMedia from '../PageHero/PageHeroMedia';
 
 type EducationHeroProps = {
 	image?: string;
+	video?: string;
 	headline: string;
 };
 
-export default function EducationHero({ image, headline }: EducationHeroProps) {
-	const heroSrc = image ? (wpMediaUrl(image) ?? image) : undefined;
-
+export default function EducationHero({ image, video, headline }: EducationHeroProps) {
 	return (
 		<section className="education-hero" aria-label="Education">
-			{heroSrc ? (
-				<div className="education-hero-image relative aspect-square overflow-hidden rounded-md bg-(--surface) md:aspect-6/3">
-					<Image
-						src={heroSrc}
-						alt=""
-						fill
-						priority
-						sizes="(max-width: 768px) 100vw, 90vw"
-						className="object-cover object-center"
-					/>
-				</div>
-			) : null}
+			<PageHeroMedia image={image} video={video} showEmptySlot asSection={false} />
 
 			<div
 				className="intro-headline mt-8 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em] md:mt-10"

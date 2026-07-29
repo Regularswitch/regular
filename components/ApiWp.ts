@@ -482,12 +482,13 @@ export function porterAbout(payloadWp: listResponseWp): AboutContent | null {
     const data = item.about_data;
     const sections = data.accordionSections.filter((section) => section.title);
 
-    if (!data.headline && !data.body && !data.heroImage && sections.length === 0) {
+    if (!data.headline && !data.body && !data.heroImage && !data.heroVideo && sections.length === 0) {
         return null;
     }
 
     return {
         heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+        heroVideo: typeof data.heroVideo === 'string' ? data.heroVideo : undefined,
         headline: data.headline,
         body: data.body,
         accordionSections: sections,
@@ -533,7 +534,10 @@ function isEducationContent(value: unknown): value is EducationContent {
     const item = value as Record<string, unknown>;
     if (typeof item.headline !== 'string') return false;
     if (!Array.isArray(item.accordionSections)) return false;
-    return item.accordionSections.every(isEducationAccordionSection);
+    if (!item.accordionSections.every(isEducationAccordionSection)) return false;
+    if (item.studioImages !== undefined && !Array.isArray(item.studioImages)) return false;
+    if (item.heroVideo !== undefined && typeof item.heroVideo !== 'string') return false;
+    return true;
 }
 
 export function porterEducation(payloadWp: listResponseWp): EducationContent | null {
@@ -543,15 +547,19 @@ export function porterEducation(payloadWp: listResponseWp): EducationContent | n
     const data = item.education_data;
     const sections = data.accordionSections.filter((section) => section.title);
 
-    if (!data.headline && !data.heroImage && sections.length === 0) {
+    if (!data.headline && !data.heroImage && !data.heroVideo && sections.length === 0) {
         return null;
     }
 
     return {
-        heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
-        headline: data.headline,
-        accordionSections: sections,
-    };
+		heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+		heroVideo: typeof data.heroVideo === 'string' ? data.heroVideo : undefined,
+		headline: data.headline,
+		accordionSections: sections,
+		studioImages: Array.isArray(data.studioImages)
+			? data.studioImages.filter((url): url is string => typeof url === 'string' && Boolean(url))
+			: [],
+	};
 }
 
 export async function GetEducationApi(data: Record<string, string> = {}): Promise<EducationContent | null> {
@@ -603,12 +611,13 @@ export function porterContact(payloadWp: listResponseWp): ContactContent | null 
     const data = item.contact_data;
     const blocks = data.blocks.filter((block) => block.title);
 
-    if (!data.headline && !data.heroImage && blocks.length === 0) {
+    if (!data.headline && !data.heroImage && !data.heroVideo && blocks.length === 0) {
         return null;
     }
 
     return {
         heroImage: typeof data.heroImage === 'string' ? data.heroImage : undefined,
+        heroVideo: typeof data.heroVideo === 'string' ? data.heroVideo : undefined,
         headline: data.headline,
         blocks,
     };

@@ -1,8 +1,4 @@
-import {
-	DEFAULT_CONTACT_HERO_IMAGE,
-	getDefaultContactContent,
-	type ContactContent,
-} from './contactDefaults';
+import { getDefaultContactContent, type ContactContent } from './contactDefaults';
 import { wpMediaUrl } from './wpMediaUrl';
 
 export function buildContactContent(
@@ -14,19 +10,22 @@ export function buildContactContent(
 	if (!wp) {
 		return {
 			...defaults,
-			heroImage: defaults.heroImage ?? DEFAULT_CONTACT_HERO_IMAGE,
+			heroImage: undefined,
+			heroVideo: undefined,
 		};
 	}
 
 	const hasWpContent =
 		Boolean(wp.heroImage) ||
+		Boolean(wp.heroVideo) ||
 		Boolean(wp.headline?.trim()) ||
 		(wp.blocks?.length ?? 0) > 0;
 
 	if (!hasWpContent) {
 		return {
 			...defaults,
-			heroImage: defaults.heroImage ?? DEFAULT_CONTACT_HERO_IMAGE,
+			heroImage: undefined,
+			heroVideo: undefined,
 		};
 	}
 
@@ -34,10 +33,8 @@ export function buildContactContent(
 	const blocks = wpBlocks.length > 0 ? wpBlocks : defaults.blocks;
 
 	return {
-		heroImage:
-			(wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined) ||
-			defaults.heroImage ||
-			DEFAULT_CONTACT_HERO_IMAGE,
+		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined,
+		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : undefined,
 		headline: wp.headline?.trim() ? wp.headline : defaults.headline,
 		blocks,
 	};

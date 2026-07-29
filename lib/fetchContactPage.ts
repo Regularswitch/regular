@@ -1,6 +1,6 @@
 import { GetContactByLocale } from '../components/ApiWp';
 import { buildContactContent } from './buildContactContent';
-import { DEFAULT_CONTACT_HERO_IMAGE, getDefaultContactContent } from './contactDefaults';
+import { getDefaultContactContent } from './contactDefaults';
 
 export async function fetchContactPage(locale: 'en' | 'pt') {
 	return fetchContactFromWp(locale).catch((error) => {
@@ -8,7 +8,8 @@ export async function fetchContactPage(locale: 'en' | 'pt') {
 		return {
 			content: {
 				...getDefaultContactContent(locale),
-				heroImage: DEFAULT_CONTACT_HERO_IMAGE,
+				heroImage: undefined,
+				heroVideo: undefined,
 			},
 		};
 	});

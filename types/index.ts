@@ -134,6 +134,10 @@ export type ProjectStructuredData = {
   logoImage?: ProjectStructuredImage | null;
   accordion?: Array<{ index: number; title?: string; body: string }>;
   gallery?: string[];
+  /** Destaque único na home (apenas um projeto deve estar true). */
+  featuredOnHome?: boolean;
+  /** Exibe vignette/logo no canto inferior esquerdo do hero. */
+  showVignette?: boolean;
 };
 
 export type ProjectMeta = {

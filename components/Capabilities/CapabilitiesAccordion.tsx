@@ -6,6 +6,7 @@ import { useState } from 'react';
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
 import type { CapabilitySection } from '../../lib/capabilitiesDefaults';
+import { toSentenceCaseHtml } from '../../lib/sentenceCase';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
 type CapabilitiesAccordionProps = {
@@ -37,8 +38,8 @@ export default function CapabilitiesAccordion({
 							aria-expanded={isOpen}
 						>
 							<span
-								className={`accordion-trigger-title font-hk${isOpen ? ' is-open' : ''}`}
-								dangerouslySetInnerHTML={{ __html: section.title }}
+								className={`accordion-trigger-title accordion-trigger-title--sentence font-hk${isOpen ? ' is-open' : ''}`}
+								dangerouslySetInnerHTML={{ __html: toSentenceCaseHtml(section.title) }}
 							/>
 							<span
 								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
@@ -53,7 +54,7 @@ export default function CapabilitiesAccordion({
 								<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
 									<div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
 										{imageSrc ? (
-											<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-md bg-(--surface)">
+											<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface)">
 												<Image
 													src={imageSrc}
 													alt=""

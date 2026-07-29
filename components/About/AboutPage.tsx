@@ -24,7 +24,7 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 
 	return (
 		<article className="about-page">
-			<AboutHero image={content.heroImage} />
+			<AboutHero image={content.heroImage} video={content.heroVideo} />
 
 			<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
 				<div

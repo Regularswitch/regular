@@ -8,6 +8,7 @@ import type { FooterContent, FooterLink } from '../types';
 import FontVariante from './FontVariante';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
 import { getCookie } from './Translate';
+import { getContactMailto, getNewsletterHref } from '../lib/siteLinks';
 
 type FooterLocale = 'en' | 'pt';
 
@@ -35,6 +36,20 @@ function isExternal(href: string) {
 	return href.startsWith('http') && !href.includes('regularswitch');
 }
 
+/** Prefer env placeholders for Contato / Newsletter até o cliente confirmar destinos. */
+function resolveFooterLinks(links: FooterLink[]): FooterLink[] {
+	return links.map((item) => {
+		const key = item.title.replace(/<[^>]+>/g, '').trim().toLowerCase();
+		if (key === 'contact' || key === 'contato') {
+			return { ...item, href: getContactMailto() };
+		}
+		if (key === 'newsletter') {
+			return { ...item, href: getNewsletterHref() };
+		}
+		return item;
+	});
+}
+
 export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
 	const pathname = usePathname() ?? '';
 	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
@@ -45,7 +60,8 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 
 	const fallback = locale === 'pt' ? DEFAULT_FOOTER_PT : DEFAULT_FOOTER_EN;
 	const fromWp = locale === 'pt' ? footerPt : footerEn;
-	const { brandMark, links, legal } = fromWp ?? fallback;
+	const { brandMark, links: rawLinks, legal } = fromWp ?? fallback;
+	const links = resolveFooterLinks(rawLinks);
 
 	const legalLinks = useMemo(
 		() => [

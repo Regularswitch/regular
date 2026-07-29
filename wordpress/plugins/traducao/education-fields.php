@@ -11,6 +11,8 @@ define('RS_EDUCATION_FIELDS_LOADED', true);
 const RS_EDUCATION_HERO_IMAGE_KEY = 'rs_education_hero_image_id';
 const RS_EDUCATION_HEADLINE_KEY = 'rs_education_headline';
 const RS_EDUCATION_SECTIONS_KEY = 'rs_education_sections';
+const RS_EDUCATION_STUDIO_KEY = 'rs_education_studio_gallery';
+const RS_EDUCATION_HERO_VIDEO_KEY = 'rs_education_hero_video_url';
 
 /**
  * @return array<int, array{title: string, body: string}>
@@ -76,15 +78,43 @@ function rs_education_sections_to_payload(array $sections): array {
     return $payload;
 }
 
+function rs_education_get_studio_ids(int $post_id): array {
+    $raw = (string) get_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, true);
+    if ($raw === '') {
+        return [];
+    }
+
+    $ids = array_filter(array_map('intval', preg_split('/\s*,\s*/', $raw) ?: []));
+    return array_values($ids);
+}
+
 function rs_education_meta_to_payload(int $post_id): array {
     $hero_url = function_exists('rs_page_heroes_get_image_url')
         ? rs_page_heroes_get_image_url('education', $post_id)
         : '';
+    $hero_video = function_exists('rs_page_heroes_get_video_url')
+        ? rs_page_heroes_get_video_url('education')
+        : '';
+
+    // Fallback: vídeo antigo salvo no post education (por idioma).
+    if ($hero_video === '') {
+        $hero_video = trim((string) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, true));
+    }
+
+    $studio = [];
+    foreach (rs_education_get_studio_ids($post_id) as $attachment_id) {
+        $url = wp_get_attachment_url($attachment_id);
+        if ($url) {
+            $studio[] = $url;
+        }
+    }
 
     return [
         'heroImage'           => $hero_url,
+        'heroVideo'           => $hero_video,
         'headline'            => trim((string) get_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, true)),
         'accordionSections'   => rs_education_sections_to_payload(rs_education_get_sections($post_id)),
+        'studioImages'        => $studio,
     ];
 }
 
@@ -123,7 +153,13 @@ function rs_education_ensure_locale_posts(): void {
 }
 
 add_action('init', function () {
-    foreach ([RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HEADLINE_KEY, RS_EDUCATION_SECTIONS_KEY] as $key) {
+    foreach ([
+        RS_EDUCATION_HERO_IMAGE_KEY,
+        RS_EDUCATION_HEADLINE_KEY,
+        RS_EDUCATION_SECTIONS_KEY,
+        RS_EDUCATION_STUDIO_KEY,
+        RS_EDUCATION_HERO_VIDEO_KEY,
+    ] as $key) {
         register_post_meta('education', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -209,18 +245,34 @@ function rs_education_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_education_save', 'rs_education_nonce');
 
     $headline = (string) get_post_meta($post->ID, RS_EDUCATION_HEADLINE_KEY, true);
+    $studio_ids = rs_education_get_studio_ids($post->ID);
     $sections = rs_education_get_sections($post->ID);
 
     if (!$sections) {
         $sections = [['title' => '', 'body' => '']];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. A <strong>imagem do hero</strong> é editada em <a href="' . esc_url(admin_url('admin.php?page=rs-page-heroes')) . '">Heroes das páginas</a>.</p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. A <strong>imagem/vídeo do hero</strong> é editada em <a href="' . esc_url(admin_url('admin.php?page=rs-page-heroes')) . '">Heroes das páginas</a>.</p>';
 
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
     rs_render_rich_text_field(RS_EDUCATION_HEADLINE_KEY, RS_EDUCATION_HEADLINE_KEY, $headline, 'inline');
     echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
+    echo '</fieldset>';
+
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Carrossel do estúdio</strong></legend>';
+    echo '<p style="margin:0 0 10px;color:#646970;font-size:12px;">Imagens do carrossel pequeno (estúdio/escritório). IDs da biblioteca de mídia, separados por vírgula.</p>';
+    echo '<input type="text" style="width:100%;" id="rs_education_studio_gallery" name="rs_education_studio_gallery" value="' . esc_attr(implode(',', $studio_ids)) . '" placeholder="12,34,56" />';
+    echo '<p style="margin:10px 0 0;"><button type="button" class="button button-secondary" id="rs-education-add-studio-image">+ Adicionar imagem</button></p>';
+    echo '<div id="rs-education-studio-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">';
+    foreach ($studio_ids as $attachment_id) {
+        $url = wp_get_attachment_image_url($attachment_id, 'thumbnail');
+        if ($url) {
+            echo '<img src="' . esc_url($url) . '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" data-id="' . esc_attr((string) $attachment_id) . '" />';
+        }
+    }
+    echo '</div>';
     echo '</fieldset>';
 
     echo '<div id="rs-education-sections-list">';
@@ -315,6 +367,17 @@ add_action('save_post_education', function (int $post_id) {
         : '';
     update_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, $headline);
 
+    $hero_video = isset($_POST['rs_education_hero_video_url'])
+        ? esc_url_raw(wp_unslash((string) $_POST['rs_education_hero_video_url']))
+        : '';
+    update_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, $hero_video);
+
+    $studio_raw = isset($_POST['rs_education_studio_gallery'])
+        ? sanitize_text_field(wp_unslash((string) $_POST['rs_education_studio_gallery']))
+        : '';
+    $studio_ids = array_values(array_filter(array_map('intval', preg_split('/\s*,\s*/', $studio_raw) ?: [])));
+    update_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, implode(',', $studio_ids));
+
     $sections = rs_education_parse_sections_from_request();
     update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
 }, 10);
@@ -322,6 +385,8 @@ add_action('save_post_education', function (int $post_id) {
 function rs_copy_education_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_EDUCATION_HEADLINE_KEY, get_post_meta($from_id, RS_EDUCATION_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_EDUCATION_SECTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_SECTIONS_KEY, true));
+    update_post_meta($to_id, RS_EDUCATION_HERO_VIDEO_KEY, get_post_meta($from_id, RS_EDUCATION_HERO_VIDEO_KEY, true));
+    update_post_meta($to_id, RS_EDUCATION_STUDIO_KEY, get_post_meta($from_id, RS_EDUCATION_STUDIO_KEY, true));
 }
 
 add_action('admin_footer-post.php', function () {
@@ -442,7 +507,45 @@ add_action('admin_footer-post.php', function () {
         });
 
         $('#post').on('submit', collectSectionsJson);
+
+        $('#rs-education-add-studio-image').on('click', function (event) {
+            event.preventDefault();
+            if (typeof wp === 'undefined' || !wp.media) return;
+
+            const frame = wp.media({
+                title: 'Selecionar imagem do estúdio',
+                button: { text: 'Adicionar' },
+                multiple: true
+            });
+
+            frame.on('select', function () {
+                const input = $('#rs_education_studio_gallery');
+                const preview = $('#rs-education-studio-preview');
+                const current = String(input.val() || '')
+                    .split(',')
+                    .map(function (v) { return parseInt(v, 10); })
+                    .filter(function (v) { return v > 0; });
+
+                frame.state().get('selection').each(function (attachment) {
+                    const data = attachment.toJSON();
+                    if (!data.id || current.indexOf(data.id) !== -1) return;
+                    current.push(data.id);
+                    const thumb = (data.sizes && data.sizes.thumbnail && data.sizes.thumbnail.url) || data.url;
+                    preview.append(
+                        '<img src="' + thumb + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" data-id="' + data.id + '" />'
+                    );
+                });
+
+                input.val(current.join(','));
+            });
+
+            frame.open();
+        });
     });
     </script>
     <?php
 });
+
+if (function_exists('rs_enqueue_admin_media_picker')) {
+    rs_enqueue_admin_media_picker(['education']);
+}

@@ -30,18 +30,25 @@ export function buildEducationContent(
 
 	const hasWpContent =
 		Boolean(wp.heroImage) ||
+		Boolean(wp.heroVideo) ||
 		Boolean(wp.headline?.trim()) ||
-		(wp.accordionSections?.length ?? 0) > 0;
+		(wp.accordionSections?.length ?? 0) > 0 ||
+		(wp.studioImages?.length ?? 0) > 0;
 
 	if (!hasWpContent) {
 		return defaults;
 	}
 
 	const wpSections = normalizeWpSections(wp.accordionSections);
+	const studioImages = (wp.studioImages ?? [])
+		.map((url) => wpMediaUrl(url) ?? url)
+		.filter(Boolean);
 
 	return {
 		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : defaults.heroImage,
+		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : defaults.heroVideo,
 		headline: wp.headline?.trim() ? wp.headline : defaults.headline,
 		accordionSections: wpSections.length > 0 ? wpSections : defaults.accordionSections,
+		studioImages: studioImages.length > 0 ? studioImages : defaults.studioImages,
 	};
 }

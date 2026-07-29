@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { getGridSpan } from '../../lib/bentoGrid';
+import { getGallerySpan } from '../../lib/bentoGrid';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 import { NavChevronLeft, NavChevronRight } from '../SiteIcons';
 
@@ -183,7 +183,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 			<section className="project-gallery" aria-label="Galeria do projeto">
 				<div className="selected-projects-grid project-gallery-grid">
 					{resolvedImages.map((src, index) => {
-						const isFull = getGridSpan(index) === 'full';
+						const isFull = getGallerySpan(index) === 'full';
 
 						return (
 							<div
@@ -197,7 +197,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 									aria-label={`${openLabel} ${index + 1}`}
 								>
 									<div
-										className={`project-gallery-image relative overflow-hidden rounded-md bg-(--surface)${isFull ? ' project-gallery-image--full' : ''}`}
+										className={`project-gallery-image relative overflow-hidden rounded-[5px] bg-(--surface)${isFull ? ' project-gallery-image--full' : ''}`}
 									>
 										<Image
 											src={src}
