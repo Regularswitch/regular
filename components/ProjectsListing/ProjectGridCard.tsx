@@ -17,9 +17,19 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
 	const isFeatured = span === 'featured';
+	const isThird = span === 'third';
+
+	const itemClass = [
+		'selected-projects-item',
+		isFeatured ? 'selected-projects-item--featured' : '',
+		isThird ? 'selected-projects-item--third' : '',
+		span === 'half' ? 'selected-projects-item--half' : '',
+	]
+		.filter(Boolean)
+		.join(' ');
 
 	return (
-		<article className={`selected-projects-item${isFeatured ? ' selected-projects-item--featured' : ''}`}>
+		<article className={itemClass}>
 			<Link href={href} className="group block">
 				<div className="selected-projects-card-image relative overflow-hidden bg-(--surface)">
 					{cardImage ? (
@@ -27,11 +37,13 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 							src={cardImage}
 							alt={project.title ?? project.slug}
 							width={1200}
-							height={isFeatured ? 900 : 800}
+							height={900}
 							sizes={
 								isFeatured
 									? '(max-width: 768px) 100vw, 90vw'
-									: '(max-width: 768px) 50vw, 45vw'
+									: isThird
+										? '(max-width: 768px) 100vw, 33vw'
+										: '(max-width: 768px) 100vw, 50vw'
 							}
 							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 						/>

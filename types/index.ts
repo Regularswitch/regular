@@ -123,17 +123,30 @@ export type BlobVisual = {
   palette: string[];
 };
 
+export type ProjectMediaType = 'image' | 'video' | 'gif';
+
 export type ProjectStructuredImage = {
   url?: string | false;
   width?: number;
   height?: number;
+  mime?: string;
+  type?: ProjectMediaType;
+};
+
+export type ProjectGalleryImage = {
+  url: string;
+  width?: number;
+  height?: number;
+  mime?: string;
+  type?: ProjectMediaType;
 };
 
 export type ProjectStructuredData = {
   heroImage?: ProjectStructuredImage | null;
   logoImage?: ProjectStructuredImage | null;
   accordion?: Array<{ index: number; title?: string; body: string }>;
-  gallery?: string[];
+  /** URLs (legado) ou objetos com dimensões para grid fluido. */
+  gallery?: Array<string | ProjectGalleryImage>;
   /** Destaque único na home (apenas um projeto deve estar true). */
   featuredOnHome?: boolean;
   /** Exibe vignette/logo no canto inferior esquerdo do hero. */

@@ -8,6 +8,7 @@ import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
 import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
+import { normalizeGalleryItems } from '../../lib/galleryImages';
 import {
 	extractImagesFromHtml,
 	parseAccordionSections,
@@ -24,8 +25,8 @@ type ProjectPageProps = {
 };
 
 const ACCORDION_TITLES = {
-	en: ['CONTEXT', 'CREATIVE DIRECTION', 'SOLUTION', 'IMPACT'],
-	pt: ['CONTEXTO', 'DIREÇÃO CRIATIVA', 'SOLUÇÃO', 'IMPACTO'],
+	en: ['Context', 'Creative direction', 'Solution', 'Impact'],
+	pt: ['Contexto', 'Direção criativa', 'Solução', 'Impacto'],
 } as const;
 
 function mediaUrl(value?: { url?: string | false } | string | false | null) {
@@ -71,8 +72,8 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 		const fromStructured = structuredAccordion(structured, locale);
 		const images =
 			structured?.gallery && structured.gallery.length > 0
-				? structured.gallery
-				: extractImagesFromHtml(contentHtml);
+				? normalizeGalleryItems(structured.gallery)
+				: normalizeGalleryItems(extractImagesFromHtml(contentHtml));
 
 		return {
 			accordionSections: fromStructured?.length
@@ -90,12 +91,13 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 		<article className="project-page">
 			<ProjectHero
 				image={heroImage}
+				media={structured?.heroImage}
 				logo={showLogo ? logoImage : undefined}
 				title={project.title ?? project.slug}
 				showVignette={showVignette}
 			/>
 
-			<div className="project-page-content space-y-10 py-8 md:space-y-16 md:py-14">
+			<div className="project-page-content space-y-10 py-8 md:space-y-20 md:py-14">
 				{(summary || accordionSections.length > 0) && (
 					<section className="project-intro grid gap-8 md:grid-cols-2 md:items-start md:gap-16 lg:gap-20">
 						{summary ? (

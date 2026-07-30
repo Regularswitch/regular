@@ -1,11 +1,32 @@
 import type { ProjectAccordionSection } from './parseProjectContent';
 
+export type EducationGalleryLayout = 'pair' | 'triple' | 'grid-2x2';
+
+export type EducationGallery = {
+	layout: EducationGalleryLayout;
+	images: string[];
+	caption?: string;
+};
+
+export type EducationInstitution = {
+	name: string;
+	logo?: string;
+	description?: string;
+	/** Galeria acima do logo/nome (ex.: Nantes). */
+	topGallery?: EducationGallery;
+	/** Galeria logo após o header (ex.: Mackenzie triple). */
+	midGallery?: EducationGallery;
+	/** Galeria após a descrição (ex.: grid 2×2). */
+	bottomGallery?: EducationGallery;
+};
+
 export type EducationContent = {
 	heroImage?: string;
 	heroVideo?: string;
 	headline: string;
 	accordionSections: ProjectAccordionSection[];
-	/** Carrossel do estúdio — preencher via CMS ou assets locais. */
+	institutions?: EducationInstitution[];
+	/** @deprecated Mantido por compatibilidade com CMS antigo. */
 	studioImages?: string[];
 };
 
@@ -47,20 +68,88 @@ const EDUCATION_ACCORDION_EN: ProjectAccordionSection[] = [
 	},
 ];
 
+const EDUCATION_INSTITUTIONS_PT: EducationInstitution[] = [
+	{
+		name: 'École de Design de Nantes Atlantique (France)',
+		topGallery: {
+			layout: 'pair',
+			images: [],
+			caption: '',
+		},
+		midGallery: {
+			layout: 'pair',
+			images: [],
+		},
+	},
+	{
+		name: 'Mackenzie University (Brazil)',
+		midGallery: {
+			layout: 'triple',
+			images: [],
+		},
+		description:
+			'<p>Parceria com a universidade para workshops, mentorias e projetos colaborativos entre estudantes e o estúdio.</p>',
+		bottomGallery: {
+			layout: 'grid-2x2',
+			images: [],
+		},
+	},
+];
+
+const EDUCATION_INSTITUTIONS_EN: EducationInstitution[] = [
+	{
+		name: 'École de Design de Nantes Atlantique (France)',
+		topGallery: {
+			layout: 'pair',
+			images: [],
+			caption: '',
+		},
+		midGallery: {
+			layout: 'pair',
+			images: [],
+		},
+	},
+	{
+		name: 'Mackenzie University (Brazil)',
+		midGallery: {
+			layout: 'triple',
+			images: [],
+		},
+		description:
+			'<p>Partnership with the university for workshops, mentoring and collaborative projects between students and the studio.</p>',
+		bottomGallery: {
+			layout: 'grid-2x2',
+			images: [],
+		},
+	},
+];
+
 export const DEFAULT_EDUCATION_PT: EducationContent = {
 	headline:
-		'Acreditamos na educação como espaço de troca e experimentação criativa. <strong>Entre</strong> França e Brasil, <strong>desenvolvemos</strong> workshops, talks e projetos colaborativos <strong>que conectam</strong> culturas e novas formas de pensar <strong>o design contemporâneo</strong>.',
+		'Acreditamos na educação como espaço de troca e experimentação criativa. <strong>Entre França e Brasil</strong>, desenvolvemos workshops, talks e projetos colaborativos que conectam culturas e novas formas de pensar o <strong>design contemporâneo</strong>.',
 	accordionSections: EDUCATION_ACCORDION_PT,
+	institutions: EDUCATION_INSTITUTIONS_PT,
 	studioImages: [],
 };
 
 export const DEFAULT_EDUCATION_EN: EducationContent = {
 	headline:
-		'We believe education is a space for exchange and creative experimentation. <strong>Between</strong> France and Brazil, <strong>we develop</strong> workshops, talks and collaborative projects <strong>that connect</strong> cultures and new ways of thinking about <strong>contemporary design</strong>.',
+		'We believe education is a space for exchange and creative experimentation. <strong>Between France and Brazil</strong>, we develop workshops, talks and collaborative projects that connect cultures and new ways of thinking about <strong>contemporary design</strong>.',
 	accordionSections: EDUCATION_ACCORDION_EN,
+	institutions: EDUCATION_INSTITUTIONS_EN,
 	studioImages: [],
 };
 
 export function getDefaultEducationContent(locale: 'en' | 'pt'): EducationContent {
-	return locale === 'pt' ? { ...DEFAULT_EDUCATION_PT } : { ...DEFAULT_EDUCATION_EN };
+	return locale === 'pt'
+		? {
+				...DEFAULT_EDUCATION_PT,
+				accordionSections: [...DEFAULT_EDUCATION_PT.accordionSections],
+				institutions: DEFAULT_EDUCATION_PT.institutions?.map((item) => ({ ...item })),
+			}
+		: {
+				...DEFAULT_EDUCATION_EN,
+				accordionSections: [...DEFAULT_EDUCATION_EN.accordionSections],
+				institutions: DEFAULT_EDUCATION_EN.institutions?.map((item) => ({ ...item })),
+			};
 }

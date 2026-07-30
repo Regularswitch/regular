@@ -55,7 +55,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 								onClick={() => setOpenIndex(isOpen ? -1 : index)}
 								aria-expanded={isOpen}
 							>
-								<span className={`accordion-trigger-title font-hk${isOpen ? ' is-open' : ''}`}>
+								<span className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}>
 									{section.title}
 								</span>
 								<span

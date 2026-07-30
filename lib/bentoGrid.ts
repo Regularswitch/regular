@@ -1,8 +1,11 @@
-export type GridSpan = 'half' | 'featured';
+export type GridSpan = 'half' | 'third' | 'featured';
 
-/** Listagem uniforme: todos os cards no mesmo tamanho. */
-export function getGridSpan(_index?: number): GridSpan {
-	return 'half';
+/**
+ * Listagem /projects: ciclo de 5 — 3 cards (1/3) + 2 cards (1/2).
+ * Desktop usa grid de 6 colunas (third=span 2, half=span 3).
+ */
+export function getGridSpan(index: number): GridSpan {
+	return index % 5 < 3 ? 'third' : 'half';
 }
 
 /**
@@ -13,17 +16,8 @@ export function getHomeGridSpan(index: number, featuredIndex: number): GridSpan 
 	return index === featuredIndex ? 'featured' : 'half';
 }
 
-/** Galeria do projeto: ciclo 2 colunas → largura total. */
-export type GallerySpan = 'half' | 'full';
-
-const GALLERY_CYCLE: GallerySpan[] = ['half', 'half', 'full'];
-
-export function getGallerySpan(index: number): GallerySpan {
-	return GALLERY_CYCLE[index % GALLERY_CYCLE.length] ?? 'half';
-}
-
-/** Primeira dobra da home (1 destaque + 4 padrão). */
+/** Primeira dobra: 1 ciclo 3+2 (listagem) ou 1 destaque + 4 (home). */
 export const INITIAL_BENTO_COUNT = 5;
 
-/** Lotes da listagem /projects (sempre grid uniforme). */
-export const BENTO_BATCH_SIZE = 6;
+/** Lotes da listagem /projects (múltiplos do ciclo 3+2). */
+export const BENTO_BATCH_SIZE = 5;

@@ -163,6 +163,8 @@ O WordPress ainda aponta `siteurl`/`home` para produção. Em **Configurações 
 **Caixas de metadados não aparecem em Projects**  
 1. Confirme que o plugin **Tradução** está ativo e atualizado (`project-fields.php` no ZIP).  
 2. A caixa **Conteúdo do Projeto (site)** fica abaixo do título (editor clássico nos Projects).  
-3. As caixas do tema (**Project Settings**, **Page Settings**) também aparecem na mesma tela.  
-4. No Gutenberg antigo: role até o fim → expanda **Caixas de metadados** (ou **Preferências → Painéis** e ative o painel).  
-5. Reenvie `wordpress/dist/wp-plugins.zip` e substitua a pasta `traducao/` inteira no servidor.
+3. No Gutenberg antigo: role até o fim → expanda **Caixas de metadados** (ou **Preferências → Painéis** e ative o painel).  
+4. Reenvie `wordpress/dist/wp-plugins.zip` e substitua a pasta `traducao/` inteira no servidor.
+
+> As caixas do tema antigo (**Project Settings**, **Page Settings**) são removidas pelo plugin Tradução (v1.1.8+) — use só **Conteúdo do Projeto (site)**.
+

@@ -39,8 +39,8 @@ export function parseAccordionSections(
 ): ProjectAccordionSection[] {
 	const defaults =
 		locale === 'pt'
-			? ['CONTEXTO', 'DIREÇÃO CRIATIVA', 'SOLUÇÃO', 'IMPACTO']
-			: ['CONTEXT', 'CREATIVE DIRECTION', 'SOLUTION', 'IMPACT'];
+			? ['Contexto', 'Direção criativa', 'Solução', 'Impacto']
+			: ['Context', 'Creative direction', 'Solution', 'Impact'];
 
 	const cleaned = removeImagesFromHtml(html);
 	const headingRegex = /<(h[2-6])[^>]*>([\s\S]*?)<\/\1>/gi;
@@ -56,7 +56,7 @@ export function parseAccordionSections(
 		const end = matches[i + 1]?.index ?? cleaned.length;
 		const body = cleaned.slice(start, end).trim();
 
-		if (body) sections.push({ title: title.toUpperCase(), body });
+		if (body) sections.push({ title, body });
 	}
 
 	if (sections.length) return sections;

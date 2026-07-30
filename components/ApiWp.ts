@@ -5,6 +5,7 @@ import type { ContactContent } from '../lib/contactDefaults';
 import type { EducationContent } from '../lib/educationDefaults';
 import type { ProjectsPageContent } from '../lib/projectsPageDefaults';
 import { wpLangSlug, type WpLocale } from '../lib/wpLocaleSlug';
+import { normalizeGalleryItems } from '../lib/galleryImages';
 import { getProjectHeroImage, normalizeProjectData } from '../lib/projectImages';
 import { wpMediaUrl } from '../lib/wpMediaUrl';
 import type { HeaderNavContent } from '../lib/resolveSiteUi';
@@ -200,7 +201,7 @@ export async function GetMeta() {
                 logoImage: item.project_data.logoImage?.url
                     ? { ...item.project_data.logoImage, url: wpMediaUrl(String(item.project_data.logoImage.url)) }
                     : item.project_data.logoImage,
-                gallery: item.project_data.gallery?.map((url) => wpMediaUrl(url) ?? url),
+                gallery: normalizeGalleryItems(item.project_data.gallery),
             }
             : item.project_data,
     }));
@@ -536,6 +537,7 @@ function isEducationContent(value: unknown): value is EducationContent {
     if (!Array.isArray(item.accordionSections)) return false;
     if (!item.accordionSections.every(isEducationAccordionSection)) return false;
     if (item.studioImages !== undefined && !Array.isArray(item.studioImages)) return false;
+    if (item.institutions !== undefined && !Array.isArray(item.institutions)) return false;
     if (item.heroVideo !== undefined && typeof item.heroVideo !== 'string') return false;
     return true;
 }
@@ -547,7 +549,13 @@ export function porterEducation(payloadWp: listResponseWp): EducationContent | n
     const data = item.education_data;
     const sections = data.accordionSections.filter((section) => section.title);
 
-    if (!data.headline && !data.heroImage && !data.heroVideo && sections.length === 0) {
+    if (
+        !data.headline &&
+        !data.heroImage &&
+        !data.heroVideo &&
+        sections.length === 0 &&
+        !(data.institutions?.length)
+    ) {
         return null;
     }
 
@@ -556,6 +564,7 @@ export function porterEducation(payloadWp: listResponseWp): EducationContent | n
 		heroVideo: typeof data.heroVideo === 'string' ? data.heroVideo : undefined,
 		headline: data.headline,
 		accordionSections: sections,
+		institutions: Array.isArray(data.institutions) ? data.institutions : [],
 		studioImages: Array.isArray(data.studioImages)
 			? data.studioImages.filter((url): url is string => typeof url === 'string' && Boolean(url))
 			: [],

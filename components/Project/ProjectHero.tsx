@@ -2,32 +2,62 @@
 
 import Image from 'next/image';
 
+import { isProjectMediaVideo, resolveProjectMediaType } from '../../lib/galleryImages';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import type { ProjectStructuredImage } from '../../types';
 
 type ProjectHeroProps = {
 	image?: string;
+	/** Hero estruturado (com type/mime) — preferido quando disponível. */
+	media?: ProjectStructuredImage | null;
 	logo?: string;
 	title: string;
 	showVignette?: boolean;
 };
 
-export default function ProjectHero({ image, logo, title, showVignette = true }: ProjectHeroProps) {
-	if (!image) return null;
+export default function ProjectHero({
+	image,
+	media,
+	logo,
+	title,
+	showVignette = true,
+}: ProjectHeroProps) {
+	const mediaUrl =
+		(media?.url && typeof media.url === 'string' ? (wpMediaUrl(media.url) ?? media.url) : undefined) ||
+		(image ? (wpMediaUrl(image) ?? image) : undefined);
 
-	const heroSrc = wpMediaUrl(image) ?? image;
+	if (!mediaUrl) return null;
+
+	const mediaType = media
+		? resolveProjectMediaType(mediaUrl, media.mime, media.type)
+		: resolveProjectMediaType(mediaUrl);
+	const isVideo = mediaType === 'video' || isProjectMediaVideo({ url: mediaUrl, type: mediaType });
+	const isGif = mediaType === 'gif';
 	const logoSrc = logo ? (wpMediaUrl(logo) ?? logo) : undefined;
 
 	return (
 		<section className="project-hero" aria-label={title}>
 			<div className="project-hero-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface) md:aspect-video">
-				<Image
-					src={heroSrc}
-					alt={title}
-					fill
-					priority
-					sizes="(max-width: 768px) 100vw, 90vw"
-					className="object-cover object-center"
-				/>
+				{isVideo ? (
+					<video
+						className="absolute inset-0 h-full w-full object-cover object-center"
+						src={mediaUrl}
+						autoPlay
+						muted
+						loop
+						playsInline
+					/>
+				) : (
+					<Image
+						src={mediaUrl}
+						alt={title}
+						fill
+						priority
+						unoptimized={isGif}
+						sizes="(max-width: 768px) 100vw, 90vw"
+						className="object-cover object-center"
+					/>
+				)}
 
 				<div className="absolute inset-0 bg-black/20" />
 

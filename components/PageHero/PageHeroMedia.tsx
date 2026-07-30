@@ -14,6 +14,8 @@ type PageHeroMediaProps = {
 	showEmptySlot?: boolean;
 	/** Quando false, renderiza só o frame (sem <section>). */
 	asSection?: boolean;
+	/** Edge-to-edge dentro do main (sem radius / aspect card). */
+	fullBleed?: boolean;
 };
 
 export default function PageHeroMedia({
@@ -23,12 +25,19 @@ export default function PageHeroMedia({
 	className = '',
 	showEmptySlot = false,
 	asSection = true,
+	fullBleed = false,
 }: PageHeroMediaProps) {
 	const imageSrc = image ? (wpMediaUrl(image) ?? image) : undefined;
 	const videoSrc = video ? (wpMediaUrl(video) ?? video) : undefined;
 
 	const frame = (children: ReactNode) => (
-		<div className="page-hero-media relative aspect-square overflow-hidden rounded-[5px] bg-(--surface) md:aspect-6/3">
+		<div
+			className={
+				fullBleed
+					? 'page-hero-media page-hero-media--bleed relative overflow-hidden bg-(--surface)'
+					: 'page-hero-media relative aspect-square overflow-hidden rounded-[5px] bg-(--surface) md:aspect-6/3'
+			}
+		>
 			{children}
 		</div>
 	);
@@ -64,7 +73,7 @@ export default function PageHeroMedia({
 			alt=""
 			fill
 			priority
-			sizes="(max-width: 768px) 100vw, 90vw"
+			sizes={fullBleed ? '100vw' : '(max-width: 768px) 100vw, 90vw'}
 			className="object-cover object-center"
 		/>
 	);

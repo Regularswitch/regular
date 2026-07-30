@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.1.2
+ * Version: 1.1.8
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -13,15 +13,17 @@ include __DIR__ . "/rich-text-fields.php";
 include __DIR__ . "/media-fields.php";
 include __DIR__ . "/footer-fields.php";
 include __DIR__ . "/capabilities-fields.php";
+include __DIR__ . "/page-heroes-fields.php";
+include __DIR__ . "/section-hero-fields.php";
 include __DIR__ . "/about-fields.php";
 include __DIR__ . "/education-fields.php";
 include __DIR__ . "/contact-fields.php";
 include __DIR__ . "/projects-page-fields.php";
 include __DIR__ . "/site-ui-fields.php";
 include __DIR__ . "/blob-visual-fields.php";
-include __DIR__ . "/page-heroes-fields.php";
 include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
+include __DIR__ . "/hide-themerain-meta.php";
 include __DIR__ . "/slug-language.php";
 include __DIR__ . "/rest-translate.php";
 include __DIR__ . "/proxy.php";

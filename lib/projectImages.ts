@@ -1,10 +1,25 @@
 import { wpMediaUrl } from './wpMediaUrl';
+import { isProjectMediaVideo, normalizeGalleryItems, resolveProjectMediaType } from './galleryImages';
 import type { Project, ProjectStructuredData, ProjectStructuredImage } from '../types';
 
 export function structuredImageUrl(image?: ProjectStructuredImage | null): string | undefined {
 	const url = image?.url;
 	if (!url || typeof url !== 'string' || !url.trim()) return undefined;
 	return wpMediaUrl(url) ?? url;
+}
+
+function normalizeStructuredMedia(
+	image?: ProjectStructuredImage | null,
+): ProjectStructuredImage | null | undefined {
+	if (!image?.url || typeof image.url !== 'string') return image;
+	const url = structuredImageUrl(image) ?? image.url;
+	const mime = typeof image.mime === 'string' ? image.mime : undefined;
+	return {
+		...image,
+		url,
+		mime,
+		type: resolveProjectMediaType(url, mime, image.type),
+	};
 }
 
 export function normalizeProjectData(
@@ -14,28 +29,28 @@ export function normalizeProjectData(
 
 	return {
 		...data,
-		heroImage: data.heroImage?.url
-			? { ...data.heroImage, url: structuredImageUrl(data.heroImage) ?? data.heroImage.url }
-			: data.heroImage,
-		logoImage: data.logoImage?.url
-			? { ...data.logoImage, url: structuredImageUrl(data.logoImage) ?? data.logoImage.url }
-			: data.logoImage,
-		gallery: data.gallery?.map((url) => wpMediaUrl(url) ?? url),
+		heroImage: normalizeStructuredMedia(data.heroImage) ?? data.heroImage,
+		logoImage: normalizeStructuredMedia(data.logoImage) ?? data.logoImage,
+		gallery: normalizeGalleryItems(data.gallery),
 	};
 }
 
-/** Imagem de fundo do projeto (hero), com fallback para galeria e imagem destacada. */
+/**
+ * Thumbnail estático para cards (home / listagem).
+ * Ignora vídeo no hero e pega a primeira imagem/GIF da galeria se precisar.
+ */
 export function getProjectHeroImage(
 	project: Pick<Project, 'image_full' | 'project_data'>,
 ): string | undefined {
-	const hero = structuredImageUrl(project.project_data?.heroImage);
-	if (hero) return hero;
-
-	const gallery = project.project_data?.gallery;
-	if (gallery?.length) {
-		const first = gallery[0];
-		if (first) return wpMediaUrl(first) ?? first;
+	const hero = project.project_data?.heroImage;
+	if (hero && !isProjectMediaVideo(hero)) {
+		const url = structuredImageUrl(hero);
+		if (url) return url;
 	}
+
+	const gallery = normalizeGalleryItems(project.project_data?.gallery);
+	const still = gallery.find((item) => item.type !== 'video');
+	if (still?.url) return still.url;
 
 	if (project.image_full) return wpMediaUrl(project.image_full) ?? project.image_full;
 	return undefined;

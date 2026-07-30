@@ -9,6 +9,7 @@ if (defined('RS_ABOUT_FIELDS_LOADED')) {
 define('RS_ABOUT_FIELDS_LOADED', true);
 
 const RS_ABOUT_HERO_IMAGE_KEY = 'rs_about_hero_image_id';
+const RS_ABOUT_HERO_VIDEO_KEY = 'rs_about_hero_video_id';
 const RS_ABOUT_HEADLINE_KEY = 'rs_about_headline';
 const RS_ABOUT_BODY_KEY = 'rs_about_body';
 const RS_ABOUT_SECTIONS_KEY = 'rs_about_sections';
@@ -84,16 +85,13 @@ function rs_about_sections_to_payload(array $sections): array {
 }
 
 function rs_about_meta_to_payload(int $post_id): array {
-    $hero_url = function_exists('rs_page_heroes_get_image_url')
-        ? rs_page_heroes_get_image_url('about', $post_id)
-        : '';
-    $hero_video = function_exists('rs_page_heroes_get_video_url')
-        ? rs_page_heroes_get_video_url('about')
-        : '';
+    $hero = function_exists('rs_section_hero_media')
+        ? rs_section_hero_media($post_id, RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY, 'about')
+        : ['image' => '', 'video' => ''];
 
     return [
-        'heroImage'          => $hero_url,
-        'heroVideo'          => $hero_video,
+        'heroImage'          => $hero['image'],
+        'heroVideo'          => $hero['video'],
         'headline'           => trim((string) get_post_meta($post_id, RS_ABOUT_HEADLINE_KEY, true)),
         'body'               => trim((string) get_post_meta($post_id, RS_ABOUT_BODY_KEY, true)),
         'accordionSections'  => rs_about_sections_to_payload(rs_about_get_sections($post_id)),
@@ -135,7 +133,7 @@ function rs_about_ensure_locale_posts(): void {
 }
 
 add_action('init', function () {
-    foreach ([RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HEADLINE_KEY, RS_ABOUT_BODY_KEY, RS_ABOUT_SECTIONS_KEY] as $key) {
+    foreach ([RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY, RS_ABOUT_HEADLINE_KEY, RS_ABOUT_BODY_KEY, RS_ABOUT_SECTIONS_KEY] as $key) {
         register_post_meta('about', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -232,7 +230,11 @@ function rs_about_render_meta_box(WP_Post $post): void {
         $sections = [['title' => '', 'text' => '', 'image_id' => 0]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. A <strong>imagem/vídeo do hero</strong> é editada em <a href="' . esc_url(admin_url('admin.php?page=rs-page-heroes')) . '">Heroes das páginas</a>.</p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js.</p>';
+
+    if (function_exists('rs_section_render_hero_fields')) {
+        rs_section_render_hero_fields($post->ID, RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY);
+    }
 
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
@@ -341,6 +343,10 @@ add_action('save_post_about', function (int $post_id) {
         : '';
     update_post_meta($post_id, RS_ABOUT_HEADLINE_KEY, $headline);
 
+    if (function_exists('rs_section_save_hero_media')) {
+        rs_section_save_hero_media($post_id, RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY);
+    }
+
     $body = isset($_POST[RS_ABOUT_BODY_KEY])
         ? wp_kses_post(wp_unslash($_POST[RS_ABOUT_BODY_KEY]))
         : '';
@@ -354,6 +360,9 @@ function rs_copy_about_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_ABOUT_HEADLINE_KEY, get_post_meta($from_id, RS_ABOUT_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_ABOUT_BODY_KEY, get_post_meta($from_id, RS_ABOUT_BODY_KEY, true));
     update_post_meta($to_id, RS_ABOUT_SECTIONS_KEY, get_post_meta($from_id, RS_ABOUT_SECTIONS_KEY, true));
+    if (function_exists('rs_section_copy_hero_media')) {
+        rs_section_copy_hero_media($from_id, $to_id, RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY);
+    }
 }
 
 rs_enqueue_admin_media_picker(['about']);

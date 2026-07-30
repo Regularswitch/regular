@@ -6,8 +6,6 @@ import type { Category, Project } from '../types';
  */
 export const HOME_PROJECTS_CATEGORY_SLUG = 'home';
 
-export const EDUCATION_PROJECTS_CATEGORY_SLUG = 'education';
-
 export function resolveHomeProjectsCategoryId(categories: Category[]): number | null {
 	const bySlug = categories.find((category) => category.slug === HOME_PROJECTS_CATEGORY_SLUG);
 	if (bySlug) return bySlug.id;

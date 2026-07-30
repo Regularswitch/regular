@@ -2,7 +2,7 @@
 
 Guia para editar o conteúdo do site no WordPress. O WP é só o **CMS**; o site público é o Next.js, que lê tudo pela API.
 
-**Plugin:** Tradução **v1.1.0** (e Api Rest Etc Extension)  
+**Plugin:** Tradução **v1.1.5** (e Api Rest Etc Extension)  
 **Para quem:** quem edita textos, imagens, projetos e menus no painel.
 
 ---
@@ -26,7 +26,7 @@ Antes havia fluxos legados (item **Tradutor**, JSON no editor, campos soltos). A
 1. Cada página do site tem um **menu próprio** no lateral (Intro, Sobre Nós, Capacidades…).
 2. Conteúdo editável fica em **caixas com campos nomeados** — não edite JSON no editor clássico.
 3. Inglês e português são **dois posts** (`en` / `pt`), ligados pela coluna **Language**.
-4. Imagens de topo (Sobre, Educação, Contato) ficam num lugar só: **Heroes**.
+4. Imagem/vídeo de topo ficam no post de cada página (Sobre, Educação, Contato).
 5. Projetos têm caixa **Conteúdo do Projeto (site)** (hero, logo, acordeão, galeria). O editor principal do WP está **desligado** nos projetos.
 
 Se o admin não bater com este guia, o plugin **Tradução** no servidor provavelmente está desatualizado — faça deploy do ZIP (`./scripts/wp-package-plugins.sh`). Detalhes: [wordpress-staging.md](./wordpress-staging.md).
@@ -42,18 +42,17 @@ Ordem típica (entre separadores):
 | **Intro** | Texto grande da home |
 | **Visual da home** | Cores do blob 3D (vale EN + PT) |
 | **Interface do site** | Labels (“Projetos Selecionados”, “Últimos”…) |
-| **Heroes** | Imagens de topo de Sobre, Educação e Contato |
-| **Sobre Nós** | Página About |
+| **Sobre Nós** | Página About (inclui hero) |
 | **Página de projetos** | Título da listagem `/projects` |
 | **Capacidades** | Página Capabilities |
-| **Educação** | Página Education |
+| **Educação** | Página Education (hero, headline, acordeão, instituições) |
 | **Marcas** | Logos do carrossel |
-| **Contato** | Página Contact |
+| **Contato** | Página Contact (inclui hero opcional) |
 | **Footer** | Rodapé |
 | **Projects** | Cada projeto (`/project/{slug}`) |
 | **Aparência → Menus** | Links do header (EN e PT) |
 
-> **Heroes** abre direto a tela de edição — não há listagem.
+> Cada página (Sobre / Educação / Contato) edita o próprio hero no post `en` ou `pt`.
 
 ---
 
@@ -86,7 +85,7 @@ Campo vazio → o site usa o **texto padrão** do Next.js. Para voltar ao padrã
 
 | O quê | Onde |
 |-------|------|
-| Hero Sobre / Educação / Contato | **Heroes** (imagem e/ou vídeo, EN+PT) |
+| Hero Sobre / Educação / Contato | No próprio menu da página (`en` / `pt`) |
 | Textos, acordeões, headlines | Post `en` ou `pt` de cada página |
 | Cores do blob | **Visual da home** (único) |
 | Hero e galeria de um projeto | No próprio projeto (e na tradução PT, se existir) |
@@ -159,14 +158,15 @@ Vale para **inglês e português** ao mesmo tempo. Não há posts `en`/`pt` aqui
 
 ### 3. Heroes (Sobre, Educação, Contato)
 
-**Menu:** Heroes
+Não há menu separado. Abra a página correspondente:
 
-Para cada página (Sobre Nós, Educação, Contato):
+| Página | Menu WP |
+|--------|---------|
+| Sobre | **Sobre Nós** → post `en` ou `pt` → caixa **Hero** |
+| Educação | **Educação** → post `en` ou `pt` → caixa **Hero** |
+| Contato | **Contato** → post `en` ou `pt` → caixa **Hero** |
 
-- **Imagem** — poster / fallback
-- **Vídeo (mp4)** — opcional; se preenchido, tem **prioridade** no site (autoplay, muted, loop)
-
-A mídia é **compartilhada entre EN e PT**. Em Contato, o hero só aparece se houver imagem ou vídeo.
+Em cada Hero: **Imagem** e **Vídeo (mp4)** opcional. Se houver vídeo, ele tem prioridade (imagem = poster). Em Contato, sem mídia o topo não aparece.
 
 ---
 
@@ -217,7 +217,7 @@ Cada post edita **só um idioma**. Exemplos:
 | **Texto introdutório** | Texto ao lado do título (desktop) |
 | **Seções do acordeão** | Título, texto e **imagem lateral** por seção |
 
-Hero: só em **Heroes**. A grade de “últimos projetos” vem de **Projects**, não desta tela.
+Hero: edite a caixa **Hero** neste mesmo post. A grade de “últimos projetos” vem de **Projects**, não desta tela.
 
 ---
 
@@ -240,10 +240,12 @@ Sem hero de página — só headline + acordeão.
 
 | Campo | Função |
 |-------|--------|
-| **Headline** | Título abaixo do hero |
-| **Seções** | Título e texto (sem imagem lateral) |
+| **Hero** | Imagem e/ou vídeo de topo (full-bleed) |
+| **Headline** | Texto introdutório — use **B** para destacar palavras |
+| **Acordeão** | Seções (ex.: Workshops) — **+ Adicionar seção** |
+| **Instituições** | Escola/parceiro: nome, logo, descrição e até 3 galerias (2 colunas, 3 verticais ou grade 2×2) — **+ Adicionar instituição** |
 
-Hero: **Heroes**. A grade de projetos usa itens de **Projects** na categoria **education**.
+No final da página, **The Latest** lista projetos da categoria `education`.
 
 ---
 
@@ -256,7 +258,7 @@ Hero: **Heroes**. A grade de projetos usa itens de **Projects** na categoria **e
 | **Headline** | Título da página |
 | **Blocos** | Colunas (título + conteúdo) — **+ Adicionar bloco** |
 
-Hero: **Heroes**.
+Hero: caixa **Hero** neste post (opcional).
 
 ---
 
@@ -284,9 +286,9 @@ Cada um tem **slug próprio**. Para português: coluna **Language → PT** (conf
 
 | Grupo | Campos |
 |-------|--------|
-| **Hero (topo)** | **Imagem de fundo** (1:1 mobile, 16:9 desktop) · **Logo** (sobre a imagem no desktop; oculta no mobile) |
+| **Hero (topo)** | Fundo: imagem, GIF ou vídeo (mp4); logo/vignette opcional |
 | **Acordeão (coluna direita)** | Seções com **título** + texto — **+ Adicionar seção** |
-| **Galeria (fotos abaixo)** | **+ Adicionar imagem** (ordem = ordem no site) |
+| **Galeria** | **+ Adicionar mídia** — imagens, GIFs e vídeos (ordem = ordem no site) |
 
 #### Barra lateral
 
@@ -377,7 +379,7 @@ Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atri
 
 **Hero de Sobre / Educação / Contato não mudou**
 
-- Edite em **Heroes**, não no post da página
+- Edite a caixa **Hero** no post da própria página (`en` / `pt`)
 
 **Na home PT vários projetos mostram o mesmo título (ex.: Terrô)**
 
@@ -394,7 +396,7 @@ Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atri
 
 **Admin diferente deste tutorial**
 
-- Confira se o plugin Tradução é **v1.1.0** (Plugins no WP, ou texto de ajuda na caixa do projeto)
+- Confira se o plugin Tradução é **v1.1.5** (Plugins no WP, ou texto de ajuda na caixa do projeto)
 
 ---
 
@@ -405,9 +407,9 @@ Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atri
 | Home | `/` e `/PT` | Intro, Visual da home, Interface |
 | Projetos | `/projects` | Página de projetos + Projects |
 | Capacidades | `/capabilities` | Capacidades |
-| Educação | `/education` | Educação + Heroes |
-| Sobre | `/about-us` | Sobre Nós + Heroes |
-| Contato | `/contact` | Contato + Heroes |
+| Educação | `/education` | Educação |
+| Sobre | `/about-us` | Sobre Nós |
+| Contato | `/contact` | Contato |
 | Projeto | `/project/{slug}` | Projects |
 
 ---

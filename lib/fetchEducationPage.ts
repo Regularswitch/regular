@@ -1,7 +1,6 @@
-import { GetCategoriesApi, GetEducationByLocale, GetProjectsByCategorySlug } from '../components/ApiWp';
+import { GetApi, GetEducationByLocale } from '../components/ApiWp';
 import { buildEducationContent } from './buildEducationContent';
 import { getDefaultEducationContent, type EducationContent } from './educationDefaults';
-import { EDUCATION_PROJECTS_CATEGORY_SLUG } from './projectCategories';
 import { sortProjectsByDate } from './sortProjects';
 import type { Category, Projects } from '../types';
 
@@ -12,19 +11,17 @@ export type EducationPageData = {
 };
 
 async function fetchEducationFromWp(locale: 'en' | 'pt') {
-	const query: Record<string, string | number> = { _embed: '' };
-	if (locale === 'pt') query.translate = 'PT';
+	const query: Record<string, string | number> = { _embed: '', per_page: 100 };
 
-	const [education, educationProjects, categories] = await Promise.all([
+	const [education, projects] = await Promise.all([
 		GetEducationByLocale(locale),
-		GetProjectsByCategorySlug(EDUCATION_PROJECTS_CATEGORY_SLUG, query),
-		GetCategoriesApi('/project-category', { per_page: 22, ...query }),
+		GetApi('/project/', query),
 	]);
 
 	return {
 		content: buildEducationContent(education, locale),
-		projects: sortProjectsByDate(educationProjects),
-		categories,
+		projects: sortProjectsByDate(projects),
+		categories: [] as Category[],
 	};
 }
 

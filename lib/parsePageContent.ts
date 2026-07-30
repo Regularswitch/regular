@@ -82,7 +82,7 @@ export function parsePageAccordionFromHeadings(
 		const end = matches[i + 1]?.index ?? cleaned.length;
 		const body = cleaned.slice(start, end).trim();
 
-		sections.push({ title: title.toUpperCase(), body });
+		sections.push({ title, body });
 	}
 
 	return sections.filter((section) => section.title);

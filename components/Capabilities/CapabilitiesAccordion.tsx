@@ -6,7 +6,6 @@ import { useState } from 'react';
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
 import type { CapabilitySection } from '../../lib/capabilitiesDefaults';
-import { toSentenceCaseHtml } from '../../lib/sentenceCase';
 import { wpMediaUrl } from '../../lib/wpMediaUrl';
 
 type CapabilitiesAccordionProps = {
@@ -38,8 +37,8 @@ export default function CapabilitiesAccordion({
 							aria-expanded={isOpen}
 						>
 							<span
-								className={`accordion-trigger-title accordion-trigger-title--sentence font-hk${isOpen ? ' is-open' : ''}`}
-								dangerouslySetInnerHTML={{ __html: toSentenceCaseHtml(section.title) }}
+								className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}
+								dangerouslySetInnerHTML={{ __html: section.title }}
 							/>
 							<span
 								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}

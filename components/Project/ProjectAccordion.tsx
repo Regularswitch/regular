@@ -4,19 +4,16 @@ import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
-import { toSentenceCase } from '../../lib/sentenceCase';
 import type { ProjectAccordionSection } from '../../lib/parseProjectContent';
 
 type ProjectAccordionProps = {
 	sections: ProjectAccordionSection[];
 	defaultOpenIndex?: number;
-	titleCase?: 'upper' | 'sentence';
 };
 
 export default function ProjectAccordion({
 	sections,
 	defaultOpenIndex = -1,
-	titleCase = 'upper',
 }: ProjectAccordionProps) {
 	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
@@ -29,8 +26,6 @@ export default function ProjectAccordion({
 			<BezierDivider />
 			{visibleSections.map((section, index) => {
 				const isOpen = openIndex === index;
-				const title =
-					titleCase === 'sentence' ? toSentenceCase(section.title) : section.title;
 
 				return (
 					<div key={section.title}>
@@ -41,9 +36,9 @@ export default function ProjectAccordion({
 							aria-expanded={isOpen}
 						>
 							<span
-								className={`accordion-trigger-title font-hk${titleCase === 'sentence' ? ' accordion-trigger-title--sentence' : ''}${isOpen ? ' is-open' : ''}`}
+								className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}
 							>
-								{title}
+								{section.title}
 							</span>
 							<span
 								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}

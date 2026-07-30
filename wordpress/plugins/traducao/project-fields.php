@@ -42,10 +42,10 @@ function rs_project_guess_locale(int $post_id): string {
  */
 function rs_project_default_accordion_titles(string $locale): array {
     if ($locale === 'pt') {
-        return ['CONTEXTO', 'DIREÇÃO CRIATIVA', 'SOLUÇÃO', 'IMPACTO'];
+        return ['Contexto', 'Direção criativa', 'Solução', 'Impacto'];
     }
 
-    return ['CONTEXT', 'CREATIVE DIRECTION', 'SOLUTION', 'IMPACT'];
+    return ['Context', 'Creative direction', 'Solution', 'Impact'];
 }
 
 /**
@@ -179,11 +179,21 @@ function rs_project_attachment_info(int $attachment_id): ?array {
     }
 
     $meta = wp_get_attachment_metadata($attachment_id);
+    $mime = (string) get_post_mime_type($attachment_id);
+    $type = 'image';
+
+    if ($mime !== '' && str_starts_with($mime, 'video/')) {
+        $type = 'video';
+    } elseif ($mime === 'image/gif') {
+        $type = 'gif';
+    }
 
     return [
         'url'    => $url,
-        'width'  => $meta['width'] ?? 0,
-        'height' => $meta['height'] ?? 0,
+        'width'  => (int) ($meta['width'] ?? 0),
+        'height' => (int) ($meta['height'] ?? 0),
+        'mime'   => $mime,
+        'type'   => $type,
     ];
 }
 
@@ -209,7 +219,7 @@ function rs_project_meta_to_payload(int $post_id): array {
     foreach (rs_project_get_gallery_ids($post_id) as $attachment_id) {
         $info = rs_project_attachment_info($attachment_id);
         if ($info && !empty($info['url'])) {
-            $gallery[] = $info['url'];
+            $gallery[] = $info;
         }
     }
 
@@ -408,7 +418,7 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
     <div class="rs-project-gallery-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 12px;padding:12px;border:1px solid #dcdcde;border-radius:4px;background:#fff;">
             <div style="flex:1;min-width:0;">
-                <?php rs_render_media_field($name_prefix . '[image_id]', '', $attachment_id, $field_id, !$is_template); ?>
+                <?php rs_render_media_field($name_prefix . '[image_id]', '', $attachment_id, $field_id, !$is_template, 'media'); ?>
             </div>
             <?php if (!$is_template) : ?>
                 <button type="button" class="button-link-delete rs-project-remove-gallery" style="flex-shrink:0;margin-top:2px;">Remover</button>
@@ -438,12 +448,12 @@ function rs_project_render_meta_box(WP_Post $post): void {
         $gallery_ids = [];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui tudo que aparece na página <code>/project/{slug}</code>. O <strong>resumo</strong> (coluna esquerda) fica no campo <em>Resumo</em> da barra lateral. Use a coluna <strong>Language</strong> para criar/editar a versão em português. <em>(Plugin Tradução v1.1.1)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui tudo que aparece na página <code>/project/{slug}</code>. O <strong>resumo</strong> (coluna esquerda) fica no campo <em>Resumo</em> da barra lateral. Use a coluna <strong>Language</strong> para criar/editar a versão em português. <em>(Plugin Tradução v1.1.5)</em></p>';
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero (topo)</strong></legend>';
-    rs_render_media_field('rs_project_hero_id', 'Imagem de fundo — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id');
-    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a imagem no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
+    rs_render_media_field('rs_project_hero_id', 'Fundo (imagem, GIF ou vídeo mp4) — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', true, 'media');
+    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a mídia no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
     echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
     echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
     echo '</fieldset>';
@@ -466,16 +476,16 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '</fieldset>';
 
     echo '<fieldset style="margin:0 0 10px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria (fotos abaixo)</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Adicione quantas imagens quiser. A ordem aqui define a ordem no site (padrão bento: 2 colunas → largura total → 2 colunas).</p>';
-    echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma imagem na galeria.</p>';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria</strong></legend>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). A ordem aqui define a ordem no site; o layout se adapta à proporção de cada mídia.</p>';
+    echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list">';
     foreach ($gallery_ids as $index => $attachment_id) {
         rs_project_render_gallery_row((int) $index, (int) $attachment_id);
     }
     echo '</div>';
     rs_project_render_gallery_row(0, 0, true);
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar imagem</button></p>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídia</button></p>';
     echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="" />';
     echo '</fieldset>';
 }

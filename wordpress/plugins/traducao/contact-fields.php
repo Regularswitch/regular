@@ -9,6 +9,7 @@ if (defined('RS_CONTACT_FIELDS_LOADED')) {
 define('RS_CONTACT_FIELDS_LOADED', true);
 
 const RS_CONTACT_HERO_IMAGE_KEY = 'rs_contact_hero_image_id';
+const RS_CONTACT_HERO_VIDEO_KEY = 'rs_contact_hero_video_id';
 const RS_CONTACT_HEADLINE_KEY = 'rs_contact_headline';
 const RS_CONTACT_BLOCKS_KEY = 'rs_contact_blocks';
 
@@ -59,16 +60,13 @@ function rs_contact_normalize_blocks(array $blocks): array {
 }
 
 function rs_contact_meta_to_payload(int $post_id): array {
-    $hero_url = function_exists('rs_page_heroes_get_image_url')
-        ? rs_page_heroes_get_image_url('contact', $post_id)
-        : '';
-    $hero_video = function_exists('rs_page_heroes_get_video_url')
-        ? rs_page_heroes_get_video_url('contact')
-        : '';
+    $hero = function_exists('rs_section_hero_media')
+        ? rs_section_hero_media($post_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY, 'contact')
+        : ['image' => '', 'video' => ''];
 
     return [
-        'heroImage' => $hero_url,
-        'heroVideo' => $hero_video,
+        'heroImage' => $hero['image'],
+        'heroVideo' => $hero['video'],
         'headline'  => trim((string) get_post_meta($post_id, RS_CONTACT_HEADLINE_KEY, true)),
         'blocks'    => rs_contact_get_blocks($post_id),
     ];
@@ -109,7 +107,7 @@ function rs_contact_ensure_locale_posts(): void {
 }
 
 add_action('init', function () {
-    foreach ([RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HEADLINE_KEY, RS_CONTACT_BLOCKS_KEY] as $key) {
+    foreach ([RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY, RS_CONTACT_HEADLINE_KEY, RS_CONTACT_BLOCKS_KEY] as $key) {
         register_post_meta('contact', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -199,7 +197,11 @@ function rs_contact_render_meta_box(WP_Post $post): void {
         $blocks = [['title' => '', 'body' => '']];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. A <strong>imagem/vídeo do hero</strong> é editada em <a href="' . esc_url(admin_url('admin.php?page=rs-page-heroes')) . '">Heroes das páginas</a>.</p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. Sem imagem/vídeo no Hero, a página Contato não exibe o topo.</p>';
+
+    if (function_exists('rs_section_render_hero_fields')) {
+        rs_section_render_hero_fields($post->ID, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
+    }
 
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
@@ -271,6 +273,10 @@ add_action('save_post_contact', function (int $post_id) {
         : '';
     update_post_meta($post_id, RS_CONTACT_HEADLINE_KEY, $headline);
 
+    if (function_exists('rs_section_save_hero_media')) {
+        rs_section_save_hero_media($post_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
+    }
+
     $blocks = rs_contact_parse_blocks_from_request();
     update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode($blocks, JSON_UNESCAPED_UNICODE));
 });
@@ -278,6 +284,9 @@ add_action('save_post_contact', function (int $post_id) {
 function rs_copy_contact_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_CONTACT_HEADLINE_KEY, get_post_meta($from_id, RS_CONTACT_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, get_post_meta($from_id, RS_CONTACT_BLOCKS_KEY, true));
+    if (function_exists('rs_section_copy_hero_media')) {
+        rs_section_copy_hero_media($from_id, $to_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
+    }
 }
 
 rs_enqueue_admin_media_picker(['contact']);

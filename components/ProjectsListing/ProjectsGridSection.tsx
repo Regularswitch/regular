@@ -26,7 +26,7 @@ export default function ProjectsGridSection({
 	hrefForSlug,
 	cta,
 	ariaLabel,
-	className = 'selected-projects pb-12 pt-10 md:pb-20 md:pt-14',
+	className = 'projects-listing-section pb-12 pt-10 md:pb-20 md:pt-14',
 }: ProjectsGridSectionProps) {
 	const sorted = useMemo(() => projects, [projects]);
 	const [visibleCount, setVisibleCount] = useState<number>(initialCount);
@@ -40,7 +40,7 @@ export default function ProjectsGridSection({
 
 	return (
 		<section className={className} aria-label={ariaLabel ?? (locale === 'pt' ? 'Projetos' : 'Projects')}>
-			<div className="selected-projects-grid">
+			<div className="projects-listing-grid">
 				{visible.map((project, index) => (
 					<ProjectGridCard
 						key={project.id}
@@ -57,7 +57,7 @@ export default function ProjectsGridSection({
 					<button
 						type="button"
 						onClick={() => setVisibleCount((count) => count + PROJECTS_BATCH_SIZE)}
-						className="selected-projects-cta font-hk"
+						className="selected-projects-cta selected-projects-cta--full-mobile font-hk"
 					>
 						{buttonLabel}
 					</button>
