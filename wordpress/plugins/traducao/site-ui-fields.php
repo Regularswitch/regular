@@ -37,7 +37,7 @@ function rs_site_ui_get_layout(): array {
     $en_id = rs_site_ui_get_post_id_by_locale('en');
     $columns = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_HOME_COLUMNS_KEY, true) : 2;
     $initial = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, true) : 5;
-    $latest = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_LATEST_COUNT_KEY, true) : 4;
+    $latest = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_LATEST_COUNT_KEY, true) : 6;
 
     if (!in_array($columns, [1, 2, 3], true)) {
         $columns = 2;
@@ -45,8 +45,8 @@ function rs_site_ui_get_layout(): array {
     if ($initial < 1) {
         $initial = 5;
     }
-    if (!in_array($latest, [3, 4], true)) {
-        $latest = 4;
+    if ($latest < 3 || $latest > 12) {
+        $latest = 6;
     }
 
     return [
@@ -292,9 +292,9 @@ function rs_site_ui_render_meta_box(WP_Post $post): void {
         echo '<p style="margin:0 0 12px;"><label for="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
         echo '<input type="number" min="1" max="100" style="width:100px;" id="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" name="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" /></p>';
 
-        echo '<p style="margin:0;"><label for="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Cards no “The Latest”</label>';
+        echo '<p style="margin:0;"><label for="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Itens no carrossel “The Latest”</label>';
         echo '<select id="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" name="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '">';
-        foreach ([3, 4] as $n) {
+        foreach ([4, 6, 8, 12] as $n) {
             echo '<option value="' . $n . '"' . selected($layout['latestCount'], $n, false) . '>' . $n . '</option>';
         }
         echo '</select></p>';
@@ -341,7 +341,11 @@ add_action('save_post_site-ui', function (int $post_id) {
         }
         if (isset($_POST[RS_SITE_UI_LATEST_COUNT_KEY])) {
             $latest = (int) $_POST[RS_SITE_UI_LATEST_COUNT_KEY];
-            update_post_meta($post_id, RS_SITE_UI_LATEST_COUNT_KEY, in_array($latest, [3, 4], true) ? (string) $latest : '4');
+            update_post_meta(
+                $post_id,
+                RS_SITE_UI_LATEST_COUNT_KEY,
+                in_array($latest, [4, 6, 8, 12], true) ? (string) $latest : '6'
+            );
         }
     }
 });

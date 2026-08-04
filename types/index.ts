@@ -118,7 +118,7 @@ export type SiteUiLayout = {
   homeColumns: 1 | 2 | 3;
   /** Quantos projetos mostrar ao abrir /projects (antes do “see more”). */
   projectsInitialCount: number;
-  /** Quantos cards no “The Latest” (grade). */
+  /** Quantos cards no carrossel “The Latest”. */
   latestCount: number;
 };
 

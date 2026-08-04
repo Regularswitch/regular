@@ -585,7 +585,10 @@ function rs_education_render_meta_box(WP_Post $post): void {
         ]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.1.7)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.1)</em></p>';
+    if (function_exists('rs_sync_media_notice_html')) {
+        echo rs_sync_media_notice_html((int) $post->ID);
+    }
 
     if (function_exists('rs_section_render_hero_fields')) {
         rs_section_render_hero_fields($post->ID, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);

@@ -49,7 +49,7 @@ const LABELS_PT: SiteUiLabels = {
 export const DEFAULT_SITE_UI_LAYOUT: SiteUiLayout = {
 	homeColumns: 2,
 	projectsInitialCount: 5,
-	latestCount: 4,
+	latestCount: 6,
 };
 
 export const DEFAULT_SITE_UI: SiteUiContent = {
@@ -77,8 +77,8 @@ export function normalizeSiteUiLayout(raw?: Partial<SiteUiLayout> | null): SiteU
 				? Math.min(100, Math.floor(projectsInitialCount))
 				: DEFAULT_SITE_UI_LAYOUT.projectsInitialCount,
 		latestCount:
-			latestCount === 3 || latestCount === 4
-				? latestCount
+			Number.isFinite(latestCount) && latestCount >= 3 && latestCount <= 12
+				? Math.floor(latestCount)
 				: DEFAULT_SITE_UI_LAYOUT.latestCount,
 	};
 }

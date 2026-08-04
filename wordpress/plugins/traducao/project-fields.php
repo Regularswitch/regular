@@ -445,9 +445,7 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
             <div style="flex:1;min-width:0;">
                 <?php rs_render_media_field($name_prefix . '[image_id]', '', $attachment_id, $field_id, !$is_template, 'media'); ?>
             </div>
-            <?php if (!$is_template) : ?>
-                <button type="button" class="button-link-delete rs-project-remove-gallery" style="flex-shrink:0;margin-top:2px;">Remover</button>
-            <?php endif; ?>
+            <button type="button" class="button-link-delete rs-project-remove-gallery" style="flex-shrink:0;margin-top:2px;">Remover</button>
         </div>
     </div>
     <?php
@@ -474,7 +472,10 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.1.9)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.1)</em></p>';
+    if (function_exists('rs_sync_media_notice_html')) {
+        echo rs_sync_media_notice_html((int) $post->ID);
+    }
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero (topo)</strong></legend>';
@@ -503,7 +504,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<fieldset style="margin:0 0 10px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). A ordem aqui define a ordem no site; o layout se adapta à proporção de cada mídia.</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos de uma vez (ou enviar novos na biblioteca). A ordem aqui define a ordem no site.</p>';
     echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list">';
     foreach ($gallery_ids as $index => $attachment_id) {
@@ -511,7 +512,10 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
     echo '</div>';
     rs_project_render_gallery_row(0, 0, true);
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídia</button></p>';
+    echo '<p style="margin:12px 0 0;display:flex;flex-wrap:wrap;gap:8px;">';
+    echo '<button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídias</button>';
+    echo '<span style="align-self:center;color:#646970;font-size:12px;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
+    echo '</p>';
     echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="" />';
     echo '</fieldset>';
 }
@@ -736,6 +740,47 @@ function rs_project_render_admin_footer_script(): void {
             row.find('input[data-rs-cap-image]').attr('name', 'rs_project_gallery[' + index + '][image_id]');
         }
 
+        function galleryPreviewHtml(attachment) {
+            if (!attachment || !attachment.url) {
+                return '';
+            }
+            const mime = attachment.mime || '';
+            if (mime.indexOf('video/') === 0) {
+                return '<video src="' + attachment.url + '" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>';
+            }
+            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
+                || attachment.url;
+            return '<img src="' + thumb + '" alt="" style="max-width:220px;height:auto;border-radius:4px;" />';
+        }
+
+        function appendGalleryAttachment(attachment) {
+            if (!attachment || !attachment.id) {
+                return;
+            }
+
+            const index = nextGalleryIndex;
+            const template = $('.rs-project-gallery-row[data-index="__INDEX__"]').first().clone();
+            template.removeAttr('style');
+            template.attr('data-index', String(index));
+            template.find('input[data-rs-cap-image]').val(String(attachment.id));
+            template.find('.rs-media-preview').html(galleryPreviewHtml(attachment));
+            template.find('[id]').each(function () {
+                const id = $(this).attr('id');
+                if (id && id.indexOf('__INDEX__') !== -1) {
+                    $(this).attr('id', id.replace(/__INDEX__/g, String(index)));
+                }
+            });
+            template.find('[data-target]').each(function () {
+                const target = $(this).attr('data-target');
+                if (target) {
+                    $(this).attr('data-target', target.replace(/__INDEX__/g, String(index)));
+                }
+            });
+            assignGalleryNames(template, index);
+            $('#rs-project-gallery-list').append(template);
+            nextGalleryIndex += 1;
+        }
+
         $('#rs-project-add-accordion').on('click', function (event) {
             event.preventDefault();
             const template = $('.rs-project-accordion-row[data-index="__INDEX__"]').first().clone();
@@ -774,27 +819,36 @@ function rs_project_render_admin_footer_script(): void {
 
         $('#rs-project-add-gallery').on('click', function (event) {
             event.preventDefault();
-            const template = $('.rs-project-gallery-row[data-index="__INDEX__"]').first().clone();
-            template.removeAttr('style');
-            template.attr('data-index', String(nextGalleryIndex));
-            template.find('input[data-rs-cap-image]').val('0');
-            template.find('.rs-media-preview').empty();
-            template.find('[id]').each(function () {
-                const id = $(this).attr('id');
-                if (id && id.indexOf('__INDEX__') !== -1) {
-                    $(this).attr('id', id.replace(/__INDEX__/g, String(nextGalleryIndex)));
+
+            if (typeof wp === 'undefined' || !wp.media) {
+                window.alert('Biblioteca de mídia indisponível. Recarregue a página.');
+                return;
+            }
+
+            const frame = wp.media({
+                title: 'Adicionar mídias à galeria',
+                button: { text: 'Adicionar à galeria' },
+                multiple: true,
+                library: {
+                    // image + video (inclui GIF como image/gif)
+                    type: ['image', 'video']
                 }
             });
-            template.find('[data-target]').each(function () {
-                const target = $(this).attr('data-target');
-                if (target) {
-                    $(this).attr('data-target', target.replace(/__INDEX__/g, String(nextGalleryIndex)));
+
+            frame.on('select', function () {
+                const selection = frame.state().get('selection');
+                if (!selection || !selection.length) {
+                    return;
                 }
+
+                selection.each(function (model) {
+                    appendGalleryAttachment(model.toJSON());
+                });
+
+                syncGalleryEmptyState();
             });
-            assignGalleryNames(template, nextGalleryIndex);
-            $('#rs-project-gallery-list').append(template);
-            nextGalleryIndex += 1;
-            syncGalleryEmptyState();
+
+            frame.open();
         });
 
         $(document).on('click', '.rs-project-remove-gallery', function (event) {

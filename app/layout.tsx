@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { GetFooterApi, GetHeaderNavApi, GetSiteUiApi } from '../components/ApiWp';
 import FooterComponents from '../components/FooterComponents';
-import CookieConsent from '../components/CookieConsent/CookieConsent';
+// import CookieConsent from '../components/CookieConsent/CookieConsent';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
 import Header from '../components/Header';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
@@ -58,7 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<Header />
 					<main className="pt-16 px-7 sm:pt-14 lg:pt-18">{children}</main>
 					<FooterComponents footerEn={footerEn} footerPt={footerPt} />
-					<CookieConsent />
+					{/* <CookieConsent /> */}
 				</SiteUiProvider>
 			</body>
 		</html>

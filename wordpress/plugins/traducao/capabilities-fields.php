@@ -282,6 +282,9 @@ function rs_capabilities_render_meta_box(WP_Post $post): void {
     }
 
     echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Headline no topo; seções no acordeão abaixo.</p>';
+    if (function_exists('rs_sync_media_notice_html')) {
+        echo rs_sync_media_notice_html((int) $post->ID);
+    }
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';

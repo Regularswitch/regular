@@ -9,7 +9,8 @@ export function getGridSpan(index: number): GridSpan {
 }
 
 /**
- * Home: no máximo 1 card em destaque (largura total → altura ~2×).
+ * Home: bento 2 colunas — half | half | featured | half | half.
+ * O destaque (largura total) fica no meio; altura visual ≈ 1 card half.
  * `columns` vem do CMS (site-ui layout).
  */
 export function getHomeGridSpan(

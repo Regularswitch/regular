@@ -37,8 +37,6 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 						<Image
 							src={cardImage}
 							alt={project.title ?? project.slug}
-							width={1200}
-							height={900}
 							sizes={
 								isFeatured
 									? '(max-width: 768px) 100vw, 90vw'
@@ -46,6 +44,8 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 										? '(max-width: 768px) 100vw, 33vw'
 										: '(max-width: 768px) 100vw, 50vw'
 							}
+							width={isFeatured ? 1600 : 1200}
+							height={isFeatured ? 600 : 900}
 							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 						/>
 					) : null}

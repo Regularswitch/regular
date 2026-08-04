@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/pageSlugs';
 import { isHomeProject } from '../../lib/projectCategories';
-import { orderHomeProjects } from '../../lib/featuredProject';
+import { homeFeaturedSlotIndex, orderHomeProjects } from '../../lib/featuredProject';
 import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import type { Category, Projects, SiteUiLabels } from '../../types';
@@ -32,6 +32,8 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 
 	if (!selected.length) return null;
 
+	const featuredIndex =
+		layout.homeColumns === 1 ? 0 : homeFeaturedSlotIndex(selected.length);
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
@@ -57,7 +59,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getHomeGridSpan(index, 0, layout.homeColumns)}
+						span={getHomeGridSpan(index, featuredIndex, layout.homeColumns)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}
