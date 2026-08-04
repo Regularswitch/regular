@@ -14,7 +14,7 @@ export type CursorVariant = keyof typeof CURSOR_VARIANTS;
 export type CursorStyle = 'blob' | CursorVariant;
 
 /** Altere aqui para comparar. */
-export const CURSOR_STYLE: CursorStyle = 'green';
+export const CURSOR_STYLE: CursorStyle = 'blob';
 
 export function isBlobCursor(style: CursorStyle = CURSOR_STYLE): boolean {
 	return style === 'blob';
