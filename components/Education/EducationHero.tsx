@@ -12,7 +12,7 @@ export default function EducationHero({ image, video, headline }: EducationHeroP
 			<PageHeroMedia image={image} video={video} showEmptySlot asSection={false} fullBleed />
 
 			<div
-				className="intro-headline mx-auto mt-10 max-w-4xl text-center font-hk text-[clamp(1.35rem,3.6vw,2.25rem)] font-medium leading-[1.2] tracking-[-0.02em] md:mt-14"
+				className="intro-headline mt-10 max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em] md:mt-14"
 				dangerouslySetInnerHTML={{ __html: headline }}
 			/>
 		</section>
