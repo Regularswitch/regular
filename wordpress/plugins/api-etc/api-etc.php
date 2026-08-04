@@ -39,6 +39,12 @@ function campos_personalizados( $data ) {
     $posts = get_posts( array(
         'numberposts' => -1,
         'post_type'   => 'project',
+        'meta_query'  => array(
+            array(
+                'key'     => 'EN',
+                'compare' => 'NOT EXISTS',
+            ),
+        ),
     ) );
     $response = array();
     foreach( $posts as $post ) {

@@ -1,4 +1,4 @@
-import type { SiteUiContent, SiteUiLabels, SiteUiLocale, SiteUiNavLink } from '../types';
+import type { SiteUiContent, SiteUiLabels, SiteUiLayout, SiteUiLocale, SiteUiNavLink } from '../types';
 import {
 	ABOUT_PAGE_SLUG,
 	CAPABILITIES_PAGE_SLUG,
@@ -46,11 +46,39 @@ const LABELS_PT: SiteUiLabels = {
 	whatsNewSubtitle: 'Novo site',
 };
 
+export const DEFAULT_SITE_UI_LAYOUT: SiteUiLayout = {
+	homeColumns: 2,
+	projectsInitialCount: 5,
+	latestCount: 4,
+};
+
 export const DEFAULT_SITE_UI: SiteUiContent = {
 	en: { labels: LABELS_EN, nav: NAV_EN },
 	pt: { labels: LABELS_PT, nav: NAV_PT },
+	layout: DEFAULT_SITE_UI_LAYOUT,
 };
 
 export function getDefaultSiteUiContent(): SiteUiContent {
-	return DEFAULT_SITE_UI;
+	return {
+		...DEFAULT_SITE_UI,
+		layout: { ...DEFAULT_SITE_UI_LAYOUT },
+	};
+}
+
+export function normalizeSiteUiLayout(raw?: Partial<SiteUiLayout> | null): SiteUiLayout {
+	const homeColumns = Number(raw?.homeColumns);
+	const projectsInitialCount = Number(raw?.projectsInitialCount);
+	const latestCount = Number(raw?.latestCount);
+
+	return {
+		homeColumns: homeColumns === 1 || homeColumns === 3 ? homeColumns : 2,
+		projectsInitialCount:
+			Number.isFinite(projectsInitialCount) && projectsInitialCount > 0
+				? Math.min(100, Math.floor(projectsInitialCount))
+				: DEFAULT_SITE_UI_LAYOUT.projectsInitialCount,
+		latestCount:
+			latestCount === 3 || latestCount === 4
+				? latestCount
+				: DEFAULT_SITE_UI_LAYOUT.latestCount,
+	};
 }

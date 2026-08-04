@@ -21,6 +21,41 @@ const RS_SITE_UI_LABEL_KEYS = [
     'rs_site_ui_whats_new_subtitle' => ['whatsNewSubtitle', "What's New (subtitle)", 'Novidades (subtítulo)'],
 ];
 
+const RS_SITE_UI_HOME_COLUMNS_KEY = 'rs_site_ui_home_columns';
+const RS_SITE_UI_PROJECTS_INITIAL_KEY = 'rs_site_ui_projects_initial_count';
+const RS_SITE_UI_LATEST_COUNT_KEY = 'rs_site_ui_latest_count';
+
+function rs_site_ui_layout_keys(): array {
+    return [
+        RS_SITE_UI_HOME_COLUMNS_KEY,
+        RS_SITE_UI_PROJECTS_INITIAL_KEY,
+        RS_SITE_UI_LATEST_COUNT_KEY,
+    ];
+}
+
+function rs_site_ui_get_layout(): array {
+    $en_id = rs_site_ui_get_post_id_by_locale('en');
+    $columns = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_HOME_COLUMNS_KEY, true) : 2;
+    $initial = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, true) : 5;
+    $latest = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_LATEST_COUNT_KEY, true) : 4;
+
+    if (!in_array($columns, [1, 2, 3], true)) {
+        $columns = 2;
+    }
+    if ($initial < 1) {
+        $initial = 5;
+    }
+    if (!in_array($latest, [3, 4], true)) {
+        $latest = 4;
+    }
+
+    return [
+        'homeColumns'          => $columns,
+        'projectsInitialCount' => $initial,
+        'latestCount'          => $latest,
+    ];
+}
+
 function rs_site_ui_locale_suffix(string $lang): string {
     return $lang === 'pt' ? '_pt' : '_en';
 }
@@ -146,6 +181,7 @@ function rs_site_ui_meta_to_payload(?array $meta = null): array {
     return [
         'en' => ['labels' => rs_site_ui_build_labels($meta, 'en')],
         'pt' => ['labels' => rs_site_ui_build_labels($meta, 'pt')],
+        'layout' => rs_site_ui_get_layout(),
     ];
 }
 
@@ -160,6 +196,17 @@ function rs_site_ui_label_for_locale(string $base_key, string $lang): string {
 
 add_action('init', function () {
     foreach (array_keys(rs_site_ui_all_meta_keys()) as $key) {
+        register_post_meta('site-ui', $key, [
+            'single'        => true,
+            'type'          => 'string',
+            'show_in_rest'  => false,
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+
+    foreach (rs_site_ui_layout_keys() as $key) {
         register_post_meta('site-ui', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -228,6 +275,31 @@ function rs_site_ui_render_meta_box(WP_Post $post): void {
     }
 
     echo '</fieldset>';
+
+    if ($locale === 'en') {
+        $layout = rs_site_ui_get_layout();
+        echo '<fieldset style="margin:16px 0 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+        echo '<legend style="font-weight:600;padding:0 6px;"><strong>Layout (global)</strong></legend>';
+        echo '<p style="margin:0 0 10px;color:#646970;font-size:12px;">Valores compartilhados EN/PT. Editáveis só no post <code>en</code>.</p>';
+
+        echo '<p style="margin:0 0 12px;"><label for="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Colunas na home (Selected Projects)</label>';
+        echo '<select id="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '" name="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '">';
+        foreach ([1, 2, 3] as $cols) {
+            echo '<option value="' . $cols . '"' . selected($layout['homeColumns'], $cols, false) . '>' . $cols . '</option>';
+        }
+        echo '</select></p>';
+
+        echo '<p style="margin:0 0 12px;"><label for="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
+        echo '<input type="number" min="1" max="100" style="width:100px;" id="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" name="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" /></p>';
+
+        echo '<p style="margin:0;"><label for="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Cards no “The Latest”</label>';
+        echo '<select id="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" name="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '">';
+        foreach ([3, 4] as $n) {
+            echo '<option value="' . $n . '"' . selected($layout['latestCount'], $n, false) . '>' . $n . '</option>';
+        }
+        echo '</select></p>';
+        echo '</fieldset>';
+    }
 }
 
 add_action('save_post_site-ui', function (int $post_id) {
@@ -256,6 +328,21 @@ add_action('save_post_site-ui', function (int $post_id) {
 
         $value = sanitize_text_field(wp_unslash($_POST[$key]));
         update_post_meta($post_id, $key, $value);
+    }
+
+    if ($locale === 'en') {
+        if (isset($_POST[RS_SITE_UI_HOME_COLUMNS_KEY])) {
+            $cols = (int) $_POST[RS_SITE_UI_HOME_COLUMNS_KEY];
+            update_post_meta($post_id, RS_SITE_UI_HOME_COLUMNS_KEY, in_array($cols, [1, 2, 3], true) ? (string) $cols : '2');
+        }
+        if (isset($_POST[RS_SITE_UI_PROJECTS_INITIAL_KEY])) {
+            $initial = max(1, min(100, (int) $_POST[RS_SITE_UI_PROJECTS_INITIAL_KEY]));
+            update_post_meta($post_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, (string) $initial);
+        }
+        if (isset($_POST[RS_SITE_UI_LATEST_COUNT_KEY])) {
+            $latest = (int) $_POST[RS_SITE_UI_LATEST_COUNT_KEY];
+            update_post_meta($post_id, RS_SITE_UI_LATEST_COUNT_KEY, in_array($latest, [3, 4], true) ? (string) $latest : '4');
+        }
     }
 });
 

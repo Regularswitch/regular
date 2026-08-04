@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.1.8
+ * Version: 1.2.0
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -24,6 +24,7 @@ include __DIR__ . "/blob-visual-fields.php";
 include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
 include __DIR__ . "/hide-themerain-meta.php";
+include __DIR__ . "/filter-project-translations.php";
 include __DIR__ . "/slug-language.php";
 include __DIR__ . "/rest-translate.php";
 include __DIR__ . "/proxy.php";
@@ -34,15 +35,37 @@ function rs_add_language_column(array $cols): array {
     return $cols;
 }
 
+function rs_project_locale_badge(int $post_id): string {
+    if ((int) get_post_meta($post_id, 'EN', true) > 0) {
+        return 'PT';
+    }
+    if ((int) get_post_meta($post_id, 'PT', true) > 0) {
+        return 'EN';
+    }
+    return 'EN';
+}
+
 function rs_render_language_column(string $column_name, int $post_ID): void {
     if ($column_name !== 'language') {
         return;
     }
 
+    $badge = rs_project_locale_badge($post_ID);
+    echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
+
     foreach (['en', 'pt'] as $slug) {
         $slug = strtoupper($slug);
         $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$slug}";
-        echo "<a href=\"#\" data-href=\"{$url}\" onclick=\"rs_link_translate(event, this)\" title=\"Translate {$slug}\">{$slug}</a> ";
+        echo "<a href=\"#\" data-href=\"" . esc_url($url) . "\" onclick=\"rs_link_translate(event, this)\" title=\"Abrir {$slug}\">{$slug}</a> ";
+    }
+
+    // Reimporta acordeão/galeria do EN na PT (não sobrescreve ao só abrir PT).
+    if (get_post_type($post_ID) === 'project' && $badge === 'EN' && (int) get_post_meta($post_ID, 'PT', true) > 0) {
+        $sync_url = add_query_arg(
+            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1'],
+            get_site_url() . '/wp-json/translate/proxy'
+        );
+        echo '<a href="#" data-href="' . esc_url($sync_url) . '" onclick="rs_link_translate(event, this)" title="Copiar campos do EN para a PT" style="margin-left:4px;color:#b32d2e;">↻ sync PT</a>';
     }
 }
 

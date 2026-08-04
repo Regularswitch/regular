@@ -131,14 +131,21 @@ function translate_proxy($request) {
 
     if ($post_translate_id === 0) {
         $locale_slug = strtolower($lang);
+        // Projetos: não copiar post_content legado (misturava imagens/texto de outro case)
+        // e não usar slug "pt"/"en" (colidia entre traduções).
+        $is_project = $the_post->post_type === 'project';
+        $post_name = $is_project
+            ? sanitize_title(wp_strip_all_tags($the_post->post_title) . '-' . $locale_slug)
+            : $locale_slug;
+
         $new_post_id = wp_insert_post([
             'post_title'   => wp_strip_all_tags($the_post->post_title),
-            'post_content' => $the_post->post_content,
+            'post_content' => $is_project ? '' : $the_post->post_content,
             'post_excerpt' => $the_post->post_excerpt ?? '',
             'post_status'  => 'publish',
             'post_author'  => (int) $the_post->post_author ?: 1,
             'post_type'    => $target_type,
-            'post_name'    => $locale_slug,
+            'post_name'    => $post_name,
         ]);
 
         if (is_wp_error($new_post_id)) {
@@ -157,6 +164,22 @@ function translate_proxy($request) {
         $parans['post_translate_id'] = $new_post_id;
     } else {
         rs_translate_link_pair($source_id, $lang, $post_translate_id);
+
+        // Re-sincroniza campos do projeto a partir do EN quando ?sync=1
+        // (útil quando a PT ficou com conteúdo antigo/errado).
+        if (
+            $the_post->post_type === 'project'
+            && !empty($parans['sync'])
+            && function_exists('rs_copy_project_fields')
+        ) {
+            rs_copy_project_fields($source_id, $post_translate_id);
+            wp_update_post([
+                'ID'           => $post_translate_id,
+                'post_content' => '',
+                'post_excerpt' => $the_post->post_excerpt ?? '',
+                'post_title'   => wp_strip_all_tags($the_post->post_title),
+            ]);
+        }
 
         $parans['go'] = get_site_url() . "/wp-admin/post.php?post={$post_translate_id}&action=edit";
         $parans['action'] = 'edit';

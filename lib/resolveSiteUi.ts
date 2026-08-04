@@ -1,4 +1,4 @@
-import { getDefaultSiteUiContent } from './siteUiDefaults';
+import { getDefaultSiteUiContent, normalizeSiteUiLayout } from './siteUiDefaults';
 import type { SiteUiContent, SiteUiLabels, SiteUiLocale, SiteUiNavLink } from '../types';
 
 function mergeLabels(defaults: SiteUiLabels, fromWp?: Partial<SiteUiLabels>): SiteUiLabels {
@@ -33,6 +33,7 @@ export function buildSiteUiContent(fromWp: SiteUiContent | null | undefined): Si
 	return {
 		en: mergeLocale(defaults.en, fromWp.en),
 		pt: mergeLocale(defaults.pt, fromWp.pt),
+		layout: normalizeSiteUiLayout(fromWp.layout ?? defaults.layout),
 	};
 }
 
@@ -58,6 +59,7 @@ export function buildSiteUiWithHeaderNav(
 			labels: base.pt.labels,
 			nav: headerNav.pt.length > 0 ? headerNav.pt : base.pt.nav,
 		},
+		layout: base.layout,
 	};
 }
 

@@ -2,7 +2,6 @@
 
 import DateTimeComponent from '../DateTimeComponent';
 import type { ContactContent } from '../../lib/contactDefaults';
-import ContactHero from './ContactHero';
 
 type ContactPageProps = {
 	content: ContactContent;
@@ -11,12 +10,9 @@ type ContactPageProps = {
 
 export default function ContactPage({ content, locale = 'en' }: ContactPageProps) {
 	const cityLabel = locale === 'pt' ? 'São Paulo' : 'São Paulo';
-	const hasHero = Boolean(content.heroImage || content.heroVideo);
 
 	return (
 		<article className="contact-page">
-			{hasHero ? <ContactHero image={content.heroImage} video={content.heroVideo} /> : null}
-
 			<section className="contact-intro py-10 md:py-14">
 				<div
 					className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"

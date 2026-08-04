@@ -1,14 +1,29 @@
 /**
- * Links de Contato / Newsletter — troque via env até o cliente confirmar.
- * NEXT_PUBLIC_* para uso no client (footer).
+ * Links de Contato / Newsletter / Jobs.
+ * NEXT_PUBLIC_* para uso no client (footer / cookie banner).
  */
-export function getContactMailto(): string {
-	const email =
+export function getContactEmail(): string {
+	return (
 		process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() ||
 		process.env.CONTACT_EMAIL?.trim() ||
-		'contact@regularswitch.com';
+		'contact@regularswitch.com'
+	);
+}
 
-	return `mailto:${email}`;
+export function getJoinUsEmail(): string {
+	return (
+		process.env.NEXT_PUBLIC_JOIN_US_EMAIL?.trim() ||
+		process.env.JOIN_US_EMAIL?.trim() ||
+		'join-us@regularswitch.com'
+	);
+}
+
+export function getContactMailto(): string {
+	return `mailto:${getContactEmail()}`;
+}
+
+export function getJoinUsMailto(): string {
+	return `mailto:${getJoinUsEmail()}`;
 }
 
 export function getNewsletterHref(): string {
@@ -20,3 +35,8 @@ export function getNewsletterHref(): string {
 
 	return `${getContactMailto()}?subject=Newsletter`;
 }
+
+export const SOCIAL_LINKS = {
+	instagram: 'https://www.instagram.com/regular.switch',
+	linkedin: 'https://www.linkedin.com/company/regularswitch',
+} as const;

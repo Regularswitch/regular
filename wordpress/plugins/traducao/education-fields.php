@@ -14,6 +14,7 @@ const RS_EDUCATION_SECTIONS_KEY = 'rs_education_sections';
 const RS_EDUCATION_INSTITUTIONS_KEY = 'rs_education_institutions';
 const RS_EDUCATION_HERO_VIDEO_KEY = 'rs_education_hero_video_id';
 const RS_EDUCATION_HERO_VIDEO_URL_LEGACY = 'rs_education_hero_video_url';
+const RS_EDUCATION_STUDIO_KEY = 'rs_education_studio_ids';
 
 /**
  * @return array<int, array{title: string, body: string}>
@@ -308,6 +309,9 @@ function rs_education_meta_to_payload(int $post_id): array {
         'headline'          => trim((string) get_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, true)),
         'accordionSections' => rs_education_sections_to_payload(rs_education_get_sections($post_id)),
         'institutions'      => rs_education_institutions_to_payload(rs_education_get_institutions_raw($post_id)),
+        'studioImages'      => rs_education_attachment_urls(
+            rs_education_parse_ids_csv((string) get_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, true))
+        ),
     ];
 }
 
@@ -605,6 +609,22 @@ function rs_education_render_meta_box(WP_Post $post): void {
     echo '<input type="hidden" id="rs-education-sections-json" name="rs_education_sections_json" value="" />';
     echo '</fieldset>';
 
+    $studio_ids = (string) get_post_meta($post->ID, RS_EDUCATION_STUDIO_KEY, true);
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Carrossel do estúdio</strong></legend>';
+    echo '<p style="margin:0 0 10px;color:#646970;font-size:12px;">Fotos do escritório/estúdio (substitui a foto “central” do site antigo). IDs separados por vírgula ou use o botão.</p>';
+    echo '<input type="hidden" class="rs-education-studio-ids" id="' . esc_attr(RS_EDUCATION_STUDIO_KEY) . '" name="' . esc_attr(RS_EDUCATION_STUDIO_KEY) . '" value="' . esc_attr($studio_ids) . '" />';
+    echo '<div class="rs-education-studio-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;">';
+    foreach (rs_education_parse_ids_csv($studio_ids) as $aid) {
+        $thumb = wp_get_attachment_image_url($aid, 'thumbnail');
+        if ($thumb) {
+            echo '<img src="' . esc_url($thumb) . '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" />';
+        }
+    }
+    echo '</div>';
+    echo '<button type="button" class="button button-secondary rs-education-add-studio-images">+ Adicionar fotos</button>';
+    echo '</fieldset>';
+
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Instituições</strong></legend>';
     echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Escolas/parceiros com logo, texto e galerias (2 colunas, 3 verticais ou grade 2×2).</p>';
@@ -699,6 +719,12 @@ add_action('save_post_education', function (int $post_id) {
     $sections = rs_education_parse_sections_from_request();
     update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
 
+    if (isset($_POST[RS_EDUCATION_STUDIO_KEY])) {
+        $studio_raw = sanitize_text_field(wp_unslash((string) $_POST[RS_EDUCATION_STUDIO_KEY]));
+        $studio_ids = rs_education_parse_ids_csv($studio_raw);
+        update_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, implode(',', $studio_ids));
+    }
+
     $institutions = rs_education_parse_institutions_from_request();
     $to_store = [];
     foreach ($institutions as $item) {
@@ -744,6 +770,7 @@ function rs_copy_education_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_EDUCATION_HEADLINE_KEY, get_post_meta($from_id, RS_EDUCATION_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_EDUCATION_SECTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_SECTIONS_KEY, true));
     update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_INSTITUTIONS_KEY, true));
+    update_post_meta($to_id, RS_EDUCATION_STUDIO_KEY, get_post_meta($from_id, RS_EDUCATION_STUDIO_KEY, true));
     if (function_exists('rs_section_copy_hero_media')) {
         rs_section_copy_hero_media($from_id, $to_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
     }
@@ -986,6 +1013,43 @@ function rs_education_admin_footer_script(): void {
                     const thumb = (data.sizes && data.sizes.thumbnail && data.sizes.thumbnail.url) || data.url;
                     preview.append(
                         '<img src="' + thumb + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:4px;" data-id="' + data.id + '" />'
+                    );
+                });
+
+                input.val(current.join(','));
+            });
+
+            frame.open();
+        });
+
+        $(document).on('click', '.rs-education-add-studio-images', function (event) {
+            event.preventDefault();
+            if (typeof wp === 'undefined' || !wp.media) return;
+
+            const fieldset = $(this).closest('fieldset');
+            const input = fieldset.find('.rs-education-studio-ids');
+            const preview = fieldset.find('.rs-education-studio-preview');
+
+            const frame = wp.media({
+                title: 'Fotos do estúdio',
+                button: { text: 'Adicionar' },
+                multiple: true,
+                library: { type: 'image' }
+            });
+
+            frame.on('select', function () {
+                const current = String(input.val() || '')
+                    .split(',')
+                    .map(function (v) { return parseInt(v, 10); })
+                    .filter(function (v) { return v > 0; });
+
+                frame.state().get('selection').each(function (attachment) {
+                    const data = attachment.toJSON();
+                    if (!data.id || current.indexOf(data.id) !== -1) return;
+                    current.push(data.id);
+                    const thumb = (data.sizes && data.sizes.thumbnail && data.sizes.thumbnail.url) || data.url;
+                    preview.append(
+                        '<img src="' + thumb + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" />'
                     );
                 });
 

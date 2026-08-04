@@ -1,4 +1,4 @@
-export type GridSpan = 'half' | 'third' | 'featured';
+export type GridSpan = 'half' | 'third' | 'featured' | 'full';
 
 /**
  * Listagem /projects: ciclo de 5 — 3 cards (1/3) + 2 cards (1/2).
@@ -9,11 +9,18 @@ export function getGridSpan(index: number): GridSpan {
 }
 
 /**
- * Home: no máximo 1 card em destaque (altura ~2×).
- * O restante fica no formato padrão (`half`).
+ * Home: no máximo 1 card em destaque (largura total → altura ~2×).
+ * `columns` vem do CMS (site-ui layout).
  */
-export function getHomeGridSpan(index: number, featuredIndex: number): GridSpan {
-	return index === featuredIndex ? 'featured' : 'half';
+export function getHomeGridSpan(
+	index: number,
+	featuredIndex: number,
+	columns: 1 | 2 | 3 = 2,
+): GridSpan {
+	if (columns === 1) return 'full';
+	if (index === featuredIndex) return 'featured';
+	if (columns === 3) return 'third';
+	return 'half';
 }
 
 /** Primeira dobra: 1 ciclo 3+2 (listagem) ou 1 destaque + 4 (home). */

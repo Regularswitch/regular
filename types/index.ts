@@ -112,9 +112,20 @@ export type SiteUiLocale = {
   nav: SiteUiNavLink[];
 };
 
+/** Layout compartilhado (não depende de idioma). */
+export type SiteUiLayout = {
+  /** Colunas da grade na home (Selected Projects). */
+  homeColumns: 1 | 2 | 3;
+  /** Quantos projetos mostrar ao abrir /projects (antes do “see more”). */
+  projectsInitialCount: number;
+  /** Quantos cards no “The Latest” (grade). */
+  latestCount: number;
+};
+
 export type SiteUiContent = {
   en: SiteUiLocale;
   pt: SiteUiLocale;
+  layout?: SiteUiLayout;
 };
 
 export type BlobVisual = {

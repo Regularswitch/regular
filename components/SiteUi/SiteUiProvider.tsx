@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { buildSiteUiContent, resolveSiteUi } from '../../lib/resolveSiteUi';
-import { getDefaultSiteUiContent } from '../../lib/siteUiDefaults';
-import type { SiteUiContent, SiteUiLocale } from '../../types';
+import { getDefaultSiteUiContent, normalizeSiteUiLayout } from '../../lib/siteUiDefaults';
+import type { SiteUiContent, SiteUiLayout, SiteUiLocale } from '../../types';
 import { getCookie } from '../Translate';
 
 type SiteUiProviderProps = {
@@ -18,6 +18,11 @@ const SiteUiContext = createContext<SiteUiContent>(getDefaultSiteUiContent());
 export function SiteUiProvider({ siteUi, children }: SiteUiProviderProps) {
 	const value = useMemo(() => buildSiteUiContent(siteUi), [siteUi]);
 	return <SiteUiContext.Provider value={value}>{children}</SiteUiContext.Provider>;
+}
+
+export function useSiteUiLayout(): SiteUiLayout {
+	const siteUi = useContext(SiteUiContext);
+	return useMemo(() => normalizeSiteUiLayout(siteUi.layout), [siteUi.layout]);
 }
 
 function localeFromPathname(pathname: string): 'en' | 'pt' {

@@ -1,3 +1,5 @@
+import { getContactMailto, getJoinUsMailto } from './siteLinks';
+
 export type ContactBlock = {
 	title: string;
 	body: string;
@@ -13,7 +15,7 @@ export type ContactContent = {
 const CONTACT_BLOCKS_PT: ContactBlock[] = [
 	{
 		title: 'CONTATO',
-		body: '<p>São Paulo – Brasil<br><a href="tel:+5511945408448">+55 11 (9) 4540-8448</a><br><a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a></p>',
+		body: `<p>São Paulo – Brasil<br><a href="tel:+5511945408448">+55 11 (9) 4540-8448</a><br><a href="${getContactMailto()}">contact@regularswitch.com</a></p>`,
 	},
 	{
 		title: 'ENDEREÇO',
@@ -21,18 +23,18 @@ const CONTACT_BLOCKS_PT: ContactBlock[] = [
 	},
 	{
 		title: 'VAGAS',
-		body: '<p>No momento não estamos contratando.</p>',
+		body: `<p>No momento não estamos contratando.<br><a href="${getJoinUsMailto()}">join-us@regularswitch.com</a></p>`,
 	},
 	{
 		title: 'ESTÁGIO',
-		body: '<p>Envie um e-mail para se candidatar.<br><a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a></p>',
+		body: `<p>Envie um e-mail para se candidatar.<br><a href="${getJoinUsMailto()}">join-us@regularswitch.com</a></p>`,
 	},
 ];
 
 const CONTACT_BLOCKS_EN: ContactBlock[] = [
 	{
 		title: 'CONTACT',
-		body: '<p>São Paulo – Brazil<br><a href="tel:+5511945408448">+55 11 (9) 4540-8448</a><br><a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a></p>',
+		body: `<p>São Paulo – Brazil<br><a href="tel:+5511945408448">+55 11 (9) 4540-8448</a><br><a href="${getContactMailto()}">contact@regularswitch.com</a></p>`,
 	},
 	{
 		title: 'ADDRESS',
@@ -40,11 +42,11 @@ const CONTACT_BLOCKS_EN: ContactBlock[] = [
 	},
 	{
 		title: 'JOBS',
-		body: '<p>We are not hiring at the moment.</p>',
+		body: `<p>We are not hiring at the moment.<br><a href="${getJoinUsMailto()}">join-us@regularswitch.com</a></p>`,
 	},
 	{
 		title: 'INTERNSHIP',
-		body: '<p>Send us an e-mail to apply.<br><a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a></p>',
+		body: `<p>Send us an e-mail to apply.<br><a href="${getJoinUsMailto()}">join-us@regularswitch.com</a></p>`,
 	},
 ];
 
@@ -61,6 +63,3 @@ export const DEFAULT_CONTACT_EN: ContactContent = {
 export function getDefaultContactContent(locale: 'en' | 'pt'): ContactContent {
 	return locale === 'pt' ? { ...DEFAULT_CONTACT_PT } : { ...DEFAULT_CONTACT_EN };
 }
-
-export const DEFAULT_CONTACT_HERO_IMAGE =
-	'https://wp.regularswitch.com/wp-content/uploads/2024/11/LA-martiniere-Regularswitch-1024x582.jpg';

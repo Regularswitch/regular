@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 
 import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/pageSlugs';
@@ -6,11 +8,10 @@ import { orderHomeProjects } from '../../lib/featuredProject';
 import { withLocalePrefix } from '../../lib/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import type { Category, Projects, SiteUiLabels } from '../../types';
-import { getHomeGridSpan, INITIAL_PROJECTS_COUNT } from '../ProjectsListing/constants';
+import { getHomeGridSpan } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
 import { SectionHeadingArrow } from '../SiteIcons';
-
-const MAX_PROJECTS = INITIAL_PROJECTS_COUNT;
+import { useSiteUiLayout } from '../SiteUi/SiteUiProvider';
 
 type SelectedProjectsProps = {
 	projects: Projects;
@@ -20,10 +21,13 @@ type SelectedProjectsProps = {
 };
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
+	const layout = useSiteUiLayout();
+	const maxProjects = Math.max(layout.projectsInitialCount, layout.homeColumns === 3 ? 6 : 5);
+
 	const selected = orderHomeProjects(
 		sortProjectsByDate(projects)
 			.filter((p) => isHomeProject(p, categories))
-			.slice(0, MAX_PROJECTS),
+			.slice(0, maxProjects),
 	);
 
 	if (!selected.length) return null;
@@ -31,6 +35,12 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
+	const gridClass =
+		layout.homeColumns === 1
+			? 'selected-projects-grid selected-projects-grid--cols-1'
+			: layout.homeColumns === 3
+				? 'selected-projects-grid selected-projects-grid--cols-3'
+				: 'selected-projects-grid';
 
 	return (
 		<section className="selected-projects py-6 md:py-10" aria-label={title}>
@@ -41,13 +51,13 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 				</h2>
 			</div>
 
-			<div className="selected-projects-grid">
+			<div className={gridClass}>
 				{selected.map((project, index) => (
 					<ProjectGridCard
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getHomeGridSpan(index, 0)}
+						span={getHomeGridSpan(index, 0, layout.homeColumns)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}

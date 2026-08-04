@@ -531,6 +531,11 @@ export default function Header({ isLight = false }: HeaderProps) {
 								</a>
 							</li>
 							<li>
+								<a href="https://www.linkedin.com/company/regularswitch" target="_blank" rel="noopener noreferrer" className="hover:text-white">
+									LinkedIn
+								</a>
+							</li>
+							<li>
 								<a href="mailto:contact@regularswitch.com" className="hover:text-white">
 									Email
 								</a>

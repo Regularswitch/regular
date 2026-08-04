@@ -734,6 +734,10 @@ function porterSiteUiLabelsPayload(data: unknown): SiteUiContent | null {
     const item = data as Record<string, unknown>;
     if (!isSiteUiLocale(item.en) || !isSiteUiLocale(item.pt)) return null;
 
+    const layoutRaw = item.layout && typeof item.layout === 'object'
+        ? (item.layout as Record<string, unknown>)
+        : null;
+
     return {
         en: {
             labels: item.en.labels,
@@ -743,6 +747,13 @@ function porterSiteUiLabelsPayload(data: unknown): SiteUiContent | null {
             labels: item.pt.labels,
             nav: Array.isArray(item.pt.nav) ? item.pt.nav.filter(isSiteUiNavLink) : [],
         },
+        layout: layoutRaw
+            ? {
+                homeColumns: Number(layoutRaw.homeColumns) as 1 | 2 | 3,
+                projectsInitialCount: Number(layoutRaw.projectsInitialCount),
+                latestCount: Number(layoutRaw.latestCount),
+            }
+            : undefined,
     };
 }
 

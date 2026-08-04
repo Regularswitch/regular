@@ -1,4 +1,4 @@
-export type GridSpan = 'half' | 'third' | 'featured';
+export type { GridSpan } from '../../lib/bentoGrid';
 
 export {
 	BENTO_BATCH_SIZE as PROJECTS_BATCH_SIZE,

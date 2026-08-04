@@ -6,7 +6,7 @@ import type { ProjectsPageContent } from '../../lib/projectsPageDefaults';
 import { sortProjectsByDate } from '../../lib/sortProjects';
 import type { Category, Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
-import { INITIAL_PROJECTS_COUNT } from './constants';
+import { useSiteUiLayout } from '../SiteUi/SiteUiProvider';
 import ProjectsGridSection from './ProjectsGridSection';
 import ProjectsListingHero from './ProjectsListingHero';
 
@@ -23,6 +23,7 @@ function projectHref(slug: string, locale: 'en' | 'pt') {
 }
 
 export default function ProjectsListing({ projects, categories, content, locale = 'en' }: ProjectsListingProps) {
+	const layout = useSiteUiLayout();
 	const sorted = useMemo(() => sortProjectsByDate(projects), [projects]);
 
 	if (!sorted.length) {
@@ -42,7 +43,7 @@ export default function ProjectsListing({ projects, categories, content, locale 
 				projects={sorted}
 				categories={categories}
 				locale={locale}
-				initialCount={INITIAL_PROJECTS_COUNT}
+				initialCount={layout.projectsInitialCount}
 				hrefForSlug={(slug) => projectHref(slug, locale)}
 			/>
 

@@ -324,20 +324,45 @@ add_action('init', function () {
 
 add_action('rest_api_init', function () {
     register_rest_field('project', 'project_data', [
-        'get_callback' => function (array $post) {
-            $post_id = (int) $post['id'];
+        'get_callback' => function (array $post, $attr, $request = null) {
+            $source_id = (int) $post['id'];
+            $post_id = $source_id;
 
-            if (function_exists('_getLang')) {
-                $lang = _getLang();
-                if ($lang) {
-                    $translated_id = (int) get_post_meta($post_id, $lang, true);
-                    if ($translated_id > 0) {
-                        $post_id = $translated_id;
-                    }
+            $lang = null;
+            if ($request instanceof WP_REST_Request) {
+                $raw = $request->get_param('translate');
+                if (is_string($raw) && $raw !== '') {
+                    $lang = strtoupper($raw);
                 }
             }
 
-            return rs_project_meta_to_payload($post_id);
+            if ($lang) {
+                $translated_id = (int) get_post_meta($source_id, $lang, true);
+                if ($translated_id > 0) {
+                    $post_id = $translated_id;
+                }
+            }
+
+            $payload = rs_project_meta_to_payload($post_id);
+
+            // Tradução PT sem campos preenchidos → herda do EN.
+            if ($post_id !== $source_id) {
+                $source_payload = rs_project_meta_to_payload($source_id);
+                if (empty($payload['accordion']) && !empty($source_payload['accordion'])) {
+                    $payload['accordion'] = $source_payload['accordion'];
+                }
+                if (empty($payload['gallery']) && !empty($source_payload['gallery'])) {
+                    $payload['gallery'] = $source_payload['gallery'];
+                }
+                if (empty($payload['heroImage']['url']) && !empty($source_payload['heroImage']['url'])) {
+                    $payload['heroImage'] = $source_payload['heroImage'];
+                }
+                if (empty($payload['logoImage']['url']) && !empty($source_payload['logoImage']['url'])) {
+                    $payload['logoImage'] = $source_payload['logoImage'];
+                }
+            }
+
+            return $payload;
         },
         'schema' => [
             'description' => 'Dados estruturados do projeto',
@@ -448,7 +473,8 @@ function rs_project_render_meta_box(WP_Post $post): void {
         $gallery_ids = [];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui tudo que aparece na página <code>/project/{slug}</code>. O <strong>resumo</strong> (coluna esquerda) fica no campo <em>Resumo</em> da barra lateral. Use a coluna <strong>Language</strong> para criar/editar a versão em português. <em>(Plugin Tradução v1.1.5)</em></p>';
+    $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.1.9)</em></p>';
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero (topo)</strong></legend>';

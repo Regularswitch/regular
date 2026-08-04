@@ -70,16 +70,18 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 
 	const { accordionSections, galleryImages } = useMemo(() => {
 		const fromStructured = structuredAccordion(structured, locale);
-		const images =
-			structured?.gallery && structured.gallery.length > 0
-				? normalizeGalleryItems(structured.gallery)
-				: normalizeGalleryItems(extractImagesFromHtml(contentHtml));
+		// Com project_data do CMS, acordeão/galeria vêm só dos campos do plugin —
+		// nunca do HTML legado do editor (evitava texto/imagens de outro projeto).
+		if (structured != null) {
+			return {
+				accordionSections: fromStructured ?? [],
+				galleryImages: normalizeGalleryItems(structured.gallery),
+			};
+		}
 
 		return {
-			accordionSections: fromStructured?.length
-				? fromStructured
-				: parseAccordionSections(contentHtml, locale),
-			galleryImages: images,
+			accordionSections: parseAccordionSections(contentHtml, locale),
+			galleryImages: normalizeGalleryItems(extractImagesFromHtml(contentHtml)),
 		};
 	}, [contentHtml, locale, structured]);
 

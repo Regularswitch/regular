@@ -16,12 +16,13 @@ type ProjectGridCardProps = {
 export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
-	const isFeatured = span === 'featured';
+	const isFeatured = span === 'featured' || span === 'full';
 	const isThird = span === 'third';
 
 	const itemClass = [
 		'selected-projects-item',
 		isFeatured ? 'selected-projects-item--featured' : '',
+		span === 'full' ? 'selected-projects-item--full' : '',
 		isThird ? 'selected-projects-item--third' : '',
 		span === 'half' ? 'selected-projects-item--half' : '',
 	]
