@@ -1,5 +1,5 @@
-import { wpMediaUrl } from './wpMediaUrl';
-import type { ProjectGalleryImage, ProjectMediaType, ProjectStructuredImage } from '../types';
+import { wpMediaUrl } from '../wp/mediaUrl';
+import type { ProjectGalleryImage, ProjectMediaType, ProjectStructuredImage } from '../../types';
 
 const VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i;
 const GIF_EXT = /\.gif(\?|$)/i;

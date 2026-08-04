@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { GetFooterByLocale } from '../../../components/ApiWp';
-import type { WpLocale } from '../../../lib/wpLocaleSlug';
+import type { WpLocale } from '../../../lib/wp/localeSlug';
 
 export const dynamic = 'force-dynamic';
 

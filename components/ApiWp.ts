@@ -1,14 +1,14 @@
 import { tipoLinguagens } from "./Language"
 import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
-import type { AboutContent } from '../lib/aboutDefaults';
-import type { ContactContent } from '../lib/contactDefaults';
-import type { EducationContent } from '../lib/educationDefaults';
-import type { ProjectsPageContent } from '../lib/projectsPageDefaults';
-import { wpLangSlug, type WpLocale } from '../lib/wpLocaleSlug';
-import { normalizeGalleryItems } from '../lib/galleryImages';
-import { getProjectHeroImage, normalizeProjectData } from '../lib/projectImages';
-import { wpMediaUrl } from '../lib/wpMediaUrl';
-import type { HeaderNavContent } from '../lib/resolveSiteUi';
+import type { AboutContent } from '../lib/content/about/defaults';
+import type { ContactContent } from '../lib/content/contact/defaults';
+import type { EducationContent } from '../lib/content/education/defaults';
+import type { ProjectsPageContent } from '../lib/content/projects-page/defaults';
+import { wpLangSlug, type WpLocale } from '../lib/wp/localeSlug';
+import { normalizeGalleryItems } from '../lib/projects/gallery';
+import { getProjectHeroImage, normalizeProjectData } from '../lib/projects/images';
+import { wpMediaUrl } from '../lib/wp/mediaUrl';
+import type { HeaderNavContent } from '../lib/site/resolveSiteUi';
 
 export type data = {
     translate?: tipoLinguagens | string

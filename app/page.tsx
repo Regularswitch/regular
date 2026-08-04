@@ -3,8 +3,8 @@ import { GetApi, GetBlobVisualApi, GetBrandsApi, GetCategoriesApi, GetIntroByLoc
 import IntroSection from '../components/Intro/IntroSection';
 import SelectedProjects from '../components/SelectedProjects/SelectedProjects';
 import LatestProjects from '../components/LatestProjects/LatestProjects';
-import { resolveBlobVisual } from '../lib/blobDefaults';
-import { buildSiteUiContent, resolveSiteUi } from '../lib/resolveSiteUi';
+import { resolveBlobVisual } from '../lib/site/blobDefaults';
+import { buildSiteUiContent, resolveSiteUi } from '../lib/site/resolveSiteUi';
 import type { Brand, Category, Projects } from '../types';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 

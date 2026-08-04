@@ -1,5 +1,5 @@
-import { getDefaultSiteUiContent, normalizeSiteUiLayout } from './siteUiDefaults';
-import type { SiteUiContent, SiteUiLabels, SiteUiLocale, SiteUiNavLink } from '../types';
+import { getDefaultSiteUiContent, normalizeSiteUiLayout } from './uiDefaults';
+import type { SiteUiContent, SiteUiLabels, SiteUiLocale, SiteUiNavLink } from '../../types';
 
 function mergeLabels(defaults: SiteUiLabels, fromWp?: Partial<SiteUiLabels>): SiteUiLabels {
 	const merged = { ...defaults };

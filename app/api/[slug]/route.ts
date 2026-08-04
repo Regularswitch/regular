@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { fetchWpPageByLocale } from '../../../lib/fetchWpPageByLocale';
-import type { WpLocale } from '../../../lib/wpLocaleSlug';
+import { fetchWpPageByLocale } from '../../../lib/fetch/wpPageByLocale';
+import type { WpLocale } from '../../../lib/wp/localeSlug';
 
-import { resolveWpPageBaseSlug } from '../../../lib/pageSlugs';
+import { resolveWpPageBaseSlug } from '../../../lib/site/pageSlugs';
 
 export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
 	const { slug } = await context.params;

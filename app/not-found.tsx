@@ -1,6 +1,6 @@
 import NotFoundPage from '../components/NotFound/NotFoundPage';
 import { GetBlobVisualApi } from '../components/ApiWp';
-import { resolveBlobVisual } from '../lib/blobDefaults';
+import { resolveBlobVisual } from '../lib/site/blobDefaults';
 
 export default async function NotFound() {
 	const blob = resolveBlobVisual(await GetBlobVisualApi());

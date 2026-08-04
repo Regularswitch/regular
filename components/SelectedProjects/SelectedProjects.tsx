@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 
-import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/pageSlugs';
-import { isHomeProject } from '../../lib/projectCategories';
-import { homeFeaturedSlotIndex, orderHomeProjects } from '../../lib/featuredProject';
-import { withLocalePrefix } from '../../lib/resolveSiteUi';
-import { sortProjectsByDate } from '../../lib/sortProjects';
+import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
+import { isHomeProject } from '../../lib/projects/categories';
+import { homeFeaturedSlotIndex, orderHomeProjects } from '../../lib/projects/featured';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
+import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects, SiteUiLabels } from '../../types';
 import { getHomeGridSpan } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';

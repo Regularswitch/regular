@@ -1,4 +1,4 @@
-import { getContactMailto, getJoinUsMailto } from './siteLinks';
+import { getContactMailto, getJoinUsMailto } from '../../site/siteLinks';
 
 export type ContactBlock = {
 	title: string;

@@ -7,7 +7,7 @@ import Image from 'next/image';
 import parse, { DOMNode } from 'html-react-parser';
 import BackgroundProject from './BackgroundProject';
 import type { Category, Meta, Projects } from '../types';
-import { getVisibleCategoryIds } from '../lib/projectCategories';
+import { getVisibleCategoryIds } from '../lib/projects/categories';
 
 type SlugPageClientProps = {
 	allPosts: Projects;

@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 
-import type { EducationGallery } from '../../lib/educationDefaults';
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import type { EducationGallery } from '../../lib/content/education/defaults';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 
 type EducationGalleryBlockProps = {
 	gallery: EducationGallery;

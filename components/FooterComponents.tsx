@@ -8,7 +8,7 @@ import type { FooterContent, FooterLink } from '../types';
 import FontVariante from './FontVariante';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
 import { getCookie } from './Translate';
-import { getContactMailto, getNewsletterHref } from '../lib/siteLinks';
+import { getContactMailto, getNewsletterHref } from '../lib/site/siteLinks';
 
 type FooterLocale = 'en' | 'pt';
 

@@ -6,9 +6,9 @@ import FooterComponents from '../components/FooterComponents';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
 import Header from '../components/Header';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
-import { buildNavActiveGradient } from '../lib/blobDefaults';
-import { hankenGrotesk } from '../lib/fonts';
-import { buildSiteUiWithHeaderNav } from '../lib/resolveSiteUi';
+import { buildNavActiveGradient } from '../lib/site/blobDefaults';
+import { hankenGrotesk } from '../lib/config/fonts';
+import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
 
 export const metadata = {

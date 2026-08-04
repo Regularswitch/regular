@@ -1,4 +1,4 @@
-import type { CapabilitySection, CapabilitiesContent } from '../types';
+import type { CapabilitySection, CapabilitiesContent } from '../../../types';
 
 export type { CapabilitySection, CapabilitiesContent };
 

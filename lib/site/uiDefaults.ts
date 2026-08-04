@@ -1,4 +1,4 @@
-import type { SiteUiContent, SiteUiLabels, SiteUiLayout, SiteUiLocale, SiteUiNavLink } from '../types';
+import type { SiteUiContent, SiteUiLabels, SiteUiLayout, SiteUiLocale, SiteUiNavLink } from '../../types';
 import {
 	ABOUT_PAGE_SLUG,
 	CAPABILITIES_PAGE_SLUG,

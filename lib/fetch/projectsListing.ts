@@ -1,8 +1,8 @@
-import { GetApi, GetCategoriesApi, GetProjectsPageByLocale } from '../components/ApiWp';
-import { buildProjectsPageContent } from './buildProjectsPageContent';
-import { getBaseUrl } from './getBaseUrl';
-import type { Category, Projects } from '../types';
-import type { ProjectsPageContent } from './projectsPageDefaults';
+import { GetApi, GetCategoriesApi, GetProjectsPageByLocale } from '../../components/ApiWp';
+import { buildProjectsPageContent } from '../content/projects-page/build';
+import { getBaseUrl } from '../config/getBaseUrl';
+import type { Category, Projects } from '../../types';
+import type { ProjectsPageContent } from '../content/projects-page/defaults';
 
 export type ProjectsListingPageData = {
 	content: ProjectsPageContent;

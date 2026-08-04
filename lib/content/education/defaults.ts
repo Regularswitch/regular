@@ -1,4 +1,4 @@
-import type { ProjectAccordionSection } from './parseProjectContent';
+import type { ProjectAccordionSection } from '../../projects/parseContent';
 
 export type EducationGalleryLayout = 'pair' | 'triple' | 'grid-2x2';
 

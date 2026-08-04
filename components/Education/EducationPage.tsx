@@ -1,7 +1,7 @@
 'use client';
 
 import type { Category, Projects } from '../../types';
-import type { EducationContent } from '../../lib/educationDefaults';
+import type { EducationContent } from '../../lib/content/education/defaults';
 import LatestProjects from '../LatestProjects/LatestProjects';
 import MediaCarousel from '../MediaCarousel/MediaCarousel';
 import ProjectAccordion from '../Project/ProjectAccordion';

@@ -4,8 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 
-import { sortProjectsByDate } from '../../lib/sortProjects';
-import { getProjectHeroImage } from '../../lib/projectImages';
+import { sortProjectsByDate } from '../../lib/projects/sort';
+import { getProjectHeroImage } from '../../lib/projects/images';
 import type { Project, Projects } from '../../types';
 import { NavChevronLeft, NavChevronRight, SectionHeadingArrow } from '../SiteIcons';
 import { useSiteUiLayout, useSiteUiLocale } from '../SiteUi/SiteUiProvider';

@@ -1,4 +1,4 @@
-import { getDefaultContactContent, type ContactContent } from './contactDefaults';
+import { getDefaultContactContent, type ContactContent } from './defaults';
 
 export function buildContactContent(
 	wp: ContactContent | null | undefined,

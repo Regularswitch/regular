@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
-import type { CapabilitySection } from '../../lib/capabilitiesDefaults';
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import type { CapabilitySection } from '../../lib/content/capabilities/defaults';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 
 type CapabilitiesAccordionProps = {
 	sections: CapabilitySection[];

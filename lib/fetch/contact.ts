@@ -1,6 +1,6 @@
-import { GetContactByLocale } from '../components/ApiWp';
-import { buildContactContent } from './buildContactContent';
-import { getDefaultContactContent } from './contactDefaults';
+import { GetContactByLocale } from '../../components/ApiWp';
+import { buildContactContent } from '../content/contact/build';
+import { getDefaultContactContent } from '../content/contact/defaults';
 
 export async function fetchContactPage(locale: 'en' | 'pt') {
 	return fetchContactFromWp(locale).catch((error) => {

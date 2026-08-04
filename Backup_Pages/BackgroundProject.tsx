@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { FastAverageColor } from 'fast-average-color';
 
-import { mediaUrlCandidates, resolveLoadableImageUrl } from '../lib/wpMediaUrl';
+import { mediaUrlCandidates, resolveLoadableImageUrl } from '../lib/wp/mediaUrl';
 
 const DEFAULT_TEXT_COLOR = 'white';
 

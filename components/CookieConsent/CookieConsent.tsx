@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { COOKIES_POLICY_PAGE_SLUG, PRIVACY_POLICY_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
-import { withLocalePrefix } from '../../lib/resolveSiteUi';
+import { COOKIES_POLICY_PAGE_SLUG, PRIVACY_POLICY_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import { getCookie, setCookie } from '../Translate';
 
 const CONSENT_COOKIE = 'rs_cookie_consent';

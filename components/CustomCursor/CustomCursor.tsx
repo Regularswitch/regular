@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { getCursorColor, isBlobCursor } from '../../lib/cursorConfig';
+import { getCursorColor, isBlobCursor } from '../../lib/config/cursor';
 
 const DEFAULT_SIZE = 16;
 const HOVER_SIZE = 44;

@@ -1,5 +1,5 @@
 import ProjectPage from '../../../../components/Project/ProjectPage';
-import { getBaseUrl } from '../../../../lib/getBaseUrl';
+import { getBaseUrl } from '../../../../lib/config/getBaseUrl';
 import type { ProjectMeta, Projects } from '../../../../types';
 
 export const revalidate = 10;

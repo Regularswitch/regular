@@ -1,8 +1,8 @@
-import { GetApi, GetAboutByLocale } from '../components/ApiWp';
-import { buildAboutContent } from './buildAboutContent';
-import { getDefaultAboutContent, type AboutContent } from './aboutDefaults';
-import { sortProjectsByDate } from './sortProjects';
-import type { Projects } from '../types';
+import { GetApi, GetAboutByLocale } from '../../components/ApiWp';
+import { buildAboutContent } from '../content/about/build';
+import { getDefaultAboutContent, type AboutContent } from '../content/about/defaults';
+import { sortProjectsByDate } from '../projects/sort';
+import type { Projects } from '../../types';
 
 export type AboutPageData = {
 	content: AboutContent;

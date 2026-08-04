@@ -2,8 +2,8 @@ import {
 	getDefaultCapabilitiesContent,
 	type CapabilitiesContent,
 	type CapabilitySection,
-} from './capabilitiesDefaults';
-import type { Projects } from '../types';
+} from './defaults';
+import type { Projects } from '../../../types';
 
 function attachProjectImages(sections: CapabilitySection[], projects: Projects): CapabilitySection[] {
 	return sections.map((section) => {

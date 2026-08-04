@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 import { NavChevronLeft, NavChevronRight } from '../SiteIcons';
 
 type MediaCarouselProps = {

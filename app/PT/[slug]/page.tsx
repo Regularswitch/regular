@@ -13,13 +13,13 @@ import {
 	EDUCATION_PAGE_SLUG,
 	isLegalPageSlug,
 	isProjectsPageSlug,
-} from '../../../lib/pageSlugs';
-import { fetchAboutPage } from '../../../lib/fetchAboutPage';
-import { fetchCapabilitiesPage } from '../../../lib/fetchCapabilitiesPage';
-import { fetchContactPage } from '../../../lib/fetchContactPage';
-import { fetchEducationPage } from '../../../lib/fetchEducationPage';
-import { fetchLegalPage } from '../../../lib/fetchLegalPage';
-import { fetchProjectsListingPage } from '../../../lib/fetchProjectsListingPage';
+} from '../../../lib/site/pageSlugs';
+import { fetchAboutPage } from '../../../lib/fetch/about';
+import { fetchCapabilitiesPage } from '../../../lib/fetch/capabilities';
+import { fetchContactPage } from '../../../lib/fetch/contact';
+import { fetchEducationPage } from '../../../lib/fetch/education';
+import { fetchLegalPage } from '../../../lib/fetch/legal';
+import { fetchProjectsListingPage } from '../../../lib/fetch/projectsListing';
 
 export const revalidate = 10;
 export const dynamicParams = true;

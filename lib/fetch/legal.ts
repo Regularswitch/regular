@@ -1,6 +1,6 @@
-import { GetApi } from '../components/ApiWp';
-import { getBaseUrl } from './getBaseUrl';
-import { isLegalPageSlug } from './pageSlugs';
+import { GetApi } from '../../components/ApiWp';
+import { getBaseUrl } from '../config/getBaseUrl';
+import { isLegalPageSlug } from '../site/pageSlugs';
 
 export { isLegalPageSlug };
 

@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { getProjectHeroImage } from '../../lib/projectImages';
+import { getProjectHeroImage } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
-import { getVisibleCategoryTags } from '../../lib/projectCategories';
+import { getVisibleCategoryTags } from '../../lib/projects/categories';
 import type { GridSpan } from './constants';
 
 type ProjectGridCardProps = {

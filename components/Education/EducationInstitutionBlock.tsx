@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 
-import type { EducationInstitution } from '../../lib/educationDefaults';
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import type { EducationInstitution } from '../../lib/content/education/defaults';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 import EducationGalleryBlock from './EducationGalleryBlock';
 
 type EducationInstitutionBlockProps = {

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import NotFoundCenterBlob from './NotFoundCenterBlob';
-import { DEFAULT_BLOB_VISUAL } from '../../lib/blobDefaults';
+import { DEFAULT_BLOB_VISUAL } from '../../lib/site/blobDefaults';
 import type { BlobVisual } from '../../types';
 
 type NotFoundPageProps = {

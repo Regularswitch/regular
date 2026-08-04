@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 
-import { isProjectMediaVideo, resolveProjectMediaType } from '../../lib/galleryImages';
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import { isProjectMediaVideo, resolveProjectMediaType } from '../../lib/projects/gallery';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 import type { ProjectStructuredImage } from '../../types';
 
 type ProjectHeroProps = {

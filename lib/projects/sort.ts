@@ -1,4 +1,4 @@
-import type { Projects } from '../types';
+import type { Projects } from '../../types';
 
 export function sortProjectsByDate(projects: Projects) {
 	return [...projects].sort(

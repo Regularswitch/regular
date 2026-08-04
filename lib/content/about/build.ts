@@ -1,12 +1,11 @@
 import {
-	DEFAULT_ABOUT_HERO_IMAGE,
 	getDefaultAboutContent,
 	type AboutAccordionSection,
 	type AboutContent,
-} from './aboutDefaults';
-import { sanitizeAboutBody, sanitizeAboutHeadline } from './sanitizeWpRichText';
-import { wpMediaUrl } from './wpMediaUrl';
-import type { Projects } from '../types';
+} from './defaults';
+import { sanitizeAboutBody, sanitizeAboutHeadline } from '../../wp/sanitizeRichText';
+import { wpMediaUrl } from '../../wp/mediaUrl';
+import type { Projects } from '../../../types';
 
 function attachSectionImages(sections: AboutAccordionSection[], projects: Projects): AboutAccordionSection[] {
 	return sections.map((section) => {
@@ -40,7 +39,8 @@ export function buildAboutContent(
 	if (!wp) {
 		return {
 			...defaults,
-			heroImage: defaults.heroImage ?? DEFAULT_ABOUT_HERO_IMAGE,
+			heroImage: undefined,
+			heroVideo: undefined,
 			accordionSections: defaultSections,
 		};
 	}
@@ -55,7 +55,8 @@ export function buildAboutContent(
 	if (!hasWpContent) {
 		return {
 			...defaults,
-			heroImage: defaults.heroImage ?? DEFAULT_ABOUT_HERO_IMAGE,
+			heroImage: undefined,
+			heroVideo: undefined,
 			accordionSections: defaultSections,
 		};
 	}
@@ -65,11 +66,8 @@ export function buildAboutContent(
 		wpSections.length > 0 ? attachSectionImages(wpSections, projects) : defaultSections;
 
 	return {
-		heroImage:
-			(wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined) ||
-			defaults.heroImage ||
-			DEFAULT_ABOUT_HERO_IMAGE,
-		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : defaults.heroVideo,
+		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined,
+		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : undefined,
 		headline: wp.headline?.trim() ? sanitizeAboutHeadline(wp.headline) : defaults.headline,
 		body: wp.body?.trim() ? sanitizeAboutBody(wp.body) : defaults.body,
 		accordionSections,

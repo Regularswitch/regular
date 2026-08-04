@@ -1,4 +1,4 @@
-import type { Project, Projects } from '../types';
+import type { Project, Projects } from '../../types';
 
 /** Projeto marcado como destaque da home no CMS (`project_data.featuredOnHome`). */
 export function isFeaturedOnHome(project: Project): boolean {

@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
-import type { AboutAccordionSection } from '../../lib/aboutDefaults';
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import type { AboutAccordionSection } from '../../lib/content/about/defaults';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 
 type AboutAccordionPanelProps = {
 	sections: AboutAccordionSection[];

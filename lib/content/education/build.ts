@@ -4,9 +4,9 @@ import {
 	type EducationGallery,
 	type EducationGalleryLayout,
 	type EducationInstitution,
-} from './educationDefaults';
-import { wpMediaUrl } from './wpMediaUrl';
-import type { ProjectAccordionSection } from './parseProjectContent';
+} from './defaults';
+import { wpMediaUrl } from '../../wp/mediaUrl';
+import type { ProjectAccordionSection } from '../../projects/parseContent';
 
 const GALLERY_LAYOUTS: EducationGalleryLayout[] = ['pair', 'triple', 'grid-2x2'];
 

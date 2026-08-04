@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 
-import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
-import { withLocalePrefix } from '../../lib/resolveSiteUi';
-import type { CapabilitiesContent } from '../../lib/capabilitiesDefaults';
+import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
+import type { CapabilitiesContent } from '../../lib/content/capabilities/defaults';
 import type { Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';

@@ -1,8 +1,8 @@
-import { GetApi, GetEducationByLocale } from '../components/ApiWp';
-import { buildEducationContent } from './buildEducationContent';
-import { getDefaultEducationContent, type EducationContent } from './educationDefaults';
-import { sortProjectsByDate } from './sortProjects';
-import type { Category, Projects } from '../types';
+import { GetApi, GetEducationByLocale } from '../../components/ApiWp';
+import { buildEducationContent } from '../content/education/build';
+import { getDefaultEducationContent, type EducationContent } from '../content/education/defaults';
+import { sortProjectsByDate } from '../projects/sort';
+import type { Category, Projects } from '../../types';
 
 export type EducationPageData = {
 	content: EducationContent;

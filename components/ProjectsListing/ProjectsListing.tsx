@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 
-import type { ProjectsPageContent } from '../../lib/projectsPageDefaults';
-import { sortProjectsByDate } from '../../lib/sortProjects';
+import type { ProjectsPageContent } from '../../lib/content/projects-page/defaults';
+import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLayout } from '../SiteUi/SiteUiProvider';

@@ -1,5 +1,5 @@
-import { GetApi } from '../components/ApiWp';
-import { wpLangSlug, type WpLocale } from './wpLocaleSlug';
+import { GetApi } from '../../components/ApiWp';
+import { wpLangSlug, type WpLocale } from '../wp/localeSlug';
 
 type WpPage = Awaited<ReturnType<typeof GetApi>>[number];
 

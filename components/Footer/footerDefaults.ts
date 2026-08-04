@@ -4,8 +4,8 @@ import {
 	COOKIES_POLICY_PAGE_SLUG,
 	pagePath,
 	PRIVACY_POLICY_PAGE_SLUG,
-} from '../../lib/pageSlugs';
-import { getContactMailto, getNewsletterHref } from '../../lib/siteLinks';
+} from '../../lib/site/pageSlugs';
+import { getContactMailto, getNewsletterHref } from '../../lib/site/siteLinks';
 
 export const DEFAULT_FOOTER_EN: FooterContent = {
 	brandMark: 'REGULARSWITCH',

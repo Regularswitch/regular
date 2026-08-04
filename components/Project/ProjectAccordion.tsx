@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
-import type { ProjectAccordionSection } from '../../lib/parseProjectContent';
+import type { ProjectAccordionSection } from '../../lib/projects/parseContent';
 
 type ProjectAccordionProps = {
 	sections: ProjectAccordionSection[];

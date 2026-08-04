@@ -1,4 +1,4 @@
-import type { ProjectsPageContent } from '../../lib/projectsPageDefaults';
+import type { ProjectsPageContent } from '../../lib/content/projects-page/defaults';
 import { SectionHeadingArrow } from '../SiteIcons';
 
 type ProjectsListingHeroProps = {

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 
-import { wpMediaUrl } from '../../lib/wpMediaUrl';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 
 type PageHeroMediaProps = {
 	image?: string;

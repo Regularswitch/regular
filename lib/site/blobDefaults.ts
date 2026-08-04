@@ -1,4 +1,4 @@
-import type { BlobVisual } from '../types';
+import type { BlobVisual } from '../../types';
 
 export const DEFAULT_BLOB_VISUAL: BlobVisual = {
 	color1: '#fe4857',

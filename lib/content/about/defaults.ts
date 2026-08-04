@@ -1,4 +1,4 @@
-import type { ProjectAccordionSection } from './parseProjectContent';
+import type { ProjectAccordionSection } from '../../projects/parseContent';
 
 export type AboutAccordionSection = ProjectAccordionSection & {
 	image?: string;
@@ -91,7 +91,3 @@ export const DEFAULT_ABOUT_EN: AboutContent = {
 export function getDefaultAboutContent(locale: 'en' | 'pt'): AboutContent {
 	return locale === 'pt' ? { ...DEFAULT_ABOUT_PT } : { ...DEFAULT_ABOUT_EN };
 }
-
-/** Imagem padrão do hero até haver conteúdo no WordPress. */
-export const DEFAULT_ABOUT_HERO_IMAGE =
-	'https://wp.regularswitch.com/wp-content/uploads/2024/11/LA-martiniere-Regularswitch-1024x582.jpg';

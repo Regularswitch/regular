@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { buildSiteUiContent, resolveSiteUi } from '../../lib/resolveSiteUi';
-import { getDefaultSiteUiContent, normalizeSiteUiLayout } from '../../lib/siteUiDefaults';
+import { buildSiteUiContent, resolveSiteUi } from '../../lib/site/resolveSiteUi';
+import { getDefaultSiteUiContent, normalizeSiteUiLayout } from '../../lib/site/uiDefaults';
 import type { SiteUiContent, SiteUiLayout, SiteUiLocale } from '../../types';
 import { getCookie } from '../Translate';
 

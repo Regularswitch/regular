@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { isGalleryWide, normalizeGalleryItems } from '../../lib/galleryImages';
+import { isGalleryWide, normalizeGalleryItems } from '../../lib/projects/gallery';
 import type { ProjectGalleryImage } from '../../types';
 import { NavChevronLeft, NavChevronRight } from '../SiteIcons';
 

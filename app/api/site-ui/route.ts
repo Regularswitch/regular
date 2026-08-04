@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { GetHeaderNavApi, GetSiteUiApi } from '../../../components/ApiWp';
-import { buildSiteUiWithHeaderNav } from '../../../lib/resolveSiteUi';
+import { buildSiteUiWithHeaderNav } from '../../../lib/site/resolveSiteUi';
 
 export const dynamic = 'force-dynamic';
 

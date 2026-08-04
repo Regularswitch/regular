@@ -1,6 +1,6 @@
-import { wpMediaUrl } from './wpMediaUrl';
-import { isProjectMediaVideo, normalizeGalleryItems, resolveProjectMediaType } from './galleryImages';
-import type { Project, ProjectStructuredData, ProjectStructuredImage } from '../types';
+import { wpMediaUrl } from '../wp/mediaUrl';
+import { isProjectMediaVideo, normalizeGalleryItems, resolveProjectMediaType } from './gallery';
+import type { Project, ProjectStructuredData, ProjectStructuredImage } from '../../types';
 
 export function structuredImageUrl(image?: ProjectStructuredImage | null): string | undefined {
 	const url = image?.url;

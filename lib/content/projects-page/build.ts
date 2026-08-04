@@ -1,4 +1,4 @@
-import { getDefaultProjectsPageContent, type ProjectsPageContent } from './projectsPageDefaults';
+import { getDefaultProjectsPageContent, type ProjectsPageContent } from './defaults';
 
 export function buildProjectsPageContent(
 	fromWp: ProjectsPageContent | null | undefined,

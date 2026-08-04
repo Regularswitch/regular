@@ -9,8 +9,8 @@ import LogoMark from './LogoMark';
 import { useSiteUi } from './SiteUi/SiteUiProvider';
 import translate, { getCookie, setCookie } from './Translate';
 import ThemeToggle from './ThemeToggle';
-import { withLocalePrefix } from '../lib/resolveSiteUi';
-import { isNavLinkActive } from '../lib/isNavLinkActive';
+import { withLocalePrefix } from '../lib/site/resolveSiteUi';
+import { isNavLinkActive } from '../lib/site/isNavLinkActive';
 
 type HeaderProps = {
 	isLight?: boolean;

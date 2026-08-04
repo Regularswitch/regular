@@ -1,7 +1,7 @@
 'use client'
 
 import { HomeProps, Project } from '../types';
-import { getVisibleCategoryIds } from '../lib/projectCategories';
+import { getVisibleCategoryIds } from '../lib/projects/categories';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';

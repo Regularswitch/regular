@@ -1,4 +1,4 @@
-import type { Category, Project } from '../types';
+import type { Category, Project } from '../../types';
 
 /**
  * Slug da taxonomia `project-category` para projetos da home.

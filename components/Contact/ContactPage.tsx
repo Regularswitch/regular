@@ -1,7 +1,7 @@
 'use client';
 
 import DateTimeComponent from '../DateTimeComponent';
-import type { ContactContent } from '../../lib/contactDefaults';
+import type { ContactContent } from '../../lib/content/contact/defaults';
 
 type ContactPageProps = {
 	content: ContactContent;

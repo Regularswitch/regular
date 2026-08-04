@@ -1,8 +1,8 @@
-import { GetApi, GetCapabilitiesByLocale } from '../components/ApiWp';
-import { buildCapabilitiesContent } from './buildCapabilitiesContent';
-import { getDefaultCapabilitiesContent } from './capabilitiesDefaults';
-import { sortProjectsByDate } from './sortProjects';
-import type { CapabilitiesContent, Projects } from '../types';
+import { GetApi, GetCapabilitiesByLocale } from '../../components/ApiWp';
+import { buildCapabilitiesContent } from '../content/capabilities/build';
+import { getDefaultCapabilitiesContent } from '../content/capabilities/defaults';
+import { sortProjectsByDate } from '../projects/sort';
+import type { CapabilitiesContent, Projects } from '../../types';
 
 export type CapabilitiesPageData = {
 	content: CapabilitiesContent;

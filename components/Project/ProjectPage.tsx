@@ -5,14 +5,14 @@ import { useMemo } from 'react';
 
 import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
-import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/pageSlugs';
-import { withLocalePrefix } from '../../lib/resolveSiteUi';
+import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
-import { normalizeGalleryItems } from '../../lib/galleryImages';
+import { normalizeGalleryItems } from '../../lib/projects/gallery';
 import {
 	extractImagesFromHtml,
 	parseAccordionSections,
-} from '../../lib/parseProjectContent';
+} from '../../lib/projects/parseContent';
 import ProjectAccordion from './ProjectAccordion';
 import ProjectGallery from './ProjectGallery';
 import ProjectHero from './ProjectHero';
