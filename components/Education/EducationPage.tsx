@@ -25,11 +25,16 @@ export default function EducationPage({
 
 	return (
 		<article className="education-page">
-			<EducationHero
-				image={content.heroImage}
-				video={content.heroVideo}
-				headline={content.headline}
-			/>
+			<EducationHero image={content.heroImage} video={content.heroVideo} />
+
+			{content.headline?.trim() ? (
+				<section className="education-intro py-10 md:py-14">
+					<div
+						className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
+						dangerouslySetInnerHTML={{ __html: content.headline }}
+					/>
+				</section>
+			) : null}
 
 			<section className="py-10 md:py-14">
 				<ProjectAccordion sections={content.accordionSections} />
