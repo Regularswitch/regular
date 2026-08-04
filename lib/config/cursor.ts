@@ -1,26 +1,26 @@
 /**
- * Estilo do cursor — troque `CURSOR_STYLE` para testar.
- * - `blob`: gradiente animado igual ao blob / nav
- * - cores sólidas: yellow | magenta | green | blue
+ * Cores sólidas do cursor customizado.
+ * A cada reload uma cor é sorteada (evita repetir a anterior).
  */
-export const CURSOR_VARIANTS = {
-	yellow: 'rgb(255, 255, 0)',
-	magenta: 'rgb(255, 0, 255)',
-	green: 'rgb(0, 255, 0)',
-	blue: 'rgb(0, 0, 255)',
-} as const;
+export const CURSOR_COLORS = [
+	'rgb(255, 255, 0)', // yellow
+	'rgb(255, 0, 255)', // magenta
+	'rgb(0, 255, 0)', // green
+	'rgb(0, 0, 255)', // blue
+] as const;
 
-export type CursorVariant = keyof typeof CURSOR_VARIANTS;
-export type CursorStyle = 'blob' | CursorVariant;
+const LAST_COLOR_KEY = 'rs-cursor-color';
 
-/** Altere aqui para comparar. */
-export const CURSOR_STYLE: CursorStyle = 'blob';
+export function pickRandomCursorColor(): string {
+	if (typeof window === 'undefined') {
+		return CURSOR_COLORS[0];
+	}
 
-export function isBlobCursor(style: CursorStyle = CURSOR_STYLE): boolean {
-	return style === 'blob';
-}
+	const last = window.sessionStorage.getItem(LAST_COLOR_KEY);
+	const pool = CURSOR_COLORS.filter((color) => color !== last);
+	const choices = pool.length > 0 ? pool : CURSOR_COLORS;
+	const color = choices[Math.floor(Math.random() * choices.length)] ?? CURSOR_COLORS[0];
 
-export function getCursorColor(style: CursorStyle = CURSOR_STYLE): string | null {
-	if (style === 'blob') return null;
-	return CURSOR_VARIANTS[style];
+	window.sessionStorage.setItem(LAST_COLOR_KEY, color);
+	return color;
 }

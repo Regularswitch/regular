@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { getCursorColor, isBlobCursor } from '../../lib/config/cursor';
+import { pickRandomCursorColor } from '../../lib/config/cursor';
 
 const DEFAULT_SIZE = 16;
 const HOVER_SIZE = 44;
@@ -33,10 +33,7 @@ export default function CustomCursor() {
 	const reduceMotion = useRef(false);
 
 	useEffect(() => {
-		const color = getCursorColor();
-		if (color) {
-			document.documentElement.style.setProperty('--cursor-color', color);
-		}
+		document.documentElement.style.setProperty('--cursor-color', pickRandomCursorColor());
 	}, []);
 
 	useEffect(() => {
@@ -169,7 +166,7 @@ export default function CustomCursor() {
 	return (
 		<div
 			ref={cursorRef}
-			className={`custom-cursor${isBlobCursor() ? ' custom-cursor--blob' : ''}${visible ? ' is-visible' : ''}`}
+			className={`custom-cursor${visible ? ' is-visible' : ''}`}
 			aria-hidden
 		/>
 	);

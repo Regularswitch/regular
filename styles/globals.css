@@ -595,50 +595,6 @@ html:not(.dark) .brand-mark {
 	will-change: left, top, width, height;
 }
 
-.custom-cursor--blob {
-	overflow: hidden;
-	background: #7b00ff;
-}
-
-/* Camada animada: scale no GPU = loop fluido, sem piscar */
-.custom-cursor--blob::before {
-	content: '';
-	position: absolute;
-	inset: -150%;
-	background: repeating-radial-gradient(
-		circle at center,
-		#ff5faf 0px,
-		#7b00ff 14px,
-		#304ffe 28px,
-		#ff5faf 42px
-	);
-	animation: cursor-radial-flow 2.4s ease-in-out infinite alternate;
-	will-change: transform;
-}
-
-@keyframes cursor-radial-flow {
-	from {
-		transform: scale(1);
-	}
-
-	to {
-		transform: scale(2);
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.custom-cursor--blob::before {
-		animation: none;
-		inset: -50%;
-		background: radial-gradient(
-			circle at center,
-			#ff5faf 0%,
-			#7b00ff 50%,
-			#304ffe 100%
-		);
-	}
-}
-
 .custom-cursor.is-visible {
 	opacity: 1;
 }
