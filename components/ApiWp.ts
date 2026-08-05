@@ -1,5 +1,5 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
+import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectMeta, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
 import type { AboutContent } from '../lib/content/about/defaults';
 import type { ContactContent } from '../lib/content/contact/defaults';
 import type { EducationContent } from '../lib/content/education/defaults';
@@ -176,7 +176,7 @@ export async function GetProjectsByCategorySlug(
     });
 }
 
-export async function GetMeta() {
+export async function GetMeta(): Promise<ProjectMeta[]> {
     let full_path = `${process.env?.API}/wp-json/api-etc/v2/all-posts?v=1.1.1`;
 
     const response = await fetch(full_path, { cache: 'no-store' });
@@ -185,8 +185,16 @@ export async function GetMeta() {
     const payload = await response.json();
     if (!Array.isArray(payload)) return [];
 
-    return payload.map((item: { img_secondary?: { url?: string }; img_single?: { url?: string }; img_primary?: { url?: string }; project_data?: ProjectStructuredData | null; [key: string]: unknown }) => ({
-        ...item,
+    return payload.map((item: {
+        slug?: string;
+        img_secondary?: { url?: string };
+        img_single?: { url?: string };
+        img_primary?: { url?: string };
+        video?: { url?: string };
+        project_data?: ProjectStructuredData | null;
+        [key: string]: unknown;
+    }): ProjectMeta => ({
+        slug: typeof item.slug === 'string' ? item.slug : '',
         img_secondary: item.img_secondary?.url
             ? { ...item.img_secondary, url: wpMediaUrl(item.img_secondary.url) }
             : item.img_secondary,
@@ -196,6 +204,9 @@ export async function GetMeta() {
         img_primary: item.img_primary?.url
             ? { ...item.img_primary, url: wpMediaUrl(item.img_primary.url) }
             : item.img_primary,
+        video: item.video?.url
+            ? { ...item.video, url: wpMediaUrl(item.video.url) }
+            : item.video,
         project_data: item.project_data
             ? {
                 ...item.project_data,
