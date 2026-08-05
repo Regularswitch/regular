@@ -1,7 +1,7 @@
 import { GetApi, GetEducationByLocale } from '../../components/ApiWp';
 import { buildEducationContent } from '../content/education/build';
 import { getDefaultEducationContent, type EducationContent } from '../content/education/defaults';
-import { sortProjectsByDate } from '../projects/sort';
+import { excludeProjectTranslationTwins, sortProjectsByDate } from '../projects/sort';
 import type { Category, Projects } from '../../types';
 
 export type EducationPageData = {
@@ -12,6 +12,7 @@ export type EducationPageData = {
 
 async function fetchEducationFromWp(locale: 'en' | 'pt') {
 	const query: Record<string, string | number> = { _embed: '', per_page: 100 };
+	if (locale === 'pt') query.translate = 'PT';
 
 	const [education, projects] = await Promise.all([
 		GetEducationByLocale(locale),
@@ -20,7 +21,7 @@ async function fetchEducationFromWp(locale: 'en' | 'pt') {
 
 	return {
 		content: buildEducationContent(education, locale),
-		projects: sortProjectsByDate(projects),
+		projects: excludeProjectTranslationTwins(sortProjectsByDate(projects)),
 		categories: [] as Category[],
 	};
 }

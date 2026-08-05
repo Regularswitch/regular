@@ -7,6 +7,7 @@ import type { ProjectsPageContent } from '../lib/content/projects-page/defaults'
 import { wpLangSlug, type WpLocale } from '../lib/wp/localeSlug';
 import { normalizeGalleryItems } from '../lib/projects/gallery';
 import { getProjectHeroImage, normalizeProjectData } from '../lib/projects/images';
+import { excludeProjectTranslationTwins } from '../lib/projects/sort';
 import { wpMediaUrl } from '../lib/wp/mediaUrl';
 import type { HeaderNavContent } from '../lib/site/resolveSiteUi';
 
@@ -145,7 +146,10 @@ async function fetchWpList(path: string, data: Record<string, string | number> =
 }
 
 export async function GetApi(path: string, data: Record<string, string | number> = {}): Promise<Projects> {
-    return porter(await fetchWpList(path, data));
+    const projects = porter(await fetchWpList(path, data));
+    // Pedido por slug pode ser o gêmeo PT; listagens só usam o canônico EN.
+    if (data.slug) return projects;
+    return excludeProjectTranslationTwins(projects);
 }
 
 export async function GetCategoriesApi(

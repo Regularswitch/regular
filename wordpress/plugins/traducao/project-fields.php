@@ -38,33 +38,6 @@ function rs_project_guess_locale(int $post_id): string {
 }
 
 /**
- * @return array<int, string>
- */
-function rs_project_default_accordion_titles(string $locale): array {
-    if ($locale === 'pt') {
-        return ['Contexto', 'Direção criativa', 'Solução', 'Impacto'];
-    }
-
-    return ['Context', 'Creative direction', 'Solution', 'Impact'];
-}
-
-/**
- * @return array<int, array{title: string, body: string}>
- */
-function rs_project_default_accordion_sections(string $locale): array {
-    $sections = [];
-
-    foreach (rs_project_default_accordion_titles($locale) as $title) {
-        $sections[] = [
-            'title' => $title,
-            'body'  => '',
-        ];
-    }
-
-    return $sections;
-}
-
-/**
  * @param array<int, mixed> $sections
  * @return array<int, array{title: string, body: string}>
  */
@@ -436,16 +409,41 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
 }
 
 function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_template = false): void {
-    $name_prefix = $is_template ? 'rs_project_gallery[__INDEX__]' : 'rs_project_gallery[' . $index . ']';
+    $name = $is_template ? 'rs_project_gallery[__INDEX__][image_id]' : 'rs_project_gallery[' . $index . '][image_id]';
     $field_id = $is_template ? 'rs_project_gallery_image___INDEX__' : 'rs_project_gallery_image_' . $index;
     $display = $is_template ? ' style="display:none;"' : '';
+
+    $url = $attachment_id > 0 ? (string) wp_get_attachment_url($attachment_id) : '';
+    $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
+    $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+    $thumb = '';
+    if ($attachment_id > 0 && !$is_video) {
+        $thumb = (string) (wp_get_attachment_image_url($attachment_id, 'medium') ?: $url);
+    }
     ?>
     <div class="rs-project-gallery-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 12px;padding:12px;border:1px solid #dcdcde;border-radius:4px;background:#fff;">
-            <div style="flex:1;min-width:0;">
-                <?php rs_render_media_field($name_prefix . '[image_id]', '', $attachment_id, $field_id, !$is_template, 'media'); ?>
+        <div class="rs-project-gallery-tile">
+            <span class="rs-project-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-project-remove-gallery" title="Remover" aria-label="Remover mídia">&times;</button>
+            <input
+                type="hidden"
+                name="<?php echo esc_attr($name); ?>"
+                id="<?php echo esc_attr($field_id); ?>"
+                value="<?php echo esc_attr((string) $attachment_id); ?>"
+                data-rs-cap-image="1"
+                data-rs-library="media"
+            />
+            <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
+                <?php if ($url && $is_video) : ?>
+                    <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
+                    <span class="rs-project-gallery-badge">vídeo</span>
+                <?php elseif ($thumb || $url) : ?>
+                    <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
+                    <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
+                        <span class="rs-project-gallery-badge">gif</span>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
-            <button type="button" class="button-link-delete rs-project-remove-gallery" style="flex-shrink:0;margin-top:2px;">Remover</button>
         </div>
     </div>
     <?php
@@ -454,7 +452,6 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
 function rs_project_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_project_save', 'rs_project_nonce');
 
-    $locale = rs_project_guess_locale($post->ID);
     $hero_id = rs_project_get_hero_id($post->ID);
     $logo_id = (int) get_post_meta($post->ID, RS_PROJECT_LOGO_KEY, true);
     $accordion_sections = rs_project_get_accordion_sections($post->ID);
@@ -463,16 +460,12 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $vignette_meta = get_post_meta($post->ID, RS_PROJECT_VIGNETTE_KEY, true);
     $show_vignette = $vignette_meta === '' ? true : (bool) $vignette_meta;
 
-    if (!$accordion_sections) {
-        $accordion_sections = rs_project_default_accordion_sections($locale);
-    }
-
     if (!$gallery_ids) {
         $gallery_ids = [];
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.1)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.6)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -492,6 +485,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Acordeão (coluna direita)</strong></legend>';
+    echo '<p id="rs-project-accordion-empty" class="description"' . ($accordion_sections ? ' style="display:none;"' : '') . '>Nenhuma seção. Use <strong>+ Adicionar seção</strong> quando precisar.</p>';
     echo '<div id="rs-project-accordion-list">';
     foreach ($accordion_sections as $index => $section) {
         rs_project_render_accordion_row((int) $index, $section);
@@ -504,14 +498,16 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<fieldset style="margin:0 0 10px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos de uma vez (ou enviar novos na biblioteca). A ordem aqui define a ordem no site.</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> as miniaturas para definir a ordem no site.</p>';
     echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
-    echo '<div id="rs-project-gallery-list">';
+    echo '<div id="rs-project-gallery-list" class="rs-project-gallery-grid">';
     foreach ($gallery_ids as $index => $attachment_id) {
         rs_project_render_gallery_row((int) $index, (int) $attachment_id);
     }
     echo '</div>';
+    echo '<div id="rs-project-gallery-template" hidden>';
     rs_project_render_gallery_row(0, 0, true);
+    echo '</div>';
     echo '<p style="margin:12px 0 0;display:flex;flex-wrap:wrap;gap:8px;">';
     echo '<button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídias</button>';
     echo '<span style="align-self:center;color:#646970;font-size:12px;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
@@ -642,20 +638,129 @@ add_action('save_post_project', function (int $post_id) {
 
 rs_enqueue_admin_media_picker(['project']);
 
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if (!in_array($hook, ['post.php', 'post-new.php'], true)) {
+        return;
+    }
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'project') {
+        return;
+    }
+    wp_enqueue_script('jquery-ui-sortable');
+});
+
 function rs_project_render_admin_footer_script(): void {
     $screen = get_current_screen();
     if (!$screen || $screen->post_type !== 'project') {
         return;
     }
     ?>
+    <style>
+        .rs-project-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 0;
+        }
+        .rs-project-gallery-row {
+            margin: 0;
+        }
+        .rs-project-gallery-tile {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid #dcdcde;
+            border-radius: 6px;
+            background: #f6f7f7;
+            overflow: hidden;
+            cursor: grab;
+        }
+        .rs-project-gallery-tile:active {
+            cursor: grabbing;
+        }
+        .rs-project-gallery-handle {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 11px;
+            line-height: 1;
+            letter-spacing: -1px;
+            user-select: none;
+        }
+        .rs-project-remove-gallery {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            z-index: 2;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .rs-project-remove-gallery:hover {
+            background: #b32d2e;
+        }
+        .rs-project-gallery-preview {
+            display: block;
+            width: 100%;
+            height: 100%;
+            margin: 0 !important;
+        }
+        .rs-project-gallery-preview img,
+        .rs-project-gallery-preview video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-width: none !important;
+            object-fit: cover;
+            border-radius: 0 !important;
+        }
+        .rs-project-gallery-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            z-index: 2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .rs-project-gallery-placeholder {
+            aspect-ratio: 1;
+            border: 2px dashed #2271b1;
+            border-radius: 6px;
+            background: #f0f6fc;
+        }
+        .rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        }
+    </style>
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
         let nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
-        let nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row:visible').length;
+        let nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row').length;
 
         function syncGalleryEmptyState() {
-            const hasRows = $('#rs-project-gallery-list .rs-project-gallery-row:visible').length > 0;
+            const hasRows = $('#rs-project-gallery-list .rs-project-gallery-row').length > 0;
             $('#rs-project-gallery-empty').toggle(!hasRows);
         }
 
@@ -702,7 +807,7 @@ function rs_project_render_admin_footer_script(): void {
 
         function collectGalleryJson() {
             const ids = [];
-            $('#rs-project-gallery-list .rs-project-gallery-row:visible').each(function () {
+            $('#rs-project-gallery-list .rs-project-gallery-row').each(function () {
                 const imageId = parseInt($(this).find('input[data-rs-cap-image]').val(), 10) || 0;
                 if (imageId > 0) {
                     ids.push(imageId);
@@ -737,7 +842,19 @@ function rs_project_render_admin_footer_script(): void {
         }
 
         function assignGalleryNames(row, index) {
-            row.find('input[data-rs-cap-image]').attr('name', 'rs_project_gallery[' + index + '][image_id]');
+            const fieldId = 'rs_project_gallery_image_' + index;
+            row.find('input[data-rs-cap-image]')
+                .attr('name', 'rs_project_gallery[' + index + '][image_id]')
+                .attr('id', fieldId);
+            row.find('.rs-media-preview').attr('data-target', fieldId);
+        }
+
+        function reindexGallery() {
+            $('#rs-project-gallery-list .rs-project-gallery-row').each(function (i) {
+                $(this).attr('data-index', String(i));
+                assignGalleryNames($(this), i);
+            });
+            nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row').length;
         }
 
         function galleryPreviewHtml(attachment) {
@@ -746,11 +863,12 @@ function rs_project_render_admin_footer_script(): void {
             }
             const mime = attachment.mime || '';
             if (mime.indexOf('video/') === 0) {
-                return '<video src="' + attachment.url + '" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>';
+                return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-project-gallery-badge">vídeo</span>';
             }
             const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
                 || attachment.url;
-            return '<img src="' + thumb + '" alt="" style="max-width:220px;height:auto;border-radius:4px;" />';
+            const isGif = mime.indexOf('gif') !== -1 || /\.gif(\?|$)/i.test(attachment.url);
+            return '<img src="' + thumb + '" alt="" />' + (isGif ? '<span class="rs-project-gallery-badge">gif</span>' : '');
         }
 
         function appendGalleryAttachment(attachment) {
@@ -759,26 +877,32 @@ function rs_project_render_admin_footer_script(): void {
             }
 
             const index = nextGalleryIndex;
-            const template = $('.rs-project-gallery-row[data-index="__INDEX__"]').first().clone();
+            const template = $('#rs-project-gallery-template .rs-project-gallery-row').first().clone();
             template.removeAttr('style');
             template.attr('data-index', String(index));
             template.find('input[data-rs-cap-image]').val(String(attachment.id));
             template.find('.rs-media-preview').html(galleryPreviewHtml(attachment));
-            template.find('[id]').each(function () {
-                const id = $(this).attr('id');
-                if (id && id.indexOf('__INDEX__') !== -1) {
-                    $(this).attr('id', id.replace(/__INDEX__/g, String(index)));
-                }
-            });
-            template.find('[data-target]').each(function () {
-                const target = $(this).attr('data-target');
-                if (target) {
-                    $(this).attr('data-target', target.replace(/__INDEX__/g, String(index)));
-                }
-            });
             assignGalleryNames(template, index);
             $('#rs-project-gallery-list').append(template);
             nextGalleryIndex += 1;
+        }
+
+        function syncAccordionEmptyState() {
+            const hasRows = $('#rs-project-accordion-list .rs-project-accordion-row').length > 0;
+            $('#rs-project-accordion-empty').toggle(!hasRows);
+        }
+
+        if ($.fn.sortable) {
+            $('#rs-project-gallery-list').sortable({
+                items: '.rs-project-gallery-row',
+                handle: '.rs-project-gallery-handle, .rs-project-gallery-tile',
+                placeholder: 'rs-project-gallery-placeholder',
+                tolerance: 'pointer',
+                opacity: 0.9,
+                update: function () {
+                    reindexGallery();
+                }
+            });
         }
 
         $('#rs-project-add-accordion').on('click', function (event) {
@@ -798,14 +922,11 @@ function rs_project_render_admin_footer_script(): void {
             $('#rs-project-accordion-list').append(template);
             initEditor('rs_project_accordion_body_' + nextAccordionIndex);
             nextAccordionIndex += 1;
+            syncAccordionEmptyState();
         });
 
         $(document).on('click', '.rs-project-remove-accordion', function (event) {
             event.preventDefault();
-            if ($('#rs-project-accordion-list .rs-project-accordion-row').length <= 1) {
-                window.alert('Mantenha pelo menos uma seção.');
-                return;
-            }
             const row = $(this).closest('.rs-project-accordion-row');
             const editorId = row.find('textarea[id^="rs_project_accordion_body_"]').attr('id');
             removeEditor(editorId);
@@ -815,6 +936,7 @@ function rs_project_render_admin_footer_script(): void {
                 assignAccordionNames($(this), i);
             });
             nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+            syncAccordionEmptyState();
         });
 
         $('#rs-project-add-gallery').on('click', function (event) {
@@ -830,7 +952,6 @@ function rs_project_render_admin_footer_script(): void {
                 button: { text: 'Adicionar à galeria' },
                 multiple: true,
                 library: {
-                    // image + video (inclui GIF como image/gif)
                     type: ['image', 'video']
                 }
             });
@@ -853,18 +974,9 @@ function rs_project_render_admin_footer_script(): void {
 
         $(document).on('click', '.rs-project-remove-gallery', function (event) {
             event.preventDefault();
+            event.stopPropagation();
             $(this).closest('.rs-project-gallery-row').remove();
-            $('#rs-project-gallery-list .rs-project-gallery-row:visible').each(function (i) {
-                $(this).attr('data-index', String(i));
-                assignGalleryNames($(this), i);
-                $(this).find('[id^="rs_project_gallery_image_"]').each(function () {
-                    const oldId = $(this).attr('id');
-                    const newId = 'rs_project_gallery_image_' + i;
-                    $(this).attr('id', newId);
-                    $(this).closest('.rs-media-field').find('[data-target="' + oldId + '"]').attr('data-target', newId);
-                });
-            });
-            nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row:visible').length;
+            reindexGallery();
             syncGalleryEmptyState();
         });
 
