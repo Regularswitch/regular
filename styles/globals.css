@@ -721,8 +721,8 @@ html:not(.dark) .brand-mark {
 
 @media (min-width: 768px) {
 	.project-gallery-grid {
-		columns: 2;
-		column-gap: 2rem;
+		columns: 3;
+		column-gap: 1.5rem;
 	}
 }
 

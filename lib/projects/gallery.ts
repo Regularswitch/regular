@@ -67,7 +67,7 @@ export function galleryItemAspectRatio(item: ProjectGalleryImage): number | unde
 	return item.width / item.height;
 }
 
-/** Landscape bem largo → ocupa as duas colunas no grid fluido. */
+/** Landscape bem largo → ocupa as três colunas no grid fluido. */
 export function isGalleryWide(item: ProjectGalleryImage): boolean {
 	const ratio = galleryItemAspectRatio(item);
 	return ratio !== undefined && ratio >= 1.7;

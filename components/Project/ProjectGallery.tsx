@@ -30,7 +30,7 @@ function GalleryMedia({
 	const height = item.height && item.height > 0 ? item.height : 900;
 	const sizes = wide
 		? '(max-width: 768px) 100vw, 100vw'
-		: '(max-width: 768px) 100vw, 50vw';
+		: '(max-width: 768px) 100vw, 33vw';
 
 	if (item.type === 'video') {
 		return (
