@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { getProjectHeroImage } from '../../lib/projects/images';
+import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
 import { getVisibleCategoryTags } from '../../lib/projects/categories';
 import type { GridSpan } from './constants';
@@ -46,6 +46,7 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 							}
 							width={isFeatured ? 1600 : 1200}
 							height={isFeatured ? 600 : 900}
+							unoptimized={isGifUrl(cardImage)}
 							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 						/>
 					) : null}

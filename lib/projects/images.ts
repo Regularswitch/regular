@@ -8,6 +8,10 @@ export function structuredImageUrl(image?: ProjectStructuredImage | null): strin
 	return wpMediaUrl(url) ?? url;
 }
 
+export function isGifUrl(url?: string | null): boolean {
+	return Boolean(url && /\.gif(\?|$)/i.test(url));
+}
+
 function normalizeStructuredMedia(
 	image?: ProjectStructuredImage | null,
 ): ProjectStructuredImage | null | undefined {
@@ -36,22 +40,74 @@ export function normalizeProjectData(
 }
 
 /**
- * Thumbnail estático para cards (home / listagem).
- * Ignora vídeo no hero e pega a primeira imagem/GIF da galeria se precisar.
+ * Thumbnail para cards (home / listagem).
+ * Prefere imagem estática; evita hero GIF pesado quando há featured/galeria menores.
+ * Ignora vídeo.
  */
 export function getProjectHeroImage(
 	project: Pick<Project, 'image_full' | 'project_data'>,
 ): string | undefined {
 	const hero = project.project_data?.heroImage;
-	if (hero && !isProjectMediaVideo(hero)) {
-		const url = structuredImageUrl(hero);
-		if (url) return url;
-	}
+	const heroUrl = hero && !isProjectMediaVideo(hero) ? structuredImageUrl(hero) : undefined;
+	const heroIsGif = heroUrl
+		? resolveProjectMediaType(heroUrl, hero?.mime, hero?.type) === 'gif'
+		: false;
+
+	// Imagem estática no hero (não GIF)
+	if (heroUrl && !heroIsGif) return heroUrl;
 
 	const gallery = normalizeGalleryItems(project.project_data?.gallery);
-	const still = gallery.find((item) => item.type !== 'video');
-	if (still?.url) return still.url;
+	const staticStill = gallery.find((item) => item.type === 'image');
+	if (staticStill?.url) return staticStill.url;
 
-	if (project.image_full) return wpMediaUrl(project.image_full) ?? project.image_full;
+	// Featured / image_full costuma ser menor que o hero GIF animado
+	if (project.image_full) {
+		const featured = wpMediaUrl(project.image_full) ?? project.image_full;
+		if (featured) return featured;
+	}
+
+	const galleryGif = gallery.find((item) => item.type === 'gif');
+	if (galleryGif?.url) return galleryGif.url;
+
+	if (heroUrl) return heroUrl;
 	return undefined;
+}
+
+/**
+ * Mídia do hero na página do projeto.
+ * Se o CMS colocou um GIF (pesado) e a galeria tem vídeo, usa o vídeo.
+ */
+export function getProjectHeroMedia(
+	project: Pick<Project, 'image_full' | 'project_data'>,
+	fallbackUrl?: string,
+): ProjectStructuredImage | null {
+	const hero = normalizeStructuredMedia(project.project_data?.heroImage) ?? null;
+	const gallery = normalizeGalleryItems(project.project_data?.gallery);
+
+	if (hero?.url) {
+		const type = resolveProjectMediaType(hero.url, hero.mime, hero.type);
+		if (type === 'gif') {
+			const video = gallery.find((item) => item.type === 'video');
+			if (video?.url) {
+				return {
+					url: video.url,
+					mime: video.mime,
+					type: 'video',
+					width: video.width,
+					height: video.height,
+				};
+			}
+		}
+		return hero;
+	}
+
+	if (fallbackUrl) {
+		const url = wpMediaUrl(fallbackUrl) ?? fallbackUrl;
+		return {
+			url,
+			type: resolveProjectMediaType(url),
+		};
+	}
+
+	return null;
 }

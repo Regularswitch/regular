@@ -3,6 +3,7 @@
 import Image from 'next/image';
 
 import { isProjectMediaVideo, resolveProjectMediaType } from '../../lib/projects/gallery';
+import { isGifUrl } from '../../lib/projects/images';
 import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 import type { ProjectStructuredImage } from '../../types';
 
@@ -70,7 +71,7 @@ export default function ProjectHero({
 								width={280}
 								height={120}
 								className="h-auto w-[min(55vw,280px)] object-contain"
-								unoptimized={logoSrc.includes('.svg')}
+								unoptimized={logoSrc.includes('.svg') || isGifUrl(logoSrc)}
 							/>
 						</div>
 					) : (

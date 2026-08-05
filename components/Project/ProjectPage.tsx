@@ -9,6 +9,7 @@ import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
 import { normalizeGalleryItems } from '../../lib/projects/gallery';
+import { getProjectHeroMedia, structuredImageUrl } from '../../lib/projects/images';
 import {
 	extractImagesFromHtml,
 	parseAccordionSections,
@@ -60,8 +61,12 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 
 	const structured = project.project_data ?? meta?.project_data ?? null;
 
-	const heroImage =
-		mediaUrl(structured?.heroImage) || mediaUrl(meta?.img_single) || project.image_full;
+	const fallbackHero =
+		mediaUrl(meta?.img_single) || project.image_full;
+	const heroMedia =
+		getProjectHeroMedia(project, fallbackHero ?? undefined) ??
+		(structured?.heroImage ? structured.heroImage : null);
+	const heroImage = structuredImageUrl(heroMedia) || fallbackHero;
 	const logoImage =
 		mediaUrl(structured?.logoImage) || mediaUrl(meta?.img_primary) || mediaUrl(meta?.img_secondary);
 
@@ -93,7 +98,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 		<article className="project-page">
 			<ProjectHero
 				image={heroImage}
-				media={structured?.heroImage}
+				media={heroMedia}
 				logo={showLogo ? logoImage : undefined}
 				title={project.title ?? project.slug}
 				showVignette={showVignette}

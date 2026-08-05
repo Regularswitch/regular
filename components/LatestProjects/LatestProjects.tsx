@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 
 import { sortProjectsByDate } from '../../lib/projects/sort';
-import { getProjectHeroImage } from '../../lib/projects/images';
+import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Project, Projects } from '../../types';
 import { NavChevronLeft, NavChevronRight, SectionHeadingArrow } from '../SiteIcons';
 import { useSiteUiLayout, useSiteUiLocale } from '../SiteUi/SiteUiProvider';
@@ -114,6 +114,7 @@ function LatestProjectCard({ project, href }: { project: Project; href: string }
 						width={640}
 						height={640}
 						sizes="(max-width: 768px) 70vw, 25vw"
+						unoptimized={isGifUrl(cardImage)}
 						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 					/>
 				) : null}
