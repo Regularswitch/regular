@@ -12,25 +12,32 @@ type AboutAccordionPanelProps = {
 	sections: AboutAccordionSection[];
 };
 
-export default function AboutAccordionPanel({ sections }: AboutAccordionPanelProps) {
-	const [openIndex, setOpenIndex] = useState(0);
+function sectionImageUrl(section?: AboutAccordionSection): string | undefined {
+	if (!section?.image) return undefined;
+	return wpMediaUrl(section.image) ?? section.image;
+}
 
+export default function AboutAccordionPanel({ sections }: AboutAccordionPanelProps) {
 	const visibleSections = useMemo(
 		() => sections.filter((section) => section.body.trim()),
 		[sections],
 	);
 
+	const [openIndex, setOpenIndex] = useState(() => (visibleSections.length > 0 ? 0 : -1));
+	const [pinnedImage, setPinnedImage] = useState<string | undefined>(() =>
+		sectionImageUrl(visibleSections[0]),
+	);
+
 	const activeSection = openIndex >= 0 ? visibleSections[openIndex] : undefined;
-	const activeImage = activeSection?.image
-		? (wpMediaUrl(activeSection.image) ?? activeSection.image)
-		: undefined;
+	const activeImage = sectionImageUrl(activeSection) ?? pinnedImage;
 
 	if (!visibleSections.length) return null;
 
 	return (
 		<section className="about-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
-			{activeImage ? (
-				<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-[5px] bg-(--surface) md:sticky md:top-28 md:mb-0">
+			{/* Coluna esquerda sempre reservada no desktop — acordeão permanece à direita ao fechar. */}
+			<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-[5px] bg-(--surface) md:sticky md:top-28 md:mb-0">
+				{activeImage ? (
 					<Image
 						key={activeImage}
 						src={activeImage}
@@ -39,10 +46,10 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 						sizes="(max-width: 768px) 100vw, 45vw"
 						className="object-cover object-center transition-opacity duration-300"
 					/>
-				</div>
-			) : null}
+				) : null}
+			</div>
 
-			<div className="project-accordion min-w-0">
+			<div className="project-accordion min-w-0 md:col-start-2">
 				<BezierDivider />
 				{visibleSections.map((section, index) => {
 					const isOpen = openIndex === index;
@@ -52,7 +59,15 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 							<button
 								type="button"
 								className="accordion-trigger flex w-full items-center justify-between gap-4 py-5 text-left"
-								onClick={() => setOpenIndex(isOpen ? -1 : index)}
+								onClick={() => {
+									if (isOpen) {
+										setOpenIndex(-1);
+										return;
+									}
+									const nextImage = sectionImageUrl(section);
+									if (nextImage) setPinnedImage(nextImage);
+									setOpenIndex(index);
+								}}
 								aria-expanded={isOpen}
 							>
 								<span className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}>
