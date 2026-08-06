@@ -366,6 +366,82 @@ function rs_project_register_meta_box(): void {
 
 add_action('add_meta_boxes_project', 'rs_project_register_meta_box', 5);
 
+/**
+ * Resumo + Slug logo abaixo do título (em vez da barra lateral / fundo da página).
+ */
+function rs_project_move_excerpt_and_slug(): void {
+    remove_meta_box('postexcerpt', 'project', 'normal');
+    remove_meta_box('postexcerpt', 'project', 'side');
+    remove_meta_box('slugdiv', 'project', 'normal');
+    remove_meta_box('slugdiv', 'project', 'side');
+}
+add_action('add_meta_boxes_project', 'rs_project_move_excerpt_and_slug', 99);
+
+function rs_project_render_after_title(WP_Post $post): void {
+    if ($post->post_type !== 'project') {
+        return;
+    }
+
+    $excerpt = (string) $post->post_excerpt;
+    $slug = (string) $post->post_name;
+    ?>
+    <div id="rs-project-title-fields" style="margin:12px 0 16px;">
+        <div class="postbox" style="margin-bottom:12px;">
+            <div class="postbox-header">
+                <h2 class="hndle">Resumo</h2>
+            </div>
+            <div class="inside">
+                <p style="margin-top:0;color:#646970;font-size:12px;">
+                    Aparece na coluna esquerda da página do projeto, abaixo do título.
+                </p>
+                <label class="screen-reader-text" for="excerpt">Resumo</label>
+                <textarea
+                    rows="4"
+                    cols="40"
+                    name="excerpt"
+                    id="excerpt"
+                    class="large-text"
+                    style="width:100%;"
+                ><?php echo esc_textarea($excerpt); ?></textarea>
+            </div>
+        </div>
+
+        <div class="postbox" style="margin-bottom:0;">
+            <div class="postbox-header">
+                <h2 class="hndle">Slug</h2>
+            </div>
+            <div class="inside">
+                <p style="margin-top:0;color:#646970;font-size:12px;">
+                    URL do projeto: <code>/project/<span id="rs-project-slug-preview"><?php echo esc_html($slug !== '' ? $slug : '…'); ?></span></code>
+                </p>
+                <label class="screen-reader-text" for="post_name">Slug</label>
+                <input
+                    type="text"
+                    name="post_name"
+                    id="post_name"
+                    value="<?php echo esc_attr($slug); ?>"
+                    class="regular-text"
+                    style="width:100%;max-width:420px;"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var input = document.getElementById('post_name');
+        var preview = document.getElementById('rs-project-slug-preview');
+        if (!input || !preview) return;
+        input.addEventListener('input', function () {
+            preview.textContent = input.value.trim() || '…';
+        });
+    })();
+    </script>
+    <?php
+}
+add_action('edit_form_after_title', 'rs_project_render_after_title');
+
 function rs_project_render_accordion_row(int $index, array $section, bool $is_template = false): void {
     $title = $section['title'] ?? '';
     $body = $section['body'] ?? '';
@@ -465,7 +541,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site) fica no campo <em>Resumo</em> da barra lateral. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.6)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.8)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }

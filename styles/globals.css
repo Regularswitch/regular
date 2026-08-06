@@ -544,6 +544,10 @@ html:not(.dark) .brand-mark {
 	margin: 0;
 }
 
+.project-summary p + p {
+	margin-top: 0.65em;
+}
+
 .project-accordion-body p {
 	margin: 0 0 0.75rem;
 }

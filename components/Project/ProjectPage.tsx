@@ -105,13 +105,22 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 			/>
 
 			<div className="project-page-content space-y-10 py-8 md:space-y-20 md:py-14">
-				{(summary || accordionSections.length > 0) && (
+				{(project.title || summary || accordionSections.length > 0) && (
 					<section className="project-intro grid gap-8 md:grid-cols-2 md:items-start md:gap-16 lg:gap-20">
-						{summary ? (
-							<div
-								className="project-summary intro-headline min-w-0 font-hk text-[clamp(1.35rem,4.5vw,2.5rem)] font-medium leading-[1.08] tracking-[-0.02em]"
-								dangerouslySetInnerHTML={{ __html: summary }}
-							/>
+						{project.title || summary ? (
+							<div className="project-intro-copy min-w-0">
+								{project.title ? (
+									<h1 className="project-title intro-headline font-hk text-[clamp(1.35rem,4.5vw,2.5rem)] font-medium leading-[1.08] tracking-[-0.02em] text-(--fg)">
+										{project.title}
+									</h1>
+								) : null}
+								{summary ? (
+									<div
+										className="project-summary mt-4 min-w-0 font-hk text-[clamp(1rem,2.4vw,1.25rem)] font-normal leading-[1.35] tracking-[-0.01em] text-(--muted) md:mt-5"
+										dangerouslySetInnerHTML={{ __html: summary }}
+									/>
+								) : null}
+							</div>
 						) : (
 							<div className="hidden md:block" />
 						)}
