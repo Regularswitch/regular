@@ -2,86 +2,73 @@
 
 import { useEffect, useState } from 'react';
 
-import type { FooterContent } from '../../types';
-import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from '../Footer/footerDefaults';
-import LegalPolicyModal from '../Legal/LegalPolicyModal';
+import { useLegalPolicies } from '../Legal/LegalPoliciesProvider';
 import { getCookie, setCookie } from '../Translate';
 
 const CONSENT_COOKIE = 'rs_cookie_consent';
 
-type CookieConsentProps = {
-	footerEn?: FooterContent | null;
-	footerPt?: FooterContent | null;
-};
-
-export default function CookieConsent({ footerEn = null, footerPt = null }: CookieConsentProps) {
+export default function CookieConsent() {
 	const [visible, setVisible] = useState(false);
-	const [locale, setLocale] = useState<'en' | 'pt'>('en');
-	const [modal, setModal] = useState<'privacy' | 'cookies' | null>(null);
+	const { locale, legal, openPolicy, policyOpen } = useLegalPolicies();
+	const isPt = locale === 'pt';
 
 	useEffect(() => {
-		const lang = getCookie('language') === 'PT' ? 'pt' : 'en';
-		setLocale(lang);
-		if (!getCookie(CONSENT_COOKIE)) {
+		const choice = getCookie(CONSENT_COOKIE);
+		// Só abre se ainda não aceitou nem negou.
+		if (!choice) {
 			setVisible(true);
 		}
 	}, []);
 
-	const fallback = locale === 'pt' ? DEFAULT_FOOTER_PT : DEFAULT_FOOTER_EN;
-	const fromWp = locale === 'pt' ? footerPt : footerEn;
-	const legal = fromWp?.legal ?? fallback.legal;
-	const isPt = locale === 'pt';
-
-	const privacyBody = (legal.privacyBody?.trim() || fallback.legal.privacyBody || '').trim();
-	const cookiesBody = (legal.cookiesBody?.trim() || fallback.legal.cookiesBody || '').trim();
-
 	const accept = () => {
-		setCookie(CONSENT_COOKIE, '1');
+		setCookie(CONSENT_COOKIE, 'accepted');
 		setVisible(false);
 	};
 
-	if (!visible && !modal) return null;
+	const decline = () => {
+		setCookie(CONSENT_COOKIE, 'denied');
+		setVisible(false);
+	};
+
+	if (!visible || policyOpen) return null;
 
 	return (
-		<>
-			{visible ? (
-				<div className="cookie-consent" role="dialog" aria-live="polite" aria-label="Cookies">
-					<div className="cookie-consent-inner">
-						<p className="cookie-consent-text font-hk">
-							{isPt
-								? 'Usamos cookies para melhorar a experiência. Ao continuar, você concorda com nossa '
-								: 'We use cookies to improve your experience. By continuing, you agree to our '}
-							<button
-								type="button"
-								className="cookie-consent-link"
-								onClick={() => setModal('privacy')}
-							>
-								{legal.privacy}
-							</button>
-							{isPt ? ' e ' : ' and '}
-							<button
-								type="button"
-								className="cookie-consent-link"
-								onClick={() => setModal('cookies')}
-							>
-								{legal.cookies}
-							</button>
-							{isPt ? ' (LGPD).' : ' (LGPD).'}
-						</p>
-						<button type="button" className="cookie-consent-btn font-hk" onClick={accept}>
-							{isPt ? 'Aceitar' : 'Accept'}
-						</button>
-					</div>
+		<div className="cookie-consent" role="dialog" aria-live="polite" aria-label="Cookies">
+			<div className="cookie-consent-inner">
+				<p className="cookie-consent-text font-hk">
+					{isPt
+						? 'Usamos cookies para melhorar a experiência. Ao continuar, você concorda com nossa '
+						: 'We use cookies to improve your experience. By continuing, you agree to our '}
+					<button
+						type="button"
+						className="cookie-consent-link"
+						onClick={() => openPolicy('privacy')}
+					>
+						{legal.privacy}
+					</button>
+					{isPt ? ' e ' : ' and '}
+					<button
+						type="button"
+						className="cookie-consent-link"
+						onClick={() => openPolicy('cookies')}
+					>
+						{legal.cookies}
+					</button>
+					{isPt ? ' (LGPD).' : ' (LGPD).'}
+				</p>
+				<div className="cookie-consent-actions">
+					<button type="button" className="cookie-consent-btn font-hk" onClick={accept}>
+						{isPt ? 'Aceitar' : 'Accept'}
+					</button>
+					<button
+						type="button"
+						className="cookie-consent-btn cookie-consent-btn--ghost font-hk"
+						onClick={decline}
+					>
+						{isPt ? 'Negar' : 'Decline'}
+					</button>
 				</div>
-			) : null}
-
-			<LegalPolicyModal
-				open={modal !== null}
-				title={modal === 'privacy' ? legal.privacy : legal.cookies}
-				bodyHtml={modal === 'privacy' ? privacyBody : cookiesBody}
-				onClose={() => setModal(null)}
-				closeLabel={isPt ? 'Fechar' : 'Close'}
-			/>
-		</>
+			</div>
+		</div>
 	);
 }

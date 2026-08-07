@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { GetFooterApi, GetHeaderNavApi, GetSiteUiApi } from '../components/ApiWp';
-import FooterComponents from '../components/FooterComponents';
-// import CookieConsent from '../components/CookieConsent/CookieConsent';
+import CookieConsent from '../components/CookieConsent/CookieConsent';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
+import FooterComponents from '../components/FooterComponents';
 import Header from '../components/Header';
+import { LegalPoliciesProvider } from '../components/Legal/LegalPoliciesProvider';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
@@ -55,10 +56,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			<body>
 				<CustomCursor />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
-					<Header />
-					<main className="pt-16 px-7 sm:pt-14 lg:pt-18">{children}</main>
-					<FooterComponents footerEn={footerEn} footerPt={footerPt} />
-					{/* <CookieConsent /> */}
+					<LegalPoliciesProvider footerEn={footerEn} footerPt={footerPt}>
+						<Header />
+						<main className="pt-16 px-7 sm:pt-14 lg:pt-18">{children}</main>
+						<FooterComponents footerEn={footerEn} footerPt={footerPt} />
+						<CookieConsent />
+					</LegalPoliciesProvider>
 				</SiteUiProvider>
 			</body>
 		</html>
