@@ -1,5 +1,6 @@
 import BrandsMarquee from '../../components/BrandsMarquee/BrandsMarquee';
 import {
+	GetApi,
 	GetBlobVisualApi,
 	GetBrandsApi,
 	GetCategoriesApi,
@@ -19,29 +20,46 @@ import type { Brand, Category, Projects } from '../../types';
 export const revalidate = 60;
 
 const HOME_SELECTED_COUNT = 5;
+const LATEST_FETCH_COUNT = 12;
 
 export default async function PtHomePage() {
-	const [projects, allCat, brands, intro, siteUiRaw, blobVisualRaw] = await Promise.all([
-		GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
-			_embed: '',
-			per_page: HOME_SELECTED_COUNT,
-			translate: 'PT',
-		}),
-		GetCategoriesApi('/project-category', { per_page: 22, translate: 'PT' }),
-		GetBrandsApi({
-			_embed: '',
-			per_page: '100',
-			orderby: 'menu_order',
-			order: 'asc',
-			translate: 'PT',
-		}),
-		GetIntroByLocale('pt'),
-		GetSiteUiApi(),
-		GetBlobVisualApi(),
-	]).catch((error) => {
-		console.error('Failed to fetch PT home', error);
-		return [[], [], [], null, null, null] as [Projects, Category[], Brand[], null, null, null];
-	});
+	const [homeProjects, latestProjects, allCat, brands, intro, siteUiRaw, blobVisualRaw] =
+		await Promise.all([
+			GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
+				_embed: '',
+				per_page: HOME_SELECTED_COUNT,
+				translate: 'PT',
+			}),
+			GetApi('/project/', {
+				_embed: '',
+				per_page: LATEST_FETCH_COUNT,
+				orderby: 'date',
+				order: 'desc',
+				translate: 'PT',
+			}),
+			GetCategoriesApi('/project-category', { per_page: 22, translate: 'PT' }),
+			GetBrandsApi({
+				_embed: '',
+				per_page: '100',
+				orderby: 'menu_order',
+				order: 'asc',
+				translate: 'PT',
+			}),
+			GetIntroByLocale('pt'),
+			GetSiteUiApi(),
+			GetBlobVisualApi(),
+		]).catch((error) => {
+			console.error('Failed to fetch PT home', error);
+			return [[], [], [], [], null, null, null] as [
+				Projects,
+				Projects,
+				Category[],
+				Brand[],
+				null,
+				null,
+				null,
+			];
+		});
 
 	const ui = resolveSiteUi(buildSiteUiContent(siteUiRaw), 'pt');
 	const blob = resolveBlobVisual(blobVisualRaw);
@@ -61,13 +79,13 @@ export default async function PtHomePage() {
 			<BrandsMarquee brands={brands} locale="pt" />
 
 			<SelectedProjects
-				projects={projects}
+				projects={homeProjects}
 				categories={allCat}
 				locale="pt"
 				labels={ui.labels}
 			/>
 
-			<LatestProjects projects={projects} locale="pt" />
+			<LatestProjects projects={latestProjects} locale="pt" />
 		</>
 	);
 }

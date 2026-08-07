@@ -1,5 +1,6 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
 import {
+	GetApi,
 	GetBlobVisualApi,
 	GetBrandsApi,
 	GetCategoriesApi,
@@ -18,24 +19,41 @@ import type { Brand, Category, Projects } from '../types';
 
 export const revalidate = 60;
 
-/** Quantos projetos a grade da home exibe (Site UI default = 5). */
+/** Grade "Selected" — categoria home (Site UI default = 5). */
 const HOME_SELECTED_COUNT = 5;
+/** Carrossel "The Latest" — teto do Site UI (3–12). */
+const LATEST_FETCH_COUNT = 12;
 
 export default async function HomePage() {
-	const [projects, allCat, brands, intro, siteUiRaw, blobVisualRaw] = await Promise.all([
-		GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
-			_embed: '',
-			per_page: HOME_SELECTED_COUNT,
-		}),
-		GetCategoriesApi('/project-category', { per_page: 22 }),
-		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
-		GetIntroByLocale('en'),
-		GetSiteUiApi(),
-		GetBlobVisualApi(),
-	]).catch((error) => {
-		console.error('Failed to fetch data:', error);
-		return [[], [], [], null, null, null] as [Projects, Category[], Brand[], null, null, null];
-	});
+	const [homeProjects, latestProjects, allCat, brands, intro, siteUiRaw, blobVisualRaw] =
+		await Promise.all([
+			GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
+				_embed: '',
+				per_page: HOME_SELECTED_COUNT,
+			}),
+			GetApi('/project/', {
+				_embed: '',
+				per_page: LATEST_FETCH_COUNT,
+				orderby: 'date',
+				order: 'desc',
+			}),
+			GetCategoriesApi('/project-category', { per_page: 22 }),
+			GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
+			GetIntroByLocale('en'),
+			GetSiteUiApi(),
+			GetBlobVisualApi(),
+		]).catch((error) => {
+			console.error('Failed to fetch data:', error);
+			return [[], [], [], [], null, null, null] as [
+				Projects,
+				Projects,
+				Category[],
+				Brand[],
+				null,
+				null,
+				null,
+			];
+		});
 
 	const ui = resolveSiteUi(buildSiteUiContent(siteUiRaw), 'en');
 	const blob = resolveBlobVisual(blobVisualRaw);
@@ -55,13 +73,13 @@ export default async function HomePage() {
 			<BrandsMarquee brands={brands} locale="en" />
 
 			<SelectedProjects
-				projects={projects}
+				projects={homeProjects}
 				categories={allCat}
 				locale="en"
 				labels={ui.labels}
 			/>
 
-			<LatestProjects projects={projects} locale="en" />
+			<LatestProjects projects={latestProjects} locale="en" />
 		</>
 	);
 }
