@@ -9,38 +9,20 @@ if (defined('RS_FOOTER_FIELDS_LOADED')) {
 define('RS_FOOTER_FIELDS_LOADED', true);
 
 const RS_FOOTER_META_KEYS = [
-    'rs_footer_brand_mark'         => 'Marca grande (ex: REGULARSWITCH)',
-    'rs_footer_link_1_title'       => 'Coluna 1 — título',
-    'rs_footer_link_1_subtitle'    => 'Coluna 1 — subtítulo',
-    'rs_footer_link_1_href'        => 'Coluna 1 — link',
-    'rs_footer_link_2_title'       => 'Coluna 2 — título',
-    'rs_footer_link_2_subtitle'    => 'Coluna 2 — subtítulo',
-    'rs_footer_link_2_href'        => 'Coluna 2 — link',
-    'rs_footer_link_3_title'       => 'Coluna 3 — título',
-    'rs_footer_link_3_subtitle'    => 'Coluna 3 — subtítulo',
-    'rs_footer_link_3_href'        => 'Coluna 3 — link',
-    'rs_footer_legal_brand'        => 'Legal — copyright (texto, sem link)',
-    'rs_footer_legal_privacy'      => 'Legal — rótulo Privacidade',
-    'rs_footer_legal_privacy_body' => 'Legal — conteúdo do popup Privacidade',
-    'rs_footer_legal_cookies'      => 'Legal — rótulo Cookies',
-    'rs_footer_legal_cookies_body' => 'Legal — conteúdo do popup Cookies',
+    'rs_footer_brand_mark'      => 'Marca grande (ex: REGULARSWITCH)',
+    'rs_footer_link_1_title'    => 'Coluna 1 — título',
+    'rs_footer_link_1_subtitle' => 'Coluna 1 — subtítulo',
+    'rs_footer_link_1_href'     => 'Coluna 1 — link',
+    'rs_footer_link_2_title'    => 'Coluna 2 — título',
+    'rs_footer_link_2_subtitle' => 'Coluna 2 — subtítulo',
+    'rs_footer_link_2_href'     => 'Coluna 2 — link',
+    'rs_footer_link_3_title'    => 'Coluna 3 — título',
+    'rs_footer_link_3_subtitle' => 'Coluna 3 — subtítulo',
+    'rs_footer_link_3_href'     => 'Coluna 3 — link',
+    'rs_footer_legal_brand'     => 'Legal — copyright (texto, sem link)',
+    'rs_footer_legal_privacy'   => 'Legal — rótulo Privacidade',
+    'rs_footer_legal_cookies'   => 'Legal — rótulo Cookies',
 ];
-
-function rs_footer_default_privacy_body(string $locale): string {
-    if ($locale === 'pt') {
-        return '<p>Coletamos e processamos dados pessoais para operar este site e responder a solicitações. Para dúvidas sobre seus dados, fale conosco em <a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a>.</p>';
-    }
-
-    return '<p>We collect and process personal data to operate this website and respond to inquiries. For questions about your data, contact us at <a href="mailto:contact@regularswitch.com">contact@regularswitch.com</a>.</p>';
-}
-
-function rs_footer_default_cookies_body(string $locale): string {
-    if ($locale === 'pt') {
-        return '<p>Usamos cookies essenciais para lembrar preferências (idioma, tema) e melhorar sua experiência. Ao continuar navegando, você concorda com o uso de cookies.</p>';
-    }
-
-    return '<p>We use essential cookies to remember preferences (language, theme) and improve your experience. By continuing to browse, you agree to our use of cookies.</p>';
-}
 
 function rs_footer_get_meta(int $post_id): array {
     $data = [];
@@ -78,14 +60,8 @@ function rs_footer_meta_to_payload(array $meta, string $locale = 'en'): array {
                 : ('© ' . $year . ' Regularswitch'),
             'privacy'     => $meta['rs_footer_legal_privacy'] ?: ($locale === 'pt' ? 'Política de Privacidade' : 'Privacy Policy'),
             'privacyHref' => '/privacy-policy',
-            'privacyBody' => $meta['rs_footer_legal_privacy_body'] !== ''
-                ? $meta['rs_footer_legal_privacy_body']
-                : rs_footer_default_privacy_body($locale),
             'cookies'     => $meta['rs_footer_legal_cookies'] ?: ($locale === 'pt' ? 'Política de Cookies' : 'Cookies Policy'),
             'cookiesHref' => '/cookies-policy',
-            'cookiesBody' => $meta['rs_footer_legal_cookies_body'] !== ''
-                ? $meta['rs_footer_legal_cookies_body']
-                : rs_footer_default_cookies_body($locale),
         ],
     ];
 }
@@ -155,19 +131,12 @@ add_action('add_meta_boxes_footer', function () {
 function rs_footer_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_footer_save', 'rs_footer_nonce');
     $meta = rs_footer_get_meta($post->ID);
-    $locale = $post->post_name === 'pt' ? 'pt' : 'en';
 
-    if (($meta['rs_footer_legal_privacy_body'] ?? '') === '') {
-        $meta['rs_footer_legal_privacy_body'] = rs_footer_default_privacy_body($locale);
-    }
-    if (($meta['rs_footer_legal_cookies_body'] ?? '') === '') {
-        $meta['rs_footer_legal_cookies_body'] = rs_footer_default_cookies_body($locale);
-    }
     if (($meta['rs_footer_legal_brand'] ?? '') === '') {
         $meta['rs_footer_legal_brand'] = '© ' . gmdate('Y') . ' Regularswitch';
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Privacidade e Cookies abrem popups no site — edite o conteúdo abaixo. <em>(Plugin Tradução v1.2.14)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Os rótulos Privacidade/Cookies abrem os popups. O conteúdo editável fica em <strong>Privacidade &amp; Cookies</strong>. <em>(Plugin Tradução v1.2.15)</em></p>';
 
     $groups = [
         'Marca' => ['rs_footer_brand_mark'],
@@ -177,9 +146,7 @@ function rs_footer_render_meta_box(WP_Post $post): void {
         'Linha legal' => [
             'rs_footer_legal_brand',
             'rs_footer_legal_privacy',
-            'rs_footer_legal_privacy_body',
             'rs_footer_legal_cookies',
-            'rs_footer_legal_cookies_body',
         ],
     ];
 

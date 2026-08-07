@@ -3,6 +3,8 @@ import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, t
 import type { AboutContent } from '../lib/content/about/defaults';
 import type { ContactContent } from '../lib/content/contact/defaults';
 import type { EducationContent } from '../lib/content/education/defaults';
+import type { LegalContent } from '../lib/content/legal/defaults';
+import { buildLegalContent } from '../lib/content/legal/build';
 import type { ProjectsPageContent } from '../lib/content/projects-page/defaults';
 import { wpLangSlug, type WpLocale } from '../lib/wp/localeSlug';
 import { normalizeGalleryItems } from '../lib/projects/gallery';
@@ -75,6 +77,7 @@ export type responseWp = {
     about_data?: AboutContent
     education_data?: EducationContent
     contact_data?: ContactContent
+    legal_data?: LegalContent
     projects_page_data?: ProjectsPageContent
     site_ui_data?: SiteUiContent
     project_data?: ProjectStructuredData
@@ -671,6 +674,42 @@ export async function GetContactApi(data: Record<string, string> = {}): Promise<
 
 export async function GetContactByLocale(locale: WpLocale): Promise<ContactContent | null> {
     return GetContactApi({ slug: wpLangSlug(locale) });
+}
+
+export function porterLegal(payloadWp: listResponseWp): LegalContent | null {
+    const item = payloadWp[0];
+    if (!item?.legal_data || typeof item.legal_data !== 'object') return null;
+    const locale = item.slug === 'pt' ? 'pt' : 'en';
+    return buildLegalContent(item.legal_data as LegalContent, locale);
+}
+
+export async function GetLegalApi(data: Record<string, string> = {}): Promise<LegalContent | null> {
+    const api = process.env?.API;
+    if (!api) return null;
+
+    try {
+        const fullPath = new URL(`${api}/wp-json/wp/v2/legal`);
+        fullPath.search = new URLSearchParams({
+            per_page: '1',
+            slug: data.slug ?? 'en',
+            ...data,
+        }).toString();
+
+        const response = await fetch(fullPath, { cache: 'no-store' });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return null;
+
+        return porterLegal(payload);
+    } catch {
+        return null;
+    }
+}
+
+export async function GetLegalByLocale(locale: WpLocale): Promise<LegalContent> {
+    const fromWp = await GetLegalApi({ slug: wpLangSlug(locale) });
+    return buildLegalContent(fromWp, locale === 'pt' ? 'pt' : 'en');
 }
 
 function isProjectsPageContent(value: unknown): value is ProjectsPageContent {

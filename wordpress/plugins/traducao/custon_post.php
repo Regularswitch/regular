@@ -208,6 +208,26 @@ add_action('init', function () {
     );
 
     register_post_type(
+        'legal',
+        [
+            'labels'        => [
+                'name'          => 'Privacidade & Cookies',
+                'singular_name' => 'Privacidade & Cookies',
+                'add_new_item'  => 'Adicionar políticas',
+                'edit_item'     => 'Editar políticas',
+                'menu_name'     => 'Privacidade & Cookies',
+            ],
+            'public'        => true,
+            'has_archive'   => false,
+            'menu_position' => 37,
+            'menu_icon'     => 'dashicons-privacy',
+            'show_in_rest'  => true,
+            'supports'      => ['title'],
+            'rewrite'       => ['slug' => 'legal'],
+        ]
+    );
+
+    register_post_type(
         'footer',
         [
             'labels'        => [

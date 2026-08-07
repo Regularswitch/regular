@@ -18,6 +18,7 @@ const RS_LOCALE_CPT_TYPES = [
     'about',
     'education',
     'contact',
+    'legal',
     'projects-page',
     'site-ui',
 ];

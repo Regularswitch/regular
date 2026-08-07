@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.14
+ * Version: 1.2.15
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -18,6 +18,7 @@ include __DIR__ . "/section-hero-fields.php";
 include __DIR__ . "/about-fields.php";
 include __DIR__ . "/education-fields.php";
 include __DIR__ . "/contact-fields.php";
+include __DIR__ . "/legal-fields.php";
 include __DIR__ . "/projects-page-fields.php";
 include __DIR__ . "/site-ui-fields.php";
 include __DIR__ . "/blob-visual-fields.php";
@@ -92,7 +93,7 @@ function rs_link_translate_script(): void {
     <?php
 }
 
-foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'projects-page', 'site-ui'] as $post_type) {
+foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'] as $post_type) {
     add_filter("manage_{$post_type}_posts_columns", 'rs_add_language_column');
     add_action("manage_{$post_type}_posts_custom_column", 'rs_render_language_column', 10, 2);
 }

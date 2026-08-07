@@ -15,6 +15,7 @@ const RS_RICH_TEXT_CPT_TYPES = [
     'about',
     'education',
     'contact',
+    'legal',
     'projects-page',
     'project',
 ];
