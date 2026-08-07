@@ -22,12 +22,21 @@ export function resolveBlobVisual(fromWp: BlobVisual | null | undefined): BlobVi
 	};
 }
 
-/** 4 cores do indicador ativo do menu (violeta, rosa, azul). */
+/** 4 cores do indicador ativo do menu (fallback se a paleta do WP não vier). */
 export const NAV_ACTIVE_LINE_COLORS = ['#7B00FF', '#D400FF', '#FF5FAF', '#304FFE'] as const;
 
-/** Gradiente horizontal do menu (loop contínuo para animação). */
-export function buildNavActiveGradient(): string {
-	const loop = [...NAV_ACTIVE_LINE_COLORS, NAV_ACTIVE_LINE_COLORS[0]];
+function isHexColor(value: string): boolean {
+	return /^#[0-9a-fA-F]{3,6}$/.test(value);
+}
+
+/** Gradiente horizontal a partir da paleta do blob (loop contínuo para animação). */
+export function buildNavActiveGradient(palette?: string[] | null): string {
+	const fromPalette = Array.isArray(palette)
+		? palette.filter((color): color is string => typeof color === 'string' && isHexColor(color))
+		: [];
+	const colors =
+		fromPalette.length >= 2 ? fromPalette : [...NAV_ACTIVE_LINE_COLORS];
+	const loop = [...colors, colors[0]];
 	const stops = loop
 		.map((color, index) => {
 			const pct = (index / (loop.length - 1)) * 100;
@@ -39,6 +48,6 @@ export function buildNavActiveGradient(): string {
 }
 
 /** @deprecated Use buildNavActiveGradient */
-export function buildBlobNavGradient(_palette?: string[]): string {
-	return buildNavActiveGradient();
+export function buildBlobNavGradient(palette?: string[]): string {
+	return buildNavActiveGradient(palette);
 }

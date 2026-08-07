@@ -16,6 +16,7 @@ import type { LegalContent } from '../../lib/content/legal/defaults';
 import { getDefaultLegalContent } from '../../lib/content/legal/defaults';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from '../Footer/footerDefaults';
 import CookiePreferencesModal, { type CookiePrefs } from '../CookieConsent/CookiePreferencesModal';
+import PolicyModalShell from './PolicyModalShell';
 import { getCookie, setCookie } from '../Translate';
 
 const CONSENT_COOKIE = 'rs_cookie_consent';
@@ -127,12 +128,13 @@ export function LegalPoliciesProvider({
 	}, []);
 
 	const closePolicy = useCallback(() => {
-		setOpenKind(null);
-		// Se ainda não escolheu cookies, reabre o modal de preferências.
+		// Sem consentimento ainda: volta ao modal de cookies (obrigatório).
 		if (!readStoredPrefs()) {
 			setConsentPrompt(true);
 			setOpenKind('cookies');
+			return;
 		}
+		setOpenKind(null);
 	}, []);
 
 	const openCookiesPreferences = useCallback(() => {
@@ -185,6 +187,7 @@ export function LegalPoliciesProvider({
 				open={showCookiesModal}
 				content={legalContent}
 				initialPrefs={storedPrefs}
+				dismissible={!(consentPrompt && !storedPrefs)}
 				onClose={() => {
 					if (consentPrompt && !readStoredPrefs()) return;
 					setOpenKind(null);
@@ -193,47 +196,37 @@ export function LegalPoliciesProvider({
 				onSubmit={submitPrefs}
 			/>
 
-			{showPrivacyModal ? (
-				<div
-					className="cookie-prefs-modal"
-					role="dialog"
-					aria-modal="true"
-					aria-label={legalContent.privacyTitle}
-				>
+			<PolicyModalShell
+				open={showPrivacyModal}
+				onClose={closePolicy}
+				label={legalContent.privacyTitle}
+				panelClassName="cookie-prefs-modal-panel--privacy"
+			>
+				<div className="cookie-prefs-modal-header">
+					<h2 className="cookie-prefs-modal-title font-hk">{legalContent.privacyTitle}</h2>
 					<button
 						type="button"
-						className="cookie-prefs-modal-backdrop"
-						aria-label={isPt ? 'Fechar' : 'Close'}
+						className="cookie-prefs-modal-close custom-cursor-target"
 						onClick={closePolicy}
-					/>
-					<div className="cookie-prefs-modal-panel cookie-prefs-modal-panel--privacy">
-						<div className="cookie-prefs-modal-header">
-							<h2 className="cookie-prefs-modal-title font-hk">{legalContent.privacyTitle}</h2>
-							<button
-								type="button"
-								className="cookie-prefs-modal-close custom-cursor-target"
-								onClick={closePolicy}
-								aria-label={isPt ? 'Fechar' : 'Close'}
-							>
-								×
-							</button>
-						</div>
-						<div
-							className="cookie-prefs-privacy-body font-hk"
-							dangerouslySetInnerHTML={{ __html: legalContent.privacyBody }}
-						/>
-						<div className="cookie-prefs-modal-actions">
-							<button
-								type="button"
-								className="cookie-prefs-btn cookie-prefs-btn--solid font-hk"
-								onClick={closePolicy}
-							>
-								{isPt ? 'Fechar' : 'Close'}
-							</button>
-						</div>
-					</div>
+						aria-label={isPt ? 'Fechar' : 'Close'}
+					>
+						×
+					</button>
 				</div>
-			) : null}
+				<div
+					className="cookie-prefs-privacy-body font-hk"
+					dangerouslySetInnerHTML={{ __html: legalContent.privacyBody }}
+				/>
+				<div className="cookie-prefs-modal-actions">
+					<button
+						type="button"
+						className="cookie-prefs-btn cookie-prefs-btn--solid font-hk"
+						onClick={closePolicy}
+					>
+						{isPt ? 'Fechar' : 'Close'}
+					</button>
+				</div>
+			</PolicyModalShell>
 		</LegalPoliciesContext.Provider>
 	);
 }

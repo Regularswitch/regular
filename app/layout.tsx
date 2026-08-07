@@ -1,12 +1,13 @@
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
-import { GetFooterApi, GetHeaderNavApi, GetLegalByLocale, GetSiteUiApi } from '../components/ApiWp';
+import { GetBlobVisualApi, GetFooterApi, GetHeaderNavApi, GetLegalByLocale, GetSiteUiApi } from '../components/ApiWp';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
 import FooterComponents from '../components/FooterComponents';
 import Header from '../components/Header';
 import { LegalPoliciesProvider } from '../components/Legal/LegalPoliciesProvider';
+import ScrollProgressBar from '../components/ScrollProgressBar';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
-import { buildNavActiveGradient } from '../lib/site/blobDefaults';
+import { buildNavActiveGradient, resolveBlobVisual } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
 import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
@@ -17,15 +18,17 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
-	const [footerEn, footerPt, legalEn, legalPt, siteUi, headerNav] = await Promise.all([
+	const [footerEn, footerPt, legalEn, legalPt, siteUi, headerNav, blobVisualRaw] = await Promise.all([
 		GetFooterApi({ slug: 'en' }),
 		GetFooterApi({ slug: 'pt' }),
 		GetLegalByLocale('en'),
 		GetLegalByLocale('pt'),
 		GetSiteUiApi(),
 		GetHeaderNavApi(),
+		GetBlobVisualApi(),
 	]);
-	const blobNavGradient = buildNavActiveGradient();
+	const blob = resolveBlobVisual(blobVisualRaw);
+	const blobNavGradient = buildNavActiveGradient(blob.palette);
 
 	return (
 		<html
@@ -56,6 +59,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			</head>
 			<body>
 				<CustomCursor />
+				<ScrollProgressBar />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
 					<LegalPoliciesProvider
 						footerEn={footerEn}

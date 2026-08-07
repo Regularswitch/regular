@@ -37,11 +37,50 @@ html:not(.dark) {
 
 
 
+html {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
 body {
 	background-color: var(--bg);
 	color: var(--fg);
 	font-family: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 		'Segoe UI', sans-serif !important;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
+/* Progresso de scroll — gradiente do blob, fixo no rodapé */
+.scroll-progress {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100;
+	height: 5px;
+	pointer-events: none;
+}
+
+.scroll-progress-fill {
+	height: 100%;
+	width: 100%;
+	transform: scaleX(0);
+	transform-origin: left center;
+	background: var(--blob-nav-gradient);
+	will-change: transform;
 }
 
 /* Header — indicador ativo com gradiente do blob */
@@ -602,6 +641,12 @@ html:not(.dark) .brand-mark {
 	align-items: center;
 	justify-content: center;
 	padding: 1.25rem;
+	pointer-events: none;
+}
+
+.cookie-prefs-modal.is-open,
+.cookie-prefs-modal.is-closing {
+	pointer-events: auto;
 }
 
 .cookie-prefs-modal-backdrop {
@@ -613,6 +658,15 @@ html:not(.dark) .brand-mark {
 	cursor: pointer;
 	background: rgb(0 0 0 / 0.35);
 	backdrop-filter: blur(10px);
+	opacity: 0;
+}
+
+.cookie-prefs-modal.is-open .cookie-prefs-modal-backdrop {
+	animation: cookie-prefs-backdrop-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.cookie-prefs-modal.is-closing .cookie-prefs-modal-backdrop {
+	animation: cookie-prefs-backdrop-out 0.26s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .cookie-prefs-modal-panel {
@@ -630,6 +684,65 @@ html:not(.dark) .brand-mark {
 	background: color-mix(in srgb, var(--bg) 88%, transparent);
 	backdrop-filter: blur(18px);
 	box-shadow: 0 24px 60px rgb(0 0 0 / 0.28);
+	opacity: 0;
+	transform: translateY(14px) scale(0.97);
+}
+
+.cookie-prefs-modal.is-open .cookie-prefs-modal-panel {
+	animation: cookie-prefs-panel-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.cookie-prefs-modal.is-closing .cookie-prefs-modal-panel {
+	animation: cookie-prefs-panel-out 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes cookie-prefs-backdrop-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes cookie-prefs-backdrop-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes cookie-prefs-panel-in {
+	from {
+		opacity: 0;
+		transform: translateY(14px) scale(0.97);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes cookie-prefs-panel-out {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(10px) scale(0.98);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cookie-prefs-modal.is-open .cookie-prefs-modal-backdrop,
+	.cookie-prefs-modal.is-closing .cookie-prefs-modal-backdrop,
+	.cookie-prefs-modal.is-open .cookie-prefs-modal-panel,
+	.cookie-prefs-modal.is-closing .cookie-prefs-modal-panel {
+		animation-duration: 0.01ms !important;
+	}
 }
 
 .cookie-prefs-modal-panel--privacy {

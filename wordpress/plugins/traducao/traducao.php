@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.15
+ * Version: 1.2.16
  * Author: Undefined
  * Author URI: undefined.com
  */
