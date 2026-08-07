@@ -12,6 +12,7 @@ define('RS_BLOB_VISUAL_LOADED', true);
 const RS_BLOB_DEFAULT_COLOR1 = '#fe4857';
 const RS_BLOB_DEFAULT_COLOR2 = '#4af117';
 const RS_BLOB_DEFAULT_PALETTE = '#7B00FF,#D400FF,#FF5FAF,#304FFE,#FFD500,#4af117,#fe4857';
+const RS_BLOB_MAX_COLORS = 8;
 
 const RS_BLOB_META_COLOR1 = 'rs_blob_color1';
 const RS_BLOB_META_COLOR2 = 'rs_blob_color2';
@@ -37,15 +38,34 @@ function rs_blob_normalize_hex(string $value, string $fallback): string {
 function rs_blob_parse_palette(string $raw, array $fallback): array {
     $parts = preg_split('/[\s,]+/', trim($raw), -1, PREG_SPLIT_NO_EMPTY);
     $colors = [];
+    $seen = [];
 
     foreach ($parts as $part) {
         $normalized = rs_blob_normalize_hex($part, '');
-        if ($normalized !== '') {
-            $colors[] = $normalized;
+        if ($normalized === '' || isset($seen[$normalized])) {
+            continue;
+        }
+        $seen[$normalized] = true;
+        $colors[] = $normalized;
+        if (count($colors) >= RS_BLOB_MAX_COLORS) {
+            break;
         }
     }
 
-    return count($colors) >= 2 ? array_values(array_unique($colors)) : $fallback;
+    return count($colors) >= 2 ? $colors : $fallback;
+}
+
+/** Garante que a cor escolhida exista na paleta. */
+function rs_blob_clamp_to_palette(string $color, array $palette, string $fallback): string {
+    $color = rs_blob_normalize_hex($color, '');
+    if ($color !== '' && in_array($color, $palette, true)) {
+        return $color;
+    }
+    $fallback = rs_blob_normalize_hex($fallback, '');
+    if ($fallback !== '' && in_array($fallback, $palette, true)) {
+        return $fallback;
+    }
+    return $palette[0] ?? RS_BLOB_DEFAULT_COLOR1;
 }
 
 function rs_blob_visual_get_post_id(): int {
@@ -81,11 +101,12 @@ function rs_blob_visual_payload(?int $post_id = null): array {
     }
 
     $meta = rs_blob_visual_get_meta($post_id);
+    $palette = rs_blob_parse_palette($meta[RS_BLOB_META_PALETTE], $defaults_palette);
 
     return [
-        'color1'  => rs_blob_normalize_hex($meta[RS_BLOB_META_COLOR1], RS_BLOB_DEFAULT_COLOR1),
-        'color2'  => rs_blob_normalize_hex($meta[RS_BLOB_META_COLOR2], RS_BLOB_DEFAULT_COLOR2),
-        'palette' => rs_blob_parse_palette($meta[RS_BLOB_META_PALETTE], $defaults_palette),
+        'color1'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR1], $palette, RS_BLOB_DEFAULT_COLOR1),
+        'color2'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR2], $palette, RS_BLOB_DEFAULT_COLOR2),
+        'palette' => $palette,
     ];
 }
 
@@ -155,9 +176,11 @@ add_action('add_meta_boxes_home-visual', function () {
 }, 10);
 
 /**
- * Renderiza uma toolbar de swatches (seleção de uma cor).
+ * Toolbar de swatches — só seleção a partir da paleta (sem +).
  */
 function rs_blob_render_color_picker_row(string $input_id, string $input_name, string $value, array $palette, string $label): void {
+    $value = rs_blob_clamp_to_palette($value, $palette, $palette[0] ?? RS_BLOB_DEFAULT_COLOR1);
+
     echo '<div class="rs-blob-field" data-rs-blob-picker data-target="' . esc_attr($input_id) . '">';
     echo '<label class="rs-blob-label">' . esc_html($label) . '</label>';
     echo '<input type="hidden" id="' . esc_attr($input_id) . '" name="' . esc_attr($input_name) . '" value="' . esc_attr($value) . '" />';
@@ -170,10 +193,6 @@ function rs_blob_render_color_picker_row(string $input_id, string $input_name, s
         echo '</button>';
     }
 
-    echo '<button type="button" class="rs-blob-swatch rs-blob-swatch--add" data-rs-blob-custom title="Cor personalizada" aria-label="Cor personalizada">';
-    echo '<span class="rs-blob-swatch-plus" aria-hidden="true">+</span>';
-    echo '</button>';
-    echo '<input type="color" class="rs-blob-native-color" value="' . esc_attr($value) . '" tabindex="-1" aria-hidden="true" />';
     echo '</div>';
     echo '</div>';
 }
@@ -182,30 +201,27 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_blob_visual_save', 'rs_blob_visual_nonce');
 
     $meta = rs_blob_visual_get_meta($post->ID);
-    $color1 = rs_blob_normalize_hex($meta[RS_BLOB_META_COLOR1], RS_BLOB_DEFAULT_COLOR1);
-    $color2 = rs_blob_normalize_hex($meta[RS_BLOB_META_COLOR2], RS_BLOB_DEFAULT_COLOR2);
     $palette = rs_blob_parse_palette(
         trim($meta[RS_BLOB_META_PALETTE]) !== '' ? $meta[RS_BLOB_META_PALETTE] : RS_BLOB_DEFAULT_PALETTE,
         rs_blob_default_palette()
     );
-
-    // Garante que color1/color2 apareçam na toolbar mesmo se custom.
-    $picker_palette = $palette;
-    foreach ([$color1, $color2] as $extra) {
-        if (!in_array($extra, array_map('strtolower', $picker_palette), true)
-            && !in_array($extra, $picker_palette, true)) {
-            $picker_palette[] = $extra;
-        }
-    }
+    $color1 = rs_blob_clamp_to_palette(
+        (string) $meta[RS_BLOB_META_COLOR1],
+        $palette,
+        RS_BLOB_DEFAULT_COLOR1
+    );
+    $color2 = rs_blob_clamp_to_palette(
+        (string) $meta[RS_BLOB_META_COLOR2],
+        $palette,
+        RS_BLOB_DEFAULT_COLOR2
+    );
 
     echo '<p class="rs-blob-help">';
     echo 'Paleta única para a home em <strong>inglês e português</strong>. ';
-    echo 'A barra de progresso e o indicador do menu usam a mesma paleta. ';
-    echo '<em>(Plugin Tradução v1.2.16)</em>';
+    echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
+    echo 'Principal e secundária são escolhidas a partir dela. ';
+    echo '<em>(Plugin Tradução v1.2.19)</em>';
     echo '</p>';
-
-    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR1, $color1, $picker_palette, 'Cor principal 1');
-    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR2, RS_BLOB_META_COLOR2, $color2, $picker_palette, 'Cor principal 2');
 
     echo '<div class="rs-blob-field" data-rs-blob-palette>';
     echo '<label class="rs-blob-label">Paleta (blob, menu e barra de progresso)</label>';
@@ -223,8 +239,13 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     echo '</button>';
     echo '</div>';
     echo '<input type="color" id="rs-blob-palette-native" class="rs-blob-native-color" value="#7b00ff" tabindex="-1" aria-hidden="true" />';
-    echo '<p class="rs-blob-hint">Clique numa cor para editar · × para remover · + para adicionar. Mínimo 2 cores.</p>';
+    echo '<p class="rs-blob-hint">Clique para editar · × para remover · + para adicionar (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
+    echo '<button type="button" class="button button-small" id="rs-blob-palette-reset" style="margin-left:6px;">Restaurar paleta padrão</button>';
+    echo '</p>';
     echo '</div>';
+
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR1, $color1, $palette, 'Cor principal');
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR2, RS_BLOB_META_COLOR2, $color2, $palette, 'Cor secundária');
 
     ?>
     <style>
@@ -241,6 +262,7 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
             border-radius: 999px;
             background: #18181b;
             box-shadow: 0 1px 0 rgb(0 0 0 / 0.08);
+            max-width: 100%;
         }
         .rs-blob-toolbar--palette { border-radius: 20px; }
         .rs-blob-swatch {
@@ -314,15 +336,30 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
             display: block;
         }
         .rs-blob-native-color {
-            position: absolute;
-            width: 1px;
-            height: 1px;
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 32px;
+            height: 32px;
             opacity: 0;
-            pointer-events: none;
         }
     </style>
     <script>
     (function () {
+        if (window.__rsBlobColorPickerInit) return;
+        window.__rsBlobColorPickerInit = true;
+
+        var DEFAULT_PALETTE = <?php echo wp_json_encode(rs_blob_default_palette()); ?>;
+        var MAX_COLORS = <?php echo (int) RS_BLOB_MAX_COLORS; ?>;
+        var COLOR1_ID = '<?php echo esc_js(RS_BLOB_META_COLOR1); ?>';
+        var COLOR2_ID = '<?php echo esc_js(RS_BLOB_META_COLOR2); ?>';
+        var paletteInput = document.getElementById('<?php echo esc_js(RS_BLOB_META_PALETTE); ?>');
+        var paletteList = document.getElementById('rs-blob-palette-list');
+        var paletteAdd = document.getElementById('rs-blob-palette-add');
+        var paletteNative = document.getElementById('rs-blob-palette-native');
+        var mode = 'idle';
+        var editIndex = -1;
+
         function normalizeHex(value) {
             value = String(value || '').trim();
             if (/^#[0-9a-fA-F]{6}$/.test(value)) return value.toLowerCase();
@@ -332,41 +369,74 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
             return '';
         }
 
-        function getPalette() {
-            var input = document.getElementById('<?php echo esc_js(RS_BLOB_META_PALETTE); ?>');
-            if (!input) return [];
-            return String(input.value || '')
-                .split(/[\s,]+/)
-                .map(normalizeHex)
-                .filter(Boolean);
+        function uniqueColors(list) {
+            var out = [];
+            var seen = {};
+            (list || []).forEach(function (item) {
+                var color = normalizeHex(item);
+                if (!color || seen[color]) return;
+                seen[color] = true;
+                out.push(color);
+            });
+            return out;
         }
 
-        function setPalette(colors) {
-            var input = document.getElementById('<?php echo esc_js(RS_BLOB_META_PALETTE); ?>');
-            if (!input) return;
-            input.value = colors.join(',');
+        function getPalette() {
+            if (!paletteInput) return DEFAULT_PALETTE.slice();
+            return uniqueColors(String(paletteInput.value || '').split(/[\s,]+/));
+        }
+
+        function clampToPalette(color, palette, fallback) {
+            color = normalizeHex(color);
+            if (color && palette.indexOf(color) !== -1) return color;
+            fallback = normalizeHex(fallback);
+            if (fallback && palette.indexOf(fallback) !== -1) return fallback;
+            return palette[0] || '#7b00ff';
+        }
+
+        function syncPrimaryColors(palette, mapOldToNew) {
+            [COLOR1_ID, COLOR2_ID].forEach(function (id, idx) {
+                var input = document.getElementById(id);
+                if (!input) return;
+                var current = normalizeHex(input.value);
+                if (mapOldToNew && mapOldToNew[current]) {
+                    current = mapOldToNew[current];
+                }
+                var fallback = palette[Math.min(idx, palette.length - 1)] || palette[0];
+                input.value = clampToPalette(current, palette, fallback);
+            });
+        }
+
+        function setPalette(colors, mapOldToNew) {
+            if (!paletteInput) return;
+            colors = uniqueColors(colors).slice(0, MAX_COLORS);
+            if (colors.length < 2) colors = DEFAULT_PALETTE.slice();
+            paletteInput.value = colors.join(',');
+            syncPrimaryColors(colors, mapOldToNew || null);
             renderPalette();
             refreshPickers();
         }
 
-        function swatchHtml(color, index) {
-            return (
-                '<button type="button" class="rs-blob-swatch" data-palette-index="' + index + '" data-color="' + color + '" style="--swatch:' + color + ';" title="' + color + ' — clique para editar">' +
-                '<span class="rs-blob-swatch-remove" title="Remover" aria-label="Remover">×</span>' +
-                '</button>'
-            );
-        }
-
         function renderPalette() {
-            var list = document.getElementById('rs-blob-palette-list');
-            var addBtn = document.getElementById('rs-blob-palette-add');
-            if (!list || !addBtn) return;
+            if (!paletteList || !paletteAdd) return;
             var colors = getPalette();
-            var html = colors.map(swatchHtml).join('');
-            list.querySelectorAll('.rs-blob-swatch:not(.rs-blob-swatch--add)').forEach(function (el) {
+            paletteList.querySelectorAll('.rs-blob-swatch:not(.rs-blob-swatch--add)').forEach(function (el) {
                 el.remove();
             });
-            addBtn.insertAdjacentHTML('beforebegin', html);
+            colors.forEach(function (color, index) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rs-blob-swatch';
+                btn.setAttribute('data-palette-index', String(index));
+                btn.setAttribute('data-color', color);
+                btn.style.setProperty('--swatch', color);
+                btn.title = color + ' — clique para editar';
+                btn.innerHTML = '<span class="rs-blob-swatch-remove" title="Remover" aria-label="Remover">×</span>';
+                paletteList.insertBefore(btn, paletteAdd);
+            });
+            if (paletteAdd) {
+                paletteAdd.style.display = colors.length >= MAX_COLORS ? 'none' : '';
+            }
         }
 
         function refreshPickers() {
@@ -375,32 +445,21 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
                 var targetId = field.getAttribute('data-target');
                 var input = document.getElementById(targetId);
                 var toolbar = field.querySelector('.rs-blob-toolbar');
-                var addBtn = field.querySelector('.rs-blob-swatch--add');
-                var native = field.querySelector('.rs-blob-native-color');
-                if (!input || !toolbar || !addBtn) return;
+                if (!input || !toolbar) return;
 
-                var current = normalizeHex(input.value) || palette[0] || '#7b00ff';
+                var current = clampToPalette(input.value, palette, palette[0]);
                 input.value = current;
-                if (native) native.value = current;
 
-                var colors = palette.slice();
-                if (colors.indexOf(current) === -1) colors.push(current);
-
-                toolbar.querySelectorAll('.rs-blob-swatch:not(.rs-blob-swatch--add)').forEach(function (el) {
-                    el.remove();
-                });
-
-                colors.forEach(function (color) {
+                toolbar.innerHTML = '';
+                palette.forEach(function (color) {
                     var btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'rs-blob-swatch' + (color === current ? ' is-active' : '');
-                    btn.setAttribute('role', 'option');
                     btn.setAttribute('data-color', color);
-                    btn.setAttribute('aria-label', color);
                     btn.title = color;
                     btn.style.setProperty('--swatch', color);
                     btn.innerHTML = '<span class="rs-blob-swatch-dot" aria-hidden="true"></span>';
-                    toolbar.insertBefore(btn, addBtn);
+                    toolbar.appendChild(btn);
                 });
             });
         }
@@ -408,53 +467,42 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
         function setPickerValue(field, color) {
             color = normalizeHex(color);
             if (!color) return;
+            if (getPalette().indexOf(color) === -1) return;
             var targetId = field.getAttribute('data-target');
             var input = document.getElementById(targetId);
-            var native = field.querySelector('.rs-blob-native-color');
             if (input) input.value = color;
-            if (native) native.value = color;
-            field.querySelectorAll('.rs-blob-swatch:not(.rs-blob-swatch--add)').forEach(function (el) {
+            field.querySelectorAll('.rs-blob-swatch').forEach(function (el) {
                 el.classList.toggle('is-active', el.getAttribute('data-color') === color);
             });
         }
 
+        function openNativeColor(native, startColor) {
+            if (!native) return;
+            var hex = normalizeHex(startColor) || '#7b00ff';
+            native.defaultValue = hex;
+            native.value = hex;
+            try {
+                if (typeof native.showPicker === 'function') {
+                    native.showPicker();
+                } else {
+                    native.click();
+                }
+            } catch (err) {
+                native.click();
+            }
+        }
+
         document.querySelectorAll('[data-rs-blob-picker]').forEach(function (field) {
-            var native = field.querySelector('.rs-blob-native-color');
             field.addEventListener('click', function (event) {
                 var swatch = event.target.closest('.rs-blob-swatch');
                 if (!swatch || !field.contains(swatch)) return;
                 event.preventDefault();
-                if (swatch.classList.contains('rs-blob-swatch--add')) {
-                    if (native) {
-                        native.style.pointerEvents = 'auto';
-                        native.click();
-                        native.style.pointerEvents = 'none';
-                    }
-                    return;
-                }
                 setPickerValue(field, swatch.getAttribute('data-color'));
             });
-            if (native) {
-                native.addEventListener('input', function () {
-                    var color = normalizeHex(native.value);
-                    if (!color) return;
-                    var palette = getPalette();
-                    if (palette.indexOf(color) === -1) {
-                        palette.push(color);
-                        setPalette(palette);
-                    }
-                    setPickerValue(field, color);
-                    refreshPickers();
-                });
-            }
         });
 
-        var paletteRoot = document.querySelector('[data-rs-blob-palette]');
-        var paletteNative = document.getElementById('rs-blob-palette-native');
-        var editingIndex = -1;
-
-        if (paletteRoot) {
-            paletteRoot.addEventListener('click', function (event) {
+        if (paletteList) {
+            paletteList.addEventListener('click', function (event) {
                 var remove = event.target.closest('.rs-blob-swatch-remove');
                 if (remove) {
                     event.preventDefault();
@@ -467,50 +515,83 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
                         return;
                     }
                     colors.splice(index, 1);
+                    mode = 'idle';
+                    editIndex = -1;
                     setPalette(colors);
                     return;
                 }
 
-                var add = event.target.closest('#rs-blob-palette-add');
-                if (add) {
+                if (event.target.closest('#rs-blob-palette-add')) {
                     event.preventDefault();
-                    editingIndex = -1;
-                    if (paletteNative) {
-                        paletteNative.value = '#7b00ff';
-                        paletteNative.style.pointerEvents = 'auto';
-                        paletteNative.click();
-                        paletteNative.style.pointerEvents = 'none';
+                    if (getPalette().length >= MAX_COLORS) {
+                        window.alert('Máximo de ' + MAX_COLORS + ' cores na paleta.');
+                        return;
                     }
+                    mode = 'add';
+                    editIndex = -1;
+                    openNativeColor(paletteNative, '#7b00ff');
                     return;
                 }
 
                 var edit = event.target.closest('.rs-blob-swatch:not(.rs-blob-swatch--add)');
-                if (edit && paletteRoot.contains(edit)) {
+                if (edit) {
                     event.preventDefault();
-                    editingIndex = parseInt(edit.getAttribute('data-palette-index') || '-1', 10);
-                    if (paletteNative) {
-                        paletteNative.value = edit.getAttribute('data-color') || '#7b00ff';
-                        paletteNative.style.pointerEvents = 'auto';
-                        paletteNative.click();
-                        paletteNative.style.pointerEvents = 'none';
-                    }
+                    mode = 'edit';
+                    editIndex = parseInt(edit.getAttribute('data-palette-index') || '-1', 10);
+                    openNativeColor(paletteNative, edit.getAttribute('data-color'));
                 }
             });
         }
 
         if (paletteNative) {
             paletteNative.addEventListener('input', function () {
+                if (mode !== 'edit' || editIndex < 0) return;
+                var color = normalizeHex(paletteNative.value);
+                if (!color) return;
+                var swatch = paletteList && paletteList.querySelector('[data-palette-index="' + editIndex + '"]');
+                if (swatch) {
+                    swatch.style.setProperty('--swatch', color);
+                }
+            });
+
+            paletteNative.addEventListener('change', function () {
                 var color = normalizeHex(paletteNative.value);
                 if (!color) return;
                 var colors = getPalette();
-                if (editingIndex >= 0 && editingIndex < colors.length) {
-                    colors[editingIndex] = color;
-                } else if (colors.indexOf(color) === -1) {
-                    colors.push(color);
+
+                if (mode === 'edit' && editIndex >= 0 && editIndex < colors.length) {
+                    var oldColor = colors[editIndex];
+                    var map = {};
+                    map[oldColor] = color;
+                    colors[editIndex] = color;
+                    setPalette(colors, map);
+                    editIndex = getPalette().indexOf(color);
+                    if (editIndex < 0) mode = 'idle';
+                    return;
                 }
-                setPalette(colors);
+
+                if (mode === 'add') {
+                    colors.push(color);
+                    setPalette(colors);
+                    mode = 'edit';
+                    editIndex = getPalette().indexOf(color);
+                    if (editIndex < 0) mode = 'idle';
+                }
             });
         }
+
+        var resetBtn = document.getElementById('rs-blob-palette-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (!window.confirm('Restaurar a paleta padrão? Isso remove as cores extras.')) return;
+                mode = 'idle';
+                editIndex = -1;
+                setPalette(DEFAULT_PALETTE.slice());
+            });
+        }
+
+        setPalette(getPalette());
     })();
     </script>
     <?php
@@ -533,16 +614,21 @@ add_action('save_post_home-visual', function (int $post_id) {
         return;
     }
 
-    $color1 = isset($_POST[RS_BLOB_META_COLOR1])
-        ? rs_blob_normalize_hex(sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR1])), RS_BLOB_DEFAULT_COLOR1)
-        : RS_BLOB_DEFAULT_COLOR1;
-    $color2 = isset($_POST[RS_BLOB_META_COLOR2])
-        ? rs_blob_normalize_hex(sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR2])), RS_BLOB_DEFAULT_COLOR2)
-        : RS_BLOB_DEFAULT_COLOR2;
     $palette_raw = isset($_POST[RS_BLOB_META_PALETTE])
         ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_PALETTE]))
         : RS_BLOB_DEFAULT_PALETTE;
     $palette = rs_blob_parse_palette($palette_raw, rs_blob_default_palette());
+
+    $color1 = rs_blob_clamp_to_palette(
+        isset($_POST[RS_BLOB_META_COLOR1]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR1])) : '',
+        $palette,
+        RS_BLOB_DEFAULT_COLOR1
+    );
+    $color2 = rs_blob_clamp_to_palette(
+        isset($_POST[RS_BLOB_META_COLOR2]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR2])) : '',
+        $palette,
+        RS_BLOB_DEFAULT_COLOR2
+    );
 
     update_post_meta($post_id, RS_BLOB_META_COLOR1, $color1);
     update_post_meta($post_id, RS_BLOB_META_COLOR2, $color2);

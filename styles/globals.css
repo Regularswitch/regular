@@ -80,7 +80,17 @@ body::-webkit-scrollbar {
 	transform: scaleX(0);
 	transform-origin: left center;
 	background: var(--blob-nav-gradient);
-	will-change: transform;
+	background-size: 200% 100%;
+	background-repeat: repeat;
+	animation: header-nav-gradient-flow 4.5s linear infinite;
+	will-change: transform, background-position;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.scroll-progress-fill {
+		animation: none;
+		background-size: 100% 100%;
+	}
 }
 
 /* Header — indicador ativo com gradiente do blob */
