@@ -22,16 +22,16 @@ export default function EducationGalleryBlock({ gallery }: EducationGalleryBlock
 				<div className="education-gallery-grid">
 					{images.map((src, index) => (
 						<div key={`${src}-${index}`} className="education-gallery-item">
-							<div className="education-gallery-frame relative overflow-hidden rounded-[5px] bg-(--surface)">
+							<div className="education-gallery-frame relative overflow-hidden rounded-[10px] bg-(--surface)">
 								<Image
 									src={src}
 									alt=""
 									fill
 									sizes={
 										gallery.layout === 'triple'
-											? '(max-width: 768px) 100vw, 33vw'
+											? '(max-width: 768px) 100vw, 34vw'
 											: gallery.layout === 'grid-2x2'
-												? '(max-width: 768px) 50vw, 25vw'
+												? '(max-width: 768px) 50vw, 50vw'
 												: '(max-width: 768px) 100vw, 50vw'
 									}
 									className="object-cover object-center"

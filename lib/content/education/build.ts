@@ -62,12 +62,13 @@ function normalizeInstitutions(raw: unknown): EducationInstitution[] {
 				? item.description
 				: undefined;
 
+		const midGallery = normalizeGallery(item.midGallery) ?? normalizeGallery(item.topGallery);
+
 		institutions.push({
 			name,
 			logo,
 			description,
-			topGallery: normalizeGallery(item.topGallery),
-			midGallery: normalizeGallery(item.midGallery),
+			midGallery,
 			bottomGallery: normalizeGallery(item.bottomGallery),
 		});
 	}
@@ -91,17 +92,13 @@ export function buildEducationContent(
 		Boolean(wp.heroVideo) ||
 		Boolean(wp.headline?.trim()) ||
 		(wp.accordionSections?.length ?? 0) > 0 ||
-		wpInstitutions.length > 0 ||
-		(wp.studioImages?.length ?? 0) > 0;
+		wpInstitutions.length > 0;
 
 	if (!hasWpContent) {
 		return defaults;
 	}
 
 	const wpSections = normalizeWpSections(wp.accordionSections);
-	const studioImages = (wp.studioImages ?? [])
-		.map((url) => wpMediaUrl(url) ?? url)
-		.filter(Boolean);
 
 	return {
 		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : defaults.heroImage,
@@ -109,6 +106,5 @@ export function buildEducationContent(
 		headline: wp.headline?.trim() ? wp.headline : defaults.headline,
 		accordionSections: wpSections.length > 0 ? wpSections : defaults.accordionSections,
 		institutions: wpInstitutions.length > 0 ? wpInstitutions : defaults.institutions,
-		studioImages: studioImages.length > 0 ? studioImages : defaults.studioImages,
 	};
 }

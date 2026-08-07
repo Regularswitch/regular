@@ -12,11 +12,11 @@ export type EducationInstitution = {
 	name: string;
 	logo?: string;
 	description?: string;
-	/** Galeria acima do logo/nome (ex.: Nantes). */
+	/** @deprecated Preferir midGallery. Mantido como fallback legado. */
 	topGallery?: EducationGallery;
-	/** Galeria logo após o header (ex.: Mackenzie triple). */
+	/** Galeria opcional após logo/nome (ex.: 3 fotos). */
 	midGallery?: EducationGallery;
-	/** Galeria após a descrição (ex.: grid 2×2). */
+	/** Galeria opcional após a descrição (ex.: grade 2×2). */
 	bottomGallery?: EducationGallery;
 };
 
@@ -26,8 +26,6 @@ export type EducationContent = {
 	headline: string;
 	accordionSections: ProjectAccordionSection[];
 	institutions?: EducationInstitution[];
-	/** @deprecated Mantido por compatibilidade com CMS antigo. */
-	studioImages?: string[];
 };
 
 const EDUCATION_ACCORDION_PT: ProjectAccordionSection[] = [
@@ -71,56 +69,26 @@ const EDUCATION_ACCORDION_EN: ProjectAccordionSection[] = [
 const EDUCATION_INSTITUTIONS_PT: EducationInstitution[] = [
 	{
 		name: 'École de Design de Nantes Atlantique (France)',
-		topGallery: {
-			layout: 'pair',
-			images: [],
-			caption: '',
-		},
-		midGallery: {
-			layout: 'pair',
-			images: [],
-		},
+		description:
+			'<p>Parceria com a escola para workshops, mentorias e projetos colaborativos entre estudantes e o estúdio.</p>',
 	},
 	{
 		name: 'Mackenzie University (Brazil)',
-		midGallery: {
-			layout: 'triple',
-			images: [],
-		},
 		description:
 			'<p>Parceria com a universidade para workshops, mentorias e projetos colaborativos entre estudantes e o estúdio.</p>',
-		bottomGallery: {
-			layout: 'grid-2x2',
-			images: [],
-		},
 	},
 ];
 
 const EDUCATION_INSTITUTIONS_EN: EducationInstitution[] = [
 	{
 		name: 'École de Design de Nantes Atlantique (France)',
-		topGallery: {
-			layout: 'pair',
-			images: [],
-			caption: '',
-		},
-		midGallery: {
-			layout: 'pair',
-			images: [],
-		},
+		description:
+			'<p>Partnership with the school for workshops, mentoring and collaborative projects between students and the studio.</p>',
 	},
 	{
 		name: 'Mackenzie University (Brazil)',
-		midGallery: {
-			layout: 'triple',
-			images: [],
-		},
 		description:
-			'<p>Partnership with the university for workshops, mentoring and collaborative projects between students and the studio.</p>',
-		bottomGallery: {
-			layout: 'grid-2x2',
-			images: [],
-		},
+			'<p>We work as creative professionals within the “Studio Brazil,” hosted by Mackenzie University, fostering a cultural partnership between Nantes Atlantique Design School and Brazil. This collaboration offers students the opportunity to pursue their Master’s degree abroad, beyond their borders, while immersing themselves in the unique creative landscape of Brazil, gaining valuable international experience and enriching their professional growth.</p>',
 	},
 ];
 
@@ -129,7 +97,6 @@ export const DEFAULT_EDUCATION_PT: EducationContent = {
 		'Acreditamos na educação como espaço de troca e experimentação criativa. <strong>Entre França e Brasil</strong>, desenvolvemos workshops, talks e projetos colaborativos que conectam culturas e novas formas de pensar o <strong>design contemporâneo</strong>.',
 	accordionSections: EDUCATION_ACCORDION_PT,
 	institutions: EDUCATION_INSTITUTIONS_PT,
-	studioImages: [],
 };
 
 export const DEFAULT_EDUCATION_EN: EducationContent = {
@@ -137,7 +104,6 @@ export const DEFAULT_EDUCATION_EN: EducationContent = {
 		'We believe education is a space for exchange and creative experimentation. <strong>Between France and Brazil</strong>, we develop workshops, talks and collaborative projects that connect cultures and new ways of thinking about <strong>contemporary design</strong>.',
 	accordionSections: EDUCATION_ACCORDION_EN,
 	institutions: EDUCATION_INSTITUTIONS_EN,
-	studioImages: [],
 };
 
 export function getDefaultEducationContent(locale: 'en' | 'pt'): EducationContent {

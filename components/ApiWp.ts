@@ -551,7 +551,6 @@ function isEducationContent(value: unknown): value is EducationContent {
     if (typeof item.headline !== 'string') return false;
     if (!Array.isArray(item.accordionSections)) return false;
     if (!item.accordionSections.every(isEducationAccordionSection)) return false;
-    if (item.studioImages !== undefined && !Array.isArray(item.studioImages)) return false;
     if (item.institutions !== undefined && !Array.isArray(item.institutions)) return false;
     if (item.heroVideo !== undefined && typeof item.heroVideo !== 'string') return false;
     return true;
@@ -580,9 +579,6 @@ export function porterEducation(payloadWp: listResponseWp): EducationContent | n
 		headline: data.headline,
 		accordionSections: sections,
 		institutions: Array.isArray(data.institutions) ? data.institutions : [],
-		studioImages: Array.isArray(data.studioImages)
-			? data.studioImages.filter((url): url is string => typeof url === 'string' && Boolean(url))
-			: [],
 	};
 }
 

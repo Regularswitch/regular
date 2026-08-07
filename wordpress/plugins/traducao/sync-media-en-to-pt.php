@@ -261,15 +261,13 @@ function rs_sync_education_media(int $from_id, int $to_id): void {
         rs_section_copy_hero_media($from_id, $to_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
     }
 
-    update_post_meta($to_id, RS_EDUCATION_STUDIO_KEY, get_post_meta($from_id, RS_EDUCATION_STUDIO_KEY, true));
-
     if (!function_exists('rs_education_get_institutions_raw')) {
         return;
     }
 
     $en = rs_education_get_institutions_raw($from_id);
     $pt = rs_education_get_institutions_raw($to_id);
-    $gallery_keys = ['topGallery', 'midGallery', 'bottomGallery'];
+    $gallery_keys = ['midGallery', 'bottomGallery'];
     $out = [];
 
     foreach ($en as $i => $en_item) {
@@ -281,8 +279,7 @@ function rs_sync_education_media(int $from_id, int $to_id): void {
             'name'          => '',
             'description'   => '',
             'logo_id'       => 0,
-            'topGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
-            'midGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
+            'midGallery'    => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
             'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
         ];
 

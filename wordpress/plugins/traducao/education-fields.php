@@ -14,7 +14,6 @@ const RS_EDUCATION_SECTIONS_KEY = 'rs_education_sections';
 const RS_EDUCATION_INSTITUTIONS_KEY = 'rs_education_institutions';
 const RS_EDUCATION_HERO_VIDEO_KEY = 'rs_education_hero_video_id';
 const RS_EDUCATION_HERO_VIDEO_URL_LEGACY = 'rs_education_hero_video_url';
-const RS_EDUCATION_STUDIO_KEY = 'rs_education_studio_ids';
 
 /**
  * @return array<int, array{title: string, body: string}>
@@ -207,13 +206,8 @@ function rs_education_get_institutions_raw(int $post_id): array {
             'name'        => $name,
             'logo_id'     => $logo_id,
             'description' => $description,
-            'topGallery'  => [
-                'layout'    => 'pair',
-                'image_ids' => '',
-                'caption'   => '',
-            ],
             'midGallery'  => [
-                'layout'    => 'pair',
+                'layout'    => 'triple',
                 'image_ids' => '',
                 'caption'   => '',
             ],
@@ -224,7 +218,7 @@ function rs_education_get_institutions_raw(int $post_id): array {
             ],
         ];
 
-        foreach (['topGallery', 'midGallery', 'bottomGallery'] as $key) {
+        foreach (['midGallery', 'bottomGallery'] as $key) {
             $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
             if ($gallery) {
                 $entry[$key] = [
@@ -235,8 +229,18 @@ function rs_education_get_institutions_raw(int $post_id): array {
             }
         }
 
+        if ($entry['midGallery']['image_ids'] === '') {
+            $legacy_top = rs_education_normalize_gallery_for_storage($item['topGallery'] ?? null);
+            if ($legacy_top && $legacy_top['image_ids'] !== '') {
+                $entry['midGallery'] = [
+                    'layout'    => $legacy_top['layout'] !== '' ? $legacy_top['layout'] : 'triple',
+                    'image_ids' => $legacy_top['image_ids'],
+                    'caption'   => $legacy_top['caption'],
+                ];
+            }
+        }
+
         if ($name === '' && $logo_id <= 0 && $description === ''
-            && $entry['topGallery']['image_ids'] === ''
             && $entry['midGallery']['image_ids'] === ''
             && $entry['bottomGallery']['image_ids'] === ''
         ) {
@@ -288,6 +292,12 @@ function rs_education_institutions_to_payload(array $institutions): array {
             }
         }
 
+        // Conteúdo legado em topGallery passa a midGallery se mid estiver vazio.
+        if (empty($entry['midGallery']) && !empty($entry['topGallery'])) {
+            $entry['midGallery'] = $entry['topGallery'];
+        }
+        unset($entry['topGallery']);
+
         $payload[] = $entry;
     }
 
@@ -309,9 +319,6 @@ function rs_education_meta_to_payload(int $post_id): array {
         'headline'          => trim((string) get_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, true)),
         'accordionSections' => rs_education_sections_to_payload(rs_education_get_sections($post_id)),
         'institutions'      => rs_education_institutions_to_payload(rs_education_get_institutions_raw($post_id)),
-        'studioImages'      => rs_education_attachment_urls(
-            rs_education_parse_ids_csv((string) get_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, true))
-        ),
     ];
 }
 
@@ -463,31 +470,54 @@ function rs_education_render_gallery_fields(string $name_prefix, string $label, 
             </select>
         </p>
 
-        <p style="margin:0 0 8px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Imagens (IDs)</label>
-            <input
-                type="text"
-                class="rs-education-gallery-ids"
-                data-gallery="<?php echo esc_attr($field_suffix); ?>"
-                style="width:100%;"
-                <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][image_ids]'); ?>"<?php endif; ?>
-                value="<?php echo esc_attr($image_ids); ?>"
-                placeholder="12,34,56"
-            />
+        <input
+            type="hidden"
+            class="rs-education-gallery-ids"
+            data-gallery="<?php echo esc_attr($field_suffix); ?>"
+            <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][image_ids]'); ?>"<?php endif; ?>
+            value="<?php echo esc_attr($image_ids); ?>"
+        />
+
+        <p style="margin:0 0 8px;color:#646970;font-size:12px;">
+            Opcional. Arraste as miniaturas para definir a ordem. Use <strong>+ Adicionar imagens</strong> para incluir várias de uma vez.
         </p>
-        <p style="margin:0 0 10px;">
-            <button type="button" class="button button-secondary rs-education-add-gallery-images" data-gallery="<?php echo esc_attr($field_suffix); ?>">+ Adicionar imagens</button>
+        <p class="rs-education-gallery-empty description" data-gallery="<?php echo esc_attr($field_suffix); ?>"<?php echo $ids ? ' style="display:none;"' : ''; ?>>
+            Nenhuma imagem na galeria.
         </p>
-        <div class="rs-education-gallery-preview" data-gallery="<?php echo esc_attr($field_suffix); ?>" style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;">
+        <div class="rs-education-gallery-grid" data-gallery="<?php echo esc_attr($field_suffix); ?>">
             <?php foreach ($ids as $attachment_id) :
-                $thumb = wp_get_attachment_image_url($attachment_id, 'thumbnail');
-                if (!$thumb) {
+                $url = (string) wp_get_attachment_url($attachment_id);
+                $mime = (string) get_post_mime_type($attachment_id);
+                $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+                $thumb = !$is_video
+                    ? (string) (wp_get_attachment_image_url($attachment_id, 'medium') ?: $url)
+                    : '';
+                if ($url === '' && $thumb === '') {
                     continue;
                 }
                 ?>
-                <img src="<?php echo esc_url($thumb); ?>" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:4px;" data-id="<?php echo esc_attr((string) $attachment_id); ?>" />
+                <div class="rs-education-gallery-item" data-id="<?php echo esc_attr((string) $attachment_id); ?>">
+                    <div class="rs-education-gallery-tile">
+                        <span class="rs-education-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+                        <button type="button" class="rs-education-remove-gallery-item" title="Remover" aria-label="Remover imagem">&times;</button>
+                        <div class="rs-education-gallery-thumb">
+                            <?php if ($is_video) : ?>
+                                <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
+                                <span class="rs-education-gallery-badge">vídeo</span>
+                            <?php else : ?>
+                                <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
+                                <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
+                                    <span class="rs-education-gallery-badge">gif</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             <?php endforeach; ?>
         </div>
+        <p style="margin:10px 0 12px;">
+            <button type="button" class="button button-secondary rs-education-add-gallery-images" data-gallery="<?php echo esc_attr($field_suffix); ?>">+ Adicionar imagens</button>
+        </p>
 
         <p style="margin:0;">
             <label style="display:block;font-weight:500;margin-bottom:4px;">Legenda (opcional)</label>
@@ -512,9 +542,18 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     $logo_field_id = $is_template ? 'rs_education_inst_logo___INDEX__' : 'rs_education_inst_logo_' . $index;
     $display = $is_template ? 'display:none;' : '';
 
-    $top = is_array($institution['topGallery'] ?? null) ? $institution['topGallery'] : ['layout' => 'pair', 'image_ids' => '', 'caption' => ''];
-    $mid = is_array($institution['midGallery'] ?? null) ? $institution['midGallery'] : ['layout' => 'pair', 'image_ids' => '', 'caption' => ''];
-    $bottom = is_array($institution['bottomGallery'] ?? null) ? $institution['bottomGallery'] : ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''];
+    $mid_raw = is_array($institution['midGallery'] ?? null) ? $institution['midGallery'] : null;
+    $top_raw = is_array($institution['topGallery'] ?? null) ? $institution['topGallery'] : null;
+    $mid_ids = is_array($mid_raw) ? (string) ($mid_raw['image_ids'] ?? '') : '';
+    $mid = $mid_ids !== '' && $mid_raw
+        ? $mid_raw
+        : ($top_raw ?: ['layout' => 'triple', 'image_ids' => '', 'caption' => '']);
+    if (!isset($mid['layout']) || $mid['layout'] === '') {
+        $mid['layout'] = 'triple';
+    }
+    $bottom = is_array($institution['bottomGallery'] ?? null)
+        ? $institution['bottomGallery']
+        : ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''];
     ?>
     <fieldset class="rs-education-institution" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>" style="margin:0 0 16px;padding:14px;border:1px solid #dcdcde;border-radius:4px;background:#fff;<?php echo esc_attr($display); ?>">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
@@ -530,7 +569,7 @@ function rs_education_render_institution_row(int $index, array $institution, boo
                 style="width:100%;"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
                 value="<?php echo esc_attr($name); ?>"
-                placeholder="École de Design de Nantes Atlantique (France)"
+                placeholder="Mackenzie University (Brazil)"
             />
         </p>
 
@@ -545,19 +584,34 @@ function rs_education_render_institution_row(int $index, array $institution, boo
         );
         ?>
 
+        <?php
+        rs_education_render_gallery_fields(
+            $name_prefix,
+            'Galeria de fotos (opcional)',
+            $mid,
+            'midGallery',
+            !$is_template
+        );
+        ?>
+
         <p style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Descrição (HTML opcional)</label>
+            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
             <textarea
                 class="rs-education-institution-description large-text"
-                style="width:100%;min-height:90px;"
+                style="width:100%;min-height:110px;"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
+                placeholder="Descrição da parceria…"
             ><?php echo esc_textarea($description); ?></textarea>
         </p>
 
         <?php
-        rs_education_render_gallery_fields($name_prefix, 'Galeria acima do nome (top)', $top, 'topGallery', !$is_template);
-        rs_education_render_gallery_fields($name_prefix, 'Galeria após o nome (mid)', $mid, 'midGallery', !$is_template);
-        rs_education_render_gallery_fields($name_prefix, 'Galeria após a descrição (bottom)', $bottom, 'bottomGallery', !$is_template);
+        rs_education_render_gallery_fields(
+            $name_prefix,
+            'Galeria após o texto (opcional)',
+            $bottom,
+            'bottomGallery',
+            !$is_template
+        );
         ?>
     </fieldset>
     <?php
@@ -579,13 +633,12 @@ function rs_education_render_meta_box(WP_Post $post): void {
             'name'          => '',
             'logo_id'       => 0,
             'description'   => '',
-            'topGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
-            'midGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
+            'midGallery'    => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
             'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
         ]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.1)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.12)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -612,25 +665,9 @@ function rs_education_render_meta_box(WP_Post $post): void {
     echo '<input type="hidden" id="rs-education-sections-json" name="rs_education_sections_json" value="" />';
     echo '</fieldset>';
 
-    $studio_ids = (string) get_post_meta($post->ID, RS_EDUCATION_STUDIO_KEY, true);
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Carrossel do estúdio</strong></legend>';
-    echo '<p style="margin:0 0 10px;color:#646970;font-size:12px;">Fotos do escritório/estúdio (substitui a foto “central” do site antigo). IDs separados por vírgula ou use o botão.</p>';
-    echo '<input type="hidden" class="rs-education-studio-ids" id="' . esc_attr(RS_EDUCATION_STUDIO_KEY) . '" name="' . esc_attr(RS_EDUCATION_STUDIO_KEY) . '" value="' . esc_attr($studio_ids) . '" />';
-    echo '<div class="rs-education-studio-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;">';
-    foreach (rs_education_parse_ids_csv($studio_ids) as $aid) {
-        $thumb = wp_get_attachment_image_url($aid, 'thumbnail');
-        if ($thumb) {
-            echo '<img src="' . esc_url($thumb) . '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" />';
-        }
-    }
-    echo '</div>';
-    echo '<button type="button" class="button button-secondary rs-education-add-studio-images">+ Adicionar fotos</button>';
-    echo '</fieldset>';
-
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Instituições</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Escolas/parceiros com logo, texto e galerias (2 colunas, 3 verticais ou grade 2×2).</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Ordem no site: <strong>logo + nome</strong> → <strong>galeria</strong> (opcional) → <strong>texto</strong> → <strong>galeria após o texto</strong> (opcional).</p>';
     echo '<div id="rs-education-institutions-list">';
     foreach ($institutions as $index => $institution) {
         rs_education_render_institution_row((int) $index, $institution);
@@ -640,8 +677,7 @@ function rs_education_render_meta_box(WP_Post $post): void {
         'name'          => '',
         'logo_id'       => 0,
         'description'   => '',
-        'topGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
-        'midGallery'    => ['layout' => 'pair', 'image_ids' => '', 'caption' => ''],
+        'midGallery'    => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
         'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
     ], true);
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
@@ -722,12 +758,6 @@ add_action('save_post_education', function (int $post_id) {
     $sections = rs_education_parse_sections_from_request();
     update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
 
-    if (isset($_POST[RS_EDUCATION_STUDIO_KEY])) {
-        $studio_raw = sanitize_text_field(wp_unslash((string) $_POST[RS_EDUCATION_STUDIO_KEY]));
-        $studio_ids = rs_education_parse_ids_csv($studio_raw);
-        update_post_meta($post_id, RS_EDUCATION_STUDIO_KEY, implode(',', $studio_ids));
-    }
-
     $institutions = rs_education_parse_institutions_from_request();
     $to_store = [];
     foreach ($institutions as $item) {
@@ -744,7 +774,7 @@ add_action('save_post_education', function (int $post_id) {
             'description' => $description,
         ];
 
-        foreach (['topGallery', 'midGallery', 'bottomGallery'] as $key) {
+        foreach (['midGallery', 'bottomGallery'] as $key) {
             $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
             if ($gallery) {
                 $entry[$key] = [
@@ -755,10 +785,21 @@ add_action('save_post_education', function (int $post_id) {
             }
         }
 
+        // Migra topGallery legado para midGallery.
+        if (empty($entry['midGallery']['image_ids'] ?? '')) {
+            $legacy_top = rs_education_normalize_gallery_for_storage($item['topGallery'] ?? null);
+            if ($legacy_top && $legacy_top['image_ids'] !== '') {
+                $entry['midGallery'] = [
+                    'layout'    => $legacy_top['layout'] !== '' ? $legacy_top['layout'] : 'triple',
+                    'image_ids' => $legacy_top['image_ids'],
+                    'caption'   => $legacy_top['caption'],
+                ];
+            }
+        }
+
         if ($name === '' && $logo_id <= 0 && trim(wp_strip_all_tags($description)) === ''
-            && empty($entry['topGallery']['image_ids'])
-            && empty($entry['midGallery']['image_ids'])
-            && empty($entry['bottomGallery']['image_ids'])
+            && empty($entry['midGallery']['image_ids'] ?? '')
+            && empty($entry['bottomGallery']['image_ids'] ?? '')
         ) {
             continue;
         }
@@ -773,7 +814,6 @@ function rs_copy_education_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_EDUCATION_HEADLINE_KEY, get_post_meta($from_id, RS_EDUCATION_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_EDUCATION_SECTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_SECTIONS_KEY, true));
     update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_INSTITUTIONS_KEY, true));
-    update_post_meta($to_id, RS_EDUCATION_STUDIO_KEY, get_post_meta($from_id, RS_EDUCATION_STUDIO_KEY, true));
     if (function_exists('rs_section_copy_hero_media')) {
         rs_section_copy_hero_media($from_id, $to_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
     }
@@ -782,12 +822,111 @@ function rs_copy_education_fields(int $from_id, int $to_id): void {
 add_action('admin_footer-post.php', 'rs_education_admin_footer_script');
 add_action('admin_footer-post-new.php', 'rs_education_admin_footer_script');
 
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if (!in_array($hook, ['post.php', 'post-new.php'], true)) {
+        return;
+    }
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'education') {
+        return;
+    }
+    wp_enqueue_script('jquery-ui-sortable');
+});
+
 function rs_education_admin_footer_script(): void {
     $screen = get_current_screen();
     if (!$screen || $screen->post_type !== 'education') {
         return;
     }
     ?>
+    <style>
+        .rs-education-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            gap: 8px;
+            margin: 0 0 4px;
+        }
+        .rs-education-gallery-item { margin: 0; }
+        .rs-education-gallery-tile {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid #dcdcde;
+            border-radius: 6px;
+            background: #f6f7f7;
+            overflow: hidden;
+            cursor: grab;
+        }
+        .rs-education-gallery-tile:active { cursor: grabbing; }
+        .rs-education-gallery-handle {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 10px;
+            line-height: 1;
+            letter-spacing: -1px;
+            user-select: none;
+        }
+        .rs-education-remove-gallery-item {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            z-index: 2;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 0;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .rs-education-remove-gallery-item:hover { background: #b32d2e; }
+        .rs-education-gallery-thumb {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .rs-education-gallery-thumb img,
+        .rs-education-gallery-thumb video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .rs-education-gallery-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            z-index: 2;
+            padding: 1px 5px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .rs-education-gallery-placeholder {
+            aspect-ratio: 1;
+            border: 2px dashed #2271b1;
+            border-radius: 6px;
+            background: #f0f6fc;
+        }
+        .rs-education-gallery-item.ui-sortable-helper .rs-education-gallery-tile {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+        }
+    </style>
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
@@ -832,9 +971,20 @@ function rs_education_admin_footer_script(): void {
             $('#rs-education-sections-json').val(JSON.stringify(sections));
         }
 
+        function syncGalleryIds($block) {
+            const ids = [];
+            $block.find('.rs-education-gallery-item').each(function () {
+                const id = parseInt($(this).attr('data-id'), 10) || 0;
+                if (id > 0) ids.push(id);
+            });
+            $block.find('.rs-education-gallery-ids').val(ids.join(','));
+            $block.find('.rs-education-gallery-empty').toggle(ids.length === 0);
+        }
+
         function readGallery($block) {
+            syncGalleryIds($block);
             return {
-                layout: ($block.find('.rs-education-gallery-layout').val() || 'pair'),
+                layout: ($block.find('.rs-education-gallery-layout').val() || 'triple'),
                 image_ids: ($block.find('.rs-education-gallery-ids').val() || '').trim(),
                 caption: ($block.find('.rs-education-gallery-caption').val() || '').trim()
             };
@@ -854,7 +1004,6 @@ function rs_education_admin_footer_script(): void {
                 });
 
                 if (!name && !logoId && !description
-                    && !(galleries.topGallery && galleries.topGallery.image_ids)
                     && !(galleries.midGallery && galleries.midGallery.image_ids)
                     && !(galleries.bottomGallery && galleries.bottomGallery.image_ids)
                 ) {
@@ -865,8 +1014,7 @@ function rs_education_admin_footer_script(): void {
                     name,
                     logo_id: logoId,
                     description,
-                    topGallery: galleries.topGallery || { layout: 'pair', image_ids: '', caption: '' },
-                    midGallery: galleries.midGallery || { layout: 'pair', image_ids: '', caption: '' },
+                    midGallery: galleries.midGallery || { layout: 'triple', image_ids: '', caption: '' },
                     bottomGallery: galleries.bottomGallery || { layout: 'grid-2x2', image_ids: '', caption: '' }
                 });
             });
@@ -919,6 +1067,65 @@ function rs_education_admin_footer_script(): void {
             });
         }
 
+        function galleryThumbHtml(attachment) {
+            if (!attachment || !attachment.url) return '';
+            const mime = attachment.mime || '';
+            if (mime.indexOf('video/') === 0) {
+                return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-education-gallery-badge">vídeo</span>';
+            }
+            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
+                || (attachment.sizes && attachment.sizes.thumbnail && attachment.sizes.thumbnail.url)
+                || attachment.url;
+            const isGif = mime.indexOf('gif') !== -1 || /\.gif(\?|$)/i.test(attachment.url);
+            return '<img src="' + thumb + '" alt="" />' + (isGif ? '<span class="rs-education-gallery-badge">gif</span>' : '');
+        }
+
+        function appendGalleryItem($block, attachment) {
+            if (!attachment || !attachment.id) return;
+            const existing = {};
+            $block.find('.rs-education-gallery-item').each(function () {
+                existing[String($(this).attr('data-id'))] = true;
+            });
+            if (existing[String(attachment.id)]) return;
+
+            const item = $(
+                '<div class="rs-education-gallery-item" data-id="' + attachment.id + '">' +
+                    '<div class="rs-education-gallery-tile">' +
+                        '<span class="rs-education-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>' +
+                        '<button type="button" class="rs-education-remove-gallery-item" title="Remover" aria-label="Remover imagem">&times;</button>' +
+                        '<div class="rs-education-gallery-thumb"></div>' +
+                    '</div>' +
+                '</div>'
+            );
+            item.find('.rs-education-gallery-thumb').html(galleryThumbHtml(attachment));
+            $block.find('.rs-education-gallery-grid').append(item);
+            syncGalleryIds($block);
+        }
+
+        function initGallerySortable($grid) {
+            if (!$.fn.sortable || !$grid.length) return;
+            if ($grid.hasClass('ui-sortable')) {
+                $grid.sortable('refresh');
+                return;
+            }
+            $grid.sortable({
+                items: '.rs-education-gallery-item',
+                handle: '.rs-education-gallery-handle, .rs-education-gallery-tile',
+                placeholder: 'rs-education-gallery-placeholder',
+                tolerance: 'pointer',
+                opacity: 0.9,
+                update: function () {
+                    syncGalleryIds($grid.closest('.rs-education-gallery-block'));
+                }
+            });
+        }
+
+        function initAllGallerySortables(scope) {
+            (scope || $(document)).find('.rs-education-gallery-grid').each(function () {
+                initGallerySortable($(this));
+            });
+        }
+
         $('#rs-education-add-section').on('click', function (event) {
             event.preventDefault();
             const template = $('.rs-education-section[data-index="__INDEX__"]').first().clone();
@@ -960,14 +1167,16 @@ function rs_education_admin_footer_script(): void {
             template.find('.rs-media-preview').empty();
             template.find('.rs-education-gallery-ids').val('');
             template.find('.rs-education-gallery-caption').val('');
-            template.find('.rs-education-gallery-preview').empty();
+            template.find('.rs-education-gallery-grid').empty();
+            template.find('.rs-education-gallery-empty').show();
             template.find('.rs-education-gallery-layout').each(function () {
                 const key = $(this).data('gallery');
-                $(this).val(key === 'bottomGallery' ? 'grid-2x2' : 'pair');
+                $(this).val(key === 'bottomGallery' ? 'grid-2x2' : 'triple');
             });
             replaceIndexAttrs(template, nextInstitutionIndex);
             assignInstitutionNames(template, nextInstitutionIndex);
             $('#rs-education-institutions-list').append(template);
+            initAllGallerySortables(template);
             nextInstitutionIndex += 1;
         });
 
@@ -991,81 +1200,42 @@ function rs_education_admin_footer_script(): void {
             event.preventDefault();
             if (typeof wp === 'undefined' || !wp.media) return;
 
-            const button = $(this);
-            const row = button.closest('.rs-education-gallery-block');
-            const input = row.find('.rs-education-gallery-ids');
-            const preview = row.find('.rs-education-gallery-preview');
+            const $block = $(this).closest('.rs-education-gallery-block');
 
             const frame = wp.media({
                 title: 'Selecionar imagens',
                 button: { text: 'Adicionar' },
                 multiple: true,
-                library: { type: 'image' }
+                library: { type: ['image', 'video'] }
             });
 
             frame.on('select', function () {
-                const current = String(input.val() || '')
-                    .split(',')
-                    .map(function (v) { return parseInt(v, 10); })
-                    .filter(function (v) { return v > 0; });
-
                 frame.state().get('selection').each(function (attachment) {
-                    const data = attachment.toJSON();
-                    if (!data.id || current.indexOf(data.id) !== -1) return;
-                    current.push(data.id);
-                    const thumb = (data.sizes && data.sizes.thumbnail && data.sizes.thumbnail.url) || data.url;
-                    preview.append(
-                        '<img src="' + thumb + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:4px;" data-id="' + data.id + '" />'
-                    );
+                    appendGalleryItem($block, attachment.toJSON());
                 });
-
-                input.val(current.join(','));
+                initGallerySortable($block.find('.rs-education-gallery-grid'));
             });
 
             frame.open();
         });
 
-        $(document).on('click', '.rs-education-add-studio-images', function (event) {
+        $(document).on('click', '.rs-education-remove-gallery-item', function (event) {
             event.preventDefault();
-            if (typeof wp === 'undefined' || !wp.media) return;
-
-            const fieldset = $(this).closest('fieldset');
-            const input = fieldset.find('.rs-education-studio-ids');
-            const preview = fieldset.find('.rs-education-studio-preview');
-
-            const frame = wp.media({
-                title: 'Fotos do estúdio',
-                button: { text: 'Adicionar' },
-                multiple: true,
-                library: { type: 'image' }
-            });
-
-            frame.on('select', function () {
-                const current = String(input.val() || '')
-                    .split(',')
-                    .map(function (v) { return parseInt(v, 10); })
-                    .filter(function (v) { return v > 0; });
-
-                frame.state().get('selection').each(function (attachment) {
-                    const data = attachment.toJSON();
-                    if (!data.id || current.indexOf(data.id) !== -1) return;
-                    current.push(data.id);
-                    const thumb = (data.sizes && data.sizes.thumbnail && data.sizes.thumbnail.url) || data.url;
-                    preview.append(
-                        '<img src="' + thumb + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:4px;" />'
-                    );
-                });
-
-                input.val(current.join(','));
-            });
-
-            frame.open();
+            event.stopPropagation();
+            const $block = $(this).closest('.rs-education-gallery-block');
+            $(this).closest('.rs-education-gallery-item').remove();
+            syncGalleryIds($block);
         });
 
         $('#post').on('submit', function () {
+            $('.rs-education-gallery-block').each(function () {
+                syncGalleryIds($(this));
+            });
             collectSectionsJson();
             collectInstitutionsJson();
         });
+
+        initAllGallerySortables();
     });
     </script>
     <?php
