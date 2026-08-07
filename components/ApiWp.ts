@@ -162,20 +162,24 @@ export async function GetCategoriesApi(
     return porterCategories(await fetchWpList(path, data));
 }
 
-/** Projetos filtrados por slug da taxonomia `project-category` (ex.: `education`). */
+/** Projetos filtrados por slug da taxonomia `project-category` (ex.: `home`, `education`). */
 export async function GetProjectsByCategorySlug(
     slug: string,
     data: Record<string, string | number> = {},
 ): Promise<Projects> {
-    const terms = await fetchWpList('/project-category', { slug, per_page: 1, ...data });
+    const { per_page = 5, _embed = '', ...rest } = data;
+    const termQuery: Record<string, string | number> = { slug, per_page: 1 };
+    if (rest.translate != null) termQuery.translate = rest.translate;
+
+    const terms = await fetchWpList('/project-category', termQuery);
     const termId = terms[0]?.id;
     if (!termId) return [];
 
-    return GetApi('/project', {
+    return GetApi('/project/', {
+        ...rest,
         'project-category': termId,
-        _embed: '',
-        per_page: 100,
-        ...data,
+        _embed,
+        per_page,
     });
 }
 

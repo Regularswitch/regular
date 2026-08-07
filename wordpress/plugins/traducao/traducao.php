@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.19
+ * Version: 1.2.20
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -32,6 +32,7 @@ include __DIR__ . "/rest-translate.php";
 include __DIR__ . "/proxy.php";
 include __DIR__ . "/mult-language.php";
 include __DIR__ . "/redirect-front-to-login.php";
+include __DIR__ . "/admin-bar-frontend.php";
 
 function rs_add_language_column(array $cols): array {
     $cols['language'] = 'Language';

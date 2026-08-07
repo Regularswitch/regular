@@ -355,7 +355,7 @@ html:not(.dark) .brand-mark {
 .not-found-digit {
 	font-family: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
 	font-size: clamp(6.5rem, 30vw, 15rem);
-	font-weight: 900;
+	font-weight: 700;
 	line-height: 0.82;
 	letter-spacing: -0.05em;
 	color: var(--fg);

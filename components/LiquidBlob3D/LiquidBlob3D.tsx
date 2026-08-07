@@ -89,7 +89,7 @@ export default function LiquidBlob3D({
 						dpr={dpr}
 						camera={{ fov: isMobile ? 40 : 36, position: [0, 0, isMobile ? 7 : 6.4] }}
 						gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-						style={{ width: '100%', height: '100%'}}
+						style={{ width: '100%', height: '100%' }}
 					>
 						<BlobMesh
 							color1={color1}
