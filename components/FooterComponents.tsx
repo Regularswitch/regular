@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { FooterContent, FooterLink } from '../types';
 import FontVariante from './FontVariante';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
+import LegalPolicyModal from './Legal/LegalPolicyModal';
 import { getCookie } from './Translate';
 import { getContactMailto, getNewsletterHref } from '../lib/site/siteLinks';
 
 type FooterLocale = 'en' | 'pt';
+type LegalModalKind = 'privacy' | 'cookies' | null;
 
 type FooterComponentsProps = {
 	footerEn: FooterContent | null;
@@ -53,6 +55,7 @@ function resolveFooterLinks(links: FooterLink[]): FooterLink[] {
 export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
 	const pathname = usePathname() ?? '';
 	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
+	const [modal, setModal] = useState<LegalModalKind>(null);
 
 	useEffect(() => {
 		setLocale(resolveLocale(pathname));
@@ -63,14 +66,23 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	const { brandMark, links: rawLinks, legal } = fromWp ?? fallback;
 	const links = resolveFooterLinks(rawLinks);
 
-	const legalLinks = useMemo(
-		() => [
-			{ label: legal.brand, href: withPrefix('/', locale) },
-			{ label: legal.privacy, href: withPrefix(legal.privacyHref, locale) },
-			{ label: legal.cookies, href: withPrefix(legal.cookiesHref, locale) },
-		],
-		[legal, locale],
-	);
+	const privacyBody = (legal.privacyBody?.trim() || fallback.legal.privacyBody || '').trim();
+	const cookiesBody = (legal.cookiesBody?.trim() || fallback.legal.cookiesBody || '').trim();
+
+	const closeModal = useCallback(() => setModal(null), []);
+	const closeLabel = locale === 'pt' ? 'Fechar' : 'Close';
+
+	const modalTitle = useMemo(() => {
+		if (modal === 'privacy') return legal.privacy;
+		if (modal === 'cookies') return legal.cookies;
+		return '';
+	}, [modal, legal.privacy, legal.cookies]);
+
+	const modalBody = useMemo(() => {
+		if (modal === 'privacy') return privacyBody;
+		if (modal === 'cookies') return cookiesBody;
+		return '';
+	}, [modal, privacyBody, cookiesBody]);
 
 	return (
 		<footer className="site-footer mt-10 border-t border-white/10 pt-12 md:mt-14 md:pt-16">
@@ -104,15 +116,38 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-sm text-(--muted) md:mt-10"
 				aria-label="Legal"
 			>
-				{legalLinks.map((item, index) => (
-					<span key={item.label} className="inline-flex items-center gap-2">
-						{index > 0 ? <span aria-hidden>/</span> : null}
-						<Link href={item.href} className="transition-opacity hover:opacity-80 hover:text-(--fg)">
-							{item.label}
-						</Link>
-					</span>
-				))}
+				<span className="inline-flex items-center gap-2">
+					<span>{legal.brand}</span>
+				</span>
+				<span className="inline-flex items-center gap-2">
+					<span aria-hidden>/</span>
+					<button
+						type="button"
+						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+						onClick={() => setModal('privacy')}
+					>
+						{legal.privacy}
+					</button>
+				</span>
+				<span className="inline-flex items-center gap-2">
+					<span aria-hidden>/</span>
+					<button
+						type="button"
+						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+						onClick={() => setModal('cookies')}
+					>
+						{legal.cookies}
+					</button>
+				</span>
 			</nav>
+
+			<LegalPolicyModal
+				open={modal !== null && modalBody !== ''}
+				title={modalTitle}
+				bodyHtml={modalBody}
+				onClose={closeModal}
+				closeLabel={closeLabel}
+			/>
 		</footer>
 	);
 }

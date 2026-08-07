@@ -254,6 +254,48 @@ function rs_sync_contact_media(int $from_id, int $to_id): void {
     if (function_exists('rs_section_copy_hero_media')) {
         rs_section_copy_hero_media($from_id, $to_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
     }
+
+    if (defined('RS_CONTACT_INFO_KEY')) {
+        $en_info = get_post_meta($from_id, RS_CONTACT_INFO_KEY, true);
+        if ($en_info !== '' && $en_info !== false) {
+            $pt_info_raw = get_post_meta($to_id, RS_CONTACT_INFO_KEY, true);
+            $en = [];
+            $pt = [];
+            if (is_string($en_info)) {
+                $decoded = json_decode($en_info, true);
+                if (is_array($decoded)) {
+                    $en = $decoded;
+                }
+            }
+            if (is_string($pt_info_raw)) {
+                $decoded = json_decode($pt_info_raw, true);
+                if (is_array($decoded)) {
+                    $pt = $decoded;
+                }
+            }
+
+            // Copia telefones/e-mails do EN; mantém títulos/textos do PT quando existirem.
+            foreach (['contact_phone', 'contact_phone_tel', 'contact_email', 'address_street', 'jobs_email', 'internship_email'] as $key) {
+                if (!empty($en[$key])) {
+                    $pt[$key] = $en[$key];
+                }
+            }
+            if (!empty($en['contact_location']) && empty($pt['contact_location'])) {
+                $pt['contact_location'] = $en['contact_location'];
+            }
+            if (!empty($en['address_location']) && empty($pt['address_location'])) {
+                $pt['address_location'] = $en['address_location'];
+            }
+
+            $normalized = function_exists('rs_contact_normalize_info')
+                ? rs_contact_normalize_info($pt, 'pt')
+                : $pt;
+            update_post_meta($to_id, RS_CONTACT_INFO_KEY, wp_json_encode($normalized, JSON_UNESCAPED_UNICODE));
+            if (function_exists('rs_contact_info_to_blocks')) {
+                update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode(rs_contact_info_to_blocks($normalized), JSON_UNESCAPED_UNICODE));
+            }
+        }
+    }
 }
 
 function rs_sync_education_media(int $from_id, int $to_id): void {

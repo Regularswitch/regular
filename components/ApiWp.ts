@@ -357,9 +357,11 @@ function isFooterContent(value: unknown): value is FooterContent {
     return (
         typeof legal.brand === 'string' &&
         typeof legal.privacy === 'string' &&
-        typeof legal.privacyHref === 'string' &&
         typeof legal.cookies === 'string' &&
-        typeof legal.cookiesHref === 'string'
+        (legal.privacyHref === undefined || typeof legal.privacyHref === 'string') &&
+        (legal.cookiesHref === undefined || typeof legal.cookiesHref === 'string') &&
+        (legal.privacyBody === undefined || typeof legal.privacyBody === 'string') &&
+        (legal.cookiesBody === undefined || typeof legal.cookiesBody === 'string')
     );
 }
 

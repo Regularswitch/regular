@@ -71,7 +71,12 @@ function rs_field_is_href_key(string $key): bool {
 }
 
 function rs_field_is_plain_text_key(string $key): bool {
-    return $key === 'rs_footer_brand_mark' || str_ends_with($key, '_image_slug');
+    return $key === 'rs_footer_brand_mark'
+        || $key === 'rs_footer_legal_brand'
+        || $key === 'rs_footer_legal_privacy'
+        || $key === 'rs_footer_legal_cookies'
+        || str_ends_with($key, '_image_slug')
+        || (str_contains($key, 'rs_footer_link_') && str_ends_with($key, '_title'));
 }
 
 function rs_field_rich_text_profile(string $key): string {

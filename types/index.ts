@@ -65,8 +65,12 @@ export type FooterLegal = {
   brand: string;
   privacy: string;
   privacyHref: string;
+  /** HTML do popup de privacidade (editável no WP). */
+  privacyBody?: string;
   cookies: string;
   cookiesHref: string;
+  /** HTML do popup de cookies (editável no WP). */
+  cookiesBody?: string;
 };
 
 export type FooterContent = {

@@ -12,11 +12,189 @@ const RS_CONTACT_HERO_IMAGE_KEY = 'rs_contact_hero_image_id';
 const RS_CONTACT_HERO_VIDEO_KEY = 'rs_contact_hero_video_id';
 const RS_CONTACT_HEADLINE_KEY = 'rs_contact_headline';
 const RS_CONTACT_BLOCKS_KEY = 'rs_contact_blocks';
+const RS_CONTACT_INFO_KEY = 'rs_contact_info';
+
+/**
+ * @return array<string, string>
+ */
+function rs_contact_default_info(string $locale): array {
+    if ($locale === 'pt') {
+        return [
+            'contact_title'     => 'CONTATO',
+            'contact_location'  => 'São Paulo – Brasil',
+            'contact_phone'     => '+55 11 (9) 4540-8448',
+            'contact_phone_tel' => '+5511945408448',
+            'contact_email'     => 'contact@regularswitch.com',
+            'address_title'     => 'ENDEREÇO',
+            'address_location'  => 'São Paulo – Brasil',
+            'address_street'    => 'Rua da Consolação, 65',
+            'jobs_title'        => 'VAGAS',
+            'jobs_text'         => 'No momento não estamos contratando.',
+            'jobs_email'        => 'join-us@regularswitch.com',
+            'internship_title'  => 'ESTÁGIO',
+            'internship_text'   => 'Envie um e-mail para se candidatar.',
+            'internship_email'  => 'join-us@regularswitch.com',
+        ];
+    }
+
+    return [
+        'contact_title'     => 'CONTACT',
+        'contact_location'  => 'São Paulo – Brazil',
+        'contact_phone'     => '+55 11 (9) 4540-8448',
+        'contact_phone_tel' => '+5511945408448',
+        'contact_email'     => 'contact@regularswitch.com',
+        'address_title'     => 'ADDRESS',
+        'address_location'  => 'São Paulo – Brazil',
+        'address_street'    => 'Rua da Consolação, 65',
+        'jobs_title'        => 'JOBS',
+        'jobs_text'         => 'We are not hiring at the moment.',
+        'jobs_email'        => 'join-us@regularswitch.com',
+        'internship_title'  => 'INTERNSHIP',
+        'internship_text'   => 'Send us an e-mail to apply.',
+        'internship_email'  => 'join-us@regularswitch.com',
+    ];
+}
+
+/**
+ * @param array<string, mixed> $raw
+ * @return array<string, string>
+ */
+function rs_contact_normalize_info(array $raw, string $locale = 'en'): array {
+    $defaults = rs_contact_default_info($locale);
+    $out = $defaults;
+
+    foreach ($defaults as $key => $_default) {
+        if (array_key_exists($key, $raw)) {
+            $out[$key] = trim(wp_strip_all_tags((string) $raw[$key]));
+        }
+    }
+
+    if ($out['contact_phone_tel'] === '' && $out['contact_phone'] !== '') {
+        $digits = preg_replace('/\D+/', '', $out['contact_phone']);
+        $out['contact_phone_tel'] = is_string($digits) ? $digits : '';
+    }
+
+    return $out;
+}
+
+/**
+ * @return array<string, string>
+ */
+function rs_contact_get_info(int $post_id): array {
+    $locale = get_post_field('post_name', $post_id) === 'pt' ? 'pt' : 'en';
+    $raw = get_post_meta($post_id, RS_CONTACT_INFO_KEY, true);
+    $decoded = [];
+
+    if (is_string($raw) && $raw !== '') {
+        $parsed = json_decode($raw, true);
+        if (is_array($parsed)) {
+            $decoded = $parsed;
+        }
+    } elseif (is_array($raw)) {
+        $decoded = $raw;
+    }
+
+    if ($decoded) {
+        return rs_contact_normalize_info($decoded, $locale);
+    }
+
+    // Migração: se só existirem blocos legados, usa defaults (conteúdo editável nos novos campos).
+    return rs_contact_default_info($locale);
+}
+
+/**
+ * @param array<string, string> $info
+ * @return array<int, array{title: string, body: string}>
+ */
+function rs_contact_info_to_blocks(array $info): array {
+    $phone_digits = preg_replace(
+        '/\D+/',
+        '',
+        $info['contact_phone_tel'] !== '' ? $info['contact_phone_tel'] : $info['contact_phone']
+    );
+    $phone_href = (is_string($phone_digits) && $phone_digits !== '')
+        ? 'tel:+' . $phone_digits
+        : '';
+
+    $contact_email = $info['contact_email'];
+    $jobs_email = $info['jobs_email'];
+    $internship_email = $info['internship_email'];
+
+    $contact_lines = array_filter([
+        $info['contact_location'] !== '' ? esc_html($info['contact_location']) : '',
+        $info['contact_phone'] !== ''
+            ? ($phone_href !== ''
+                ? '<a href="' . esc_url($phone_href) . '">' . esc_html($info['contact_phone']) . '</a>'
+                : esc_html($info['contact_phone']))
+            : '',
+        $contact_email !== ''
+            ? '<a href="' . esc_url('mailto:' . $contact_email) . '">' . esc_html($contact_email) . '</a>'
+            : '',
+    ]);
+
+    $address_lines = array_filter([
+        $info['address_location'] !== '' ? esc_html($info['address_location']) : '',
+        $info['address_street'] !== '' ? esc_html($info['address_street']) : '',
+    ]);
+
+    $jobs_lines = array_filter([
+        $info['jobs_text'] !== '' ? esc_html($info['jobs_text']) : '',
+        $jobs_email !== ''
+            ? '<a href="' . esc_url('mailto:' . $jobs_email) . '">' . esc_html($jobs_email) . '</a>'
+            : '',
+    ]);
+
+    $internship_lines = array_filter([
+        $info['internship_text'] !== '' ? esc_html($info['internship_text']) : '',
+        $internship_email !== ''
+            ? '<a href="' . esc_url('mailto:' . $internship_email) . '">' . esc_html($internship_email) . '</a>'
+            : '',
+    ]);
+
+    $blocks = [];
+
+    if ($info['contact_title'] !== '' && $contact_lines) {
+        $blocks[] = [
+            'title' => $info['contact_title'],
+            'body'  => '<p>' . implode('<br>', $contact_lines) . '</p>',
+        ];
+    }
+
+    if ($info['address_title'] !== '' && $address_lines) {
+        $blocks[] = [
+            'title' => $info['address_title'],
+            'body'  => '<p>' . implode('<br>', $address_lines) . '</p>',
+        ];
+    }
+
+    if ($info['jobs_title'] !== '' && $jobs_lines) {
+        $blocks[] = [
+            'title' => $info['jobs_title'],
+            'body'  => '<p>' . implode('<br>', $jobs_lines) . '</p>',
+        ];
+    }
+
+    if ($info['internship_title'] !== '' && $internship_lines) {
+        $blocks[] = [
+            'title' => $info['internship_title'],
+            'body'  => '<p>' . implode('<br>', $internship_lines) . '</p>',
+        ];
+    }
+
+    return $blocks;
+}
 
 /**
  * @return array<int, array{title: string, body: string}>
  */
 function rs_contact_get_blocks(int $post_id): array {
+    // Preferência: campos estruturados.
+    $info = rs_contact_get_info($post_id);
+    $from_info = rs_contact_info_to_blocks($info);
+    if ($from_info) {
+        return $from_info;
+    }
+
     $raw = get_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, true);
 
     if (is_string($raw) && $raw !== '') {
@@ -84,30 +262,46 @@ function rs_contact_get_post_id_by_locale(string $locale): int {
     return !empty($posts[0]) ? (int) $posts[0] : 0;
 }
 
-function rs_contact_ensure_locale_posts(): void {
-    if (get_option('rs_contact_posts_ensured_v1')) {
-        return;
+function rs_contact_seed_post(int $post_id, string $locale): void {
+    $headline = $locale === 'pt'
+        ? 'Vamos <strong>conversar</strong> sobre o seu <strong>próximo projeto</strong>.'
+        : 'Let\'s <strong>talk</strong> about your <strong>next project</strong>.';
+
+    if (trim((string) get_post_meta($post_id, RS_CONTACT_HEADLINE_KEY, true)) === '') {
+        update_post_meta($post_id, RS_CONTACT_HEADLINE_KEY, $headline);
     }
 
+    $info_raw = get_post_meta($post_id, RS_CONTACT_INFO_KEY, true);
+    if ($info_raw === '' || $info_raw === false || $info_raw === null) {
+        $info = rs_contact_default_info($locale);
+        update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_json_encode($info, JSON_UNESCAPED_UNICODE));
+        update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode(rs_contact_info_to_blocks($info), JSON_UNESCAPED_UNICODE));
+    }
+}
+
+function rs_contact_ensure_locale_posts(): void {
     foreach (['en', 'pt'] as $locale) {
-        if (rs_contact_get_post_id_by_locale($locale) > 0) {
-            continue;
+        $post_id = rs_contact_get_post_id_by_locale($locale);
+        if ($post_id <= 0) {
+            $post_id = (int) wp_insert_post([
+                'post_title'  => $locale === 'pt' ? 'Contato (PT)' : 'Contact (EN)',
+                'post_status' => 'publish',
+                'post_type'   => 'contact',
+                'post_name'   => $locale,
+                'post_author' => 1,
+            ], true);
         }
 
-        wp_insert_post([
-            'post_title'  => $locale === 'pt' ? 'Contato (PT)' : 'Contact (EN)',
-            'post_status' => 'publish',
-            'post_type'   => 'contact',
-            'post_name'   => $locale,
-            'post_author' => 1,
-        ], true);
+        if ($post_id > 0 && !is_wp_error($post_id)) {
+            rs_contact_seed_post($post_id, $locale);
+        }
     }
 
-    update_option('rs_contact_posts_ensured_v1', 1);
+    update_option('rs_contact_posts_ensured_v2', 1);
 }
 
 add_action('init', function () {
-    foreach ([RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY, RS_CONTACT_HEADLINE_KEY, RS_CONTACT_BLOCKS_KEY] as $key) {
+    foreach ([RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY, RS_CONTACT_HEADLINE_KEY, RS_CONTACT_BLOCKS_KEY, RS_CONTACT_INFO_KEY] as $key) {
         register_post_meta('contact', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -147,115 +341,91 @@ add_action('add_meta_boxes_contact', function () {
     remove_meta_box('postcustom', 'contact', 'normal');
 }, 10);
 
-function rs_contact_render_block_row(int $index, array $block, bool $is_template = false): void {
-    $title = $block['title'] ?? '';
-    $body = $block['body'] ?? '';
-    $editor_id = $is_template ? 'rs_contact_block_body___INDEX__' : 'rs_contact_block_body_' . $index;
-    $name_prefix = $is_template ? 'rs_contact_blocks[__INDEX__]' : 'rs_contact_blocks[' . $index . ']';
-    $display = $is_template ? ' style="display:none;"' : '';
+/**
+ * @param array<string, string> $info
+ */
+function rs_contact_render_text_field(string $name, string $label, string $value, string $placeholder = ''): void {
     ?>
-    <fieldset class="rs-contact-block" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-            <legend style="font-weight:600;padding:0;margin:0;"><strong>Bloco</strong></legend>
-            <button type="button" class="button-link-delete rs-contact-remove-block">Remover</button>
-        </div>
-
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
-            <input
-                type="text"
-                style="width:100%;"
-                class="rs-contact-block-title"
-                <?php if (!$is_template) : ?>
-                    name="<?php echo esc_attr($name_prefix); ?>[title]"
-                    value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
-                <?php endif; ?>
-            />
-        </div>
-
-        <p style="margin:0;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Conteúdo</label>
-            <?php
-            if ($is_template) {
-                echo '<textarea class="rs-contact-block-body" style="width:100%;min-height:120px;" id="' . esc_attr($editor_id) . '"></textarea>';
-            } else {
-                rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph');
-            }
-            ?>
-        </p>
-    </fieldset>
+    <p style="margin:0 0 12px;">
+        <label style="display:block;font-weight:500;margin-bottom:4px;"><?php echo esc_html($label); ?></label>
+        <input
+            type="text"
+            class="widefat"
+            name="<?php echo esc_attr($name); ?>"
+            value="<?php echo esc_attr($value); ?>"
+            placeholder="<?php echo esc_attr($placeholder); ?>"
+        />
+    </p>
     <?php
 }
 
 function rs_contact_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_contact_save', 'rs_contact_nonce');
 
+    $locale = $post->post_name === 'pt' ? 'pt' : 'en';
+    rs_contact_seed_post((int) $post->ID, $locale);
+
     $headline = (string) get_post_meta($post->ID, RS_CONTACT_HEADLINE_KEY, true);
-    $blocks = rs_contact_get_blocks($post->ID);
+    $info = rs_contact_get_info((int) $post->ID);
 
-    if (!$blocks) {
-        $blocks = [['title' => '', 'body' => '']];
-    }
-
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Campos vazios usam o fallback do Next.js. Sem imagem/vídeo no Hero, a página Contato não exibe o topo.</p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Edite telefone, e-mails e textos abaixo — o site monta a grade Contato / Endereço / Vagas / Estágio. <em>(Plugin Tradução v1.2.13)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
-    }
-
-    if (function_exists('rs_section_render_hero_fields')) {
-        rs_section_render_hero_fields($post->ID, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
     }
 
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
     rs_render_rich_text_field(RS_CONTACT_HEADLINE_KEY, RS_CONTACT_HEADLINE_KEY, $headline, 'inline');
+    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
     echo '</fieldset>';
 
-    echo '<div id="rs-contact-blocks-list">';
-    foreach ($blocks as $index => $block) {
-        rs_contact_render_block_row((int) $index, $block);
-    }
-    echo '</div>';
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Contato</strong></legend>';
+    rs_contact_render_text_field('rs_contact_info[contact_title]', 'Título', $info['contact_title'], 'CONTACT');
+    rs_contact_render_text_field('rs_contact_info[contact_location]', 'Cidade / localização', $info['contact_location'], 'São Paulo – Brazil');
+    rs_contact_render_text_field('rs_contact_info[contact_phone]', 'Telefone (exibição)', $info['contact_phone'], '+55 11 (9) 4540-8448');
+    rs_contact_render_text_field('rs_contact_info[contact_phone_tel]', 'Telefone para o link (só números)', $info['contact_phone_tel'], '5511945408448');
+    rs_contact_render_text_field('rs_contact_info[contact_email]', 'E-mail', $info['contact_email'], 'contact@regularswitch.com');
+    echo '</fieldset>';
 
-    rs_contact_render_block_row(0, ['title' => '', 'body' => ''], true);
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Endereço</strong></legend>';
+    rs_contact_render_text_field('rs_contact_info[address_title]', 'Título', $info['address_title'], 'ADDRESS');
+    rs_contact_render_text_field('rs_contact_info[address_location]', 'Cidade / localização', $info['address_location'], 'São Paulo – Brazil');
+    rs_contact_render_text_field('rs_contact_info[address_street]', 'Rua / endereço', $info['address_street'], 'Rua da Consolação, 65');
+    echo '</fieldset>';
 
-    echo '<p style="margin:16px 0 0;">';
-    echo '<button type="button" class="button button-secondary" id="rs-contact-add-block">+ Adicionar bloco</button>';
-    echo '</p>';
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Vagas</strong></legend>';
+    rs_contact_render_text_field('rs_contact_info[jobs_title]', 'Título', $info['jobs_title'], 'JOBS');
+    rs_contact_render_text_field('rs_contact_info[jobs_text]', 'Texto', $info['jobs_text'], 'We are not hiring at the moment.');
+    rs_contact_render_text_field('rs_contact_info[jobs_email]', 'E-mail', $info['jobs_email'], 'join-us@regularswitch.com');
+    echo '</fieldset>';
 
-    echo '<input type="hidden" id="rs-contact-blocks-json" name="rs_contact_blocks_json" value="" />';
+    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Estágio</strong></legend>';
+    rs_contact_render_text_field('rs_contact_info[internship_title]', 'Título', $info['internship_title'], 'INTERNSHIP');
+    rs_contact_render_text_field('rs_contact_info[internship_text]', 'Texto', $info['internship_text'], 'Send us an e-mail to apply.');
+    rs_contact_render_text_field('rs_contact_info[internship_email]', 'E-mail', $info['internship_email'], 'join-us@regularswitch.com');
+    echo '</fieldset>';
 }
 
 /**
- * @return array<int, array{title: string, body: string}>
+ * @return array<string, string>
  */
-function rs_contact_parse_blocks_from_request(): array {
-    $blocks = [];
-
-    if (!empty($_POST['rs_contact_blocks_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_contact_blocks_json']), true);
-        if (is_array($decoded)) {
-            foreach ($decoded as $block) {
-                if (!is_array($block)) {
-                    continue;
-                }
-
-                $title = trim(wp_strip_all_tags((string) ($block['title'] ?? '')));
-                $body = wp_kses_post((string) ($block['body'] ?? ''));
-
-                if ($title === '' && $body === '') {
-                    continue;
-                }
-
-                $blocks[] = [
-                    'title' => $title !== '' ? $title : 'Bloco',
-                    'body'  => $body,
-                ];
-            }
-        }
+function rs_contact_parse_info_from_request(string $locale): array {
+    $raw = [];
+    if (isset($_POST['rs_contact_info']) && is_array($_POST['rs_contact_info'])) {
+        $raw = wp_unslash($_POST['rs_contact_info']);
     }
 
-    return $blocks;
+    $defaults = rs_contact_default_info($locale);
+    $out = [];
+    foreach ($defaults as $key => $_default) {
+        $out[$key] = isset($raw[$key]) ? sanitize_text_field((string) $raw[$key]) : '';
+    }
+
+    return $out;
 }
 
 add_action('save_post_contact', function (int $post_id) {
@@ -267,9 +437,15 @@ add_action('save_post_contact', function (int $post_id) {
         return;
     }
 
+    if (wp_is_post_revision($post_id)) {
+        return;
+    }
+
     if (!current_user_can('edit_post', $post_id)) {
         return;
     }
+
+    $locale = get_post_field('post_name', $post_id) === 'pt' ? 'pt' : 'en';
 
     $headline = isset($_POST[RS_CONTACT_HEADLINE_KEY])
         ? wp_kses_post(wp_unslash($_POST[RS_CONTACT_HEADLINE_KEY]))
@@ -280,112 +456,22 @@ add_action('save_post_contact', function (int $post_id) {
         rs_section_save_hero_media($post_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
     }
 
-    $blocks = rs_contact_parse_blocks_from_request();
+    $info = rs_contact_parse_info_from_request($locale);
+    update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_json_encode($info, JSON_UNESCAPED_UNICODE));
+
+    $blocks = rs_contact_info_to_blocks(rs_contact_normalize_info($info, $locale));
     update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode($blocks, JSON_UNESCAPED_UNICODE));
 });
 
 function rs_copy_contact_fields(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_CONTACT_HEADLINE_KEY, get_post_meta($from_id, RS_CONTACT_HEADLINE_KEY, true));
     update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, get_post_meta($from_id, RS_CONTACT_BLOCKS_KEY, true));
+    update_post_meta($to_id, RS_CONTACT_INFO_KEY, get_post_meta($from_id, RS_CONTACT_INFO_KEY, true));
     if (function_exists('rs_section_copy_hero_media')) {
         rs_section_copy_hero_media($from_id, $to_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
     }
 }
 
-rs_enqueue_admin_media_picker(['contact']);
-
-add_action('admin_enqueue_scripts', function (string $hook) {
-    if (!in_array($hook, ['post.php', 'post-new.php'], true)) {
-        return;
-    }
-
-    $screen = get_current_screen();
-    if (!$screen || $screen->post_type !== 'contact') {
-        return;
-    }
-
-    $paragraph_settings = wp_json_encode(rs_rich_text_js_settings('paragraph'));
-
-    wp_add_inline_script('editor', <<<JS
-jQuery(function ($) {
-    const paragraphEditorSettings = {$paragraph_settings};
-    let nextIndex = $('#rs-contact-blocks-list .rs-contact-block').length;
-
-    function syncAllEditors() {
-        if (typeof tinymce !== 'undefined') tinymce.triggerSave();
-        if (typeof wp !== 'undefined' && wp.editor && wp.editor.save) {
-            $('textarea[id^="rs_contact_block_body_"]').each(function () {
-                const id = $(this).attr('id');
-                if (id) wp.editor.save(id);
-            });
-        }
-    }
-
-    function readBlockBody(textarea) {
-        const editorId = textarea.attr('id');
-        if (editorId && typeof tinymce !== 'undefined') {
-            const editor = tinymce.get(editorId);
-            if (editor) return editor.getContent();
-        }
-        return textarea.val() || '';
-    }
-
-    function collectBlocksJson() {
-        syncAllEditors();
-        const blocks = [];
-        $('#rs-contact-blocks-list .rs-contact-block').each(function () {
-            const block = $(this);
-            const title = (block.find('.rs-contact-block-title').val() || '').trim();
-            const body = readBlockBody(block.find('textarea.rs-contact-block-body, textarea[id^="rs_contact_block_body_"]'));
-            if (!title && !body) return;
-            blocks.push({ title: title || 'Bloco', body });
-        });
-        $('#rs-contact-blocks-json').val(JSON.stringify(blocks));
-    }
-
-    $('#post').on('submit', collectBlocksJson);
-
-    function initEditor(id) {
-        if (typeof wp === 'undefined' || !wp.editor) return;
-        wp.editor.initialize(id, paragraphEditorSettings);
-    }
-
-    function assignBlockNames(block, index) {
-        block.attr('data-index', String(index));
-        block.find('.rs-contact-block-title').attr('name', 'rs_contact_blocks[' + index + '][title]');
-        block.find('textarea').attr('name', 'rs_contact_blocks[' + index + '][body]');
-    }
-
-    $('#rs-contact-add-block').on('click', function (event) {
-        event.preventDefault();
-        const template = $('.rs-contact-block[data-index="__INDEX__"]').first().clone();
-        template.attr('data-index', String(nextIndex)).show();
-        template.find('.rs-contact-block-title').val('');
-        template.find('textarea').val('');
-        template.find('[id]').each(function () {
-            const id = $(this).attr('id');
-            if (id && id.indexOf('__INDEX__') !== -1) {
-                $(this).attr('id', id.replace(/__INDEX__/g, String(nextIndex)));
-            }
-        });
-        assignBlockNames(template, nextIndex);
-        $('#rs-contact-blocks-list').append(template);
-        initEditor('rs_contact_block_body_' + nextIndex);
-        nextIndex += 1;
-    });
-
-    $(document).on('click', '.rs-contact-remove-block', function (event) {
-        event.preventDefault();
-        if ($('#rs-contact-blocks-list .rs-contact-block').length <= 1) {
-            window.alert('Mantenha pelo menos um bloco.');
-            return;
-        }
-        const block = $(this).closest('.rs-contact-block');
-        const editorId = block.find('textarea[id^="rs_contact_block_body_"]').attr('id');
-        if (editorId && typeof wp !== 'undefined' && wp.editor) wp.editor.remove(editorId);
-        block.remove();
-    });
-});
-JS
-    );
-}, 20);
+if (function_exists('rs_enqueue_admin_media_picker')) {
+    rs_enqueue_admin_media_picker(['contact']);
+}
