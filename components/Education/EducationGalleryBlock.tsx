@@ -22,7 +22,7 @@ export default function EducationGalleryBlock({ gallery }: EducationGalleryBlock
 				<div className="education-gallery-grid">
 					{images.map((src, index) => (
 						<div key={`${src}-${index}`} className="education-gallery-item">
-							<div className="education-gallery-frame relative overflow-hidden rounded-[10px] bg-(--surface)">
+							<div className="education-gallery-frame relative overflow-hidden rounded-[5px] bg-(--surface)">
 								<Image
 									src={src}
 									alt=""

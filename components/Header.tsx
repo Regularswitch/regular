@@ -434,7 +434,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[0] = el;
 						}}
-						className="w-full max-w-[700px] rounded-[10px] bg-white text-black overflow-y-auto"
+						className="w-full max-w-[700px] rounded-[5px] bg-white text-black overflow-y-auto"
 					>
 						<div className="flex items-center justify-between px-10 pt-8">
 							<Link href={`/${prefix}`.replace('//', '/')} onClick={() => closeMenu()} aria-label="RSW — início">
@@ -505,7 +505,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[1] = el;
 						}}
-						className="w-full max-w-[700px] rounded-[10px] bg-linear-to-r from-purple-600 via-pink-500 to-yellow-400 text-black p-6"
+						className="w-full max-w-[700px] rounded-[5px] bg-linear-to-r from-purple-600 via-pink-500 to-yellow-400 text-black p-6"
 					>
 						<div className="text-(--fg) text-[0.65rem] uppercase tracking-widest opacity-60 mb-3">
 							{siteUi.labels.whatsNewLabel}
@@ -522,7 +522,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[2] = el;
 						}}
-						className="w-full max-w-[700px] rounded-[10px] bg-black text-white/70 flex items-center p-6"
+						className="w-full max-w-[700px] rounded-[5px] bg-black text-white/70 flex items-center p-6"
 					>
 						<ul className="list-none flex flex-wrap gap-4 text-sm">
 							<li>
