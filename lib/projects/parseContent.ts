@@ -13,6 +13,22 @@ function stripHtml(html: string) {
 	return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+/** Remove cores inline do rich text do WP (evita preto no tema dark). */
+export function stripInlineColors(html: string): string {
+	return html.replace(/\sstyle=(["'])([\s\S]*?)\1/gi, (_match, quote: string, style: string) => {
+		const cleaned = style
+			.split(';')
+			.map((part) => part.trim())
+			.filter((part) => {
+				if (!part) return false;
+				const prop = part.split(':')[0]?.trim().toLowerCase() ?? '';
+				return prop !== 'color' && prop !== 'background' && prop !== 'background-color';
+			})
+			.join('; ');
+		return cleaned ? ` style=${quote}${cleaned}${quote}` : '';
+	});
+}
+
 export function extractImagesFromHtml(html: string): string[] {
 	const images: string[] = [];
 	const regex = /<img[^>]+src=["']([^"']+)["']/gi;
@@ -54,14 +70,14 @@ export function parseAccordionSections(
 
 		const start = (matches[i].index ?? 0) + matches[i][0].length;
 		const end = matches[i + 1]?.index ?? cleaned.length;
-		const body = cleaned.slice(start, end).trim();
+		const body = stripInlineColors(cleaned.slice(start, end).trim());
 
 		if (body) sections.push({ title, body });
 	}
 
 	if (sections.length) return sections;
 
-	const fallbackBody = cleaned.trim();
+	const fallbackBody = stripInlineColors(cleaned.trim());
 	if (!fallbackBody) {
 		return defaults.map((title) => ({ title, body: '' }));
 	}

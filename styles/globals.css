@@ -1014,6 +1014,16 @@ html:not(.dark) .brand-mark {
 	margin-bottom: 0;
 }
 
+/* Rich text do WP traz color:#000 inline — força o tom do tema. */
+.project-accordion-body,
+.project-accordion-body :where(*:not(a)) {
+	color: inherit !important;
+}
+
+.project-accordion-body a {
+	color: var(--fg) !important;
+}
+
 .capabilities-accordion-body p {
 	margin: 0 0 0.75rem;
 }
