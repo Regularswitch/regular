@@ -317,6 +317,34 @@ html:not(.dark) .brand-mark {
 	transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
+.selected-projects-ctas {
+	display: flex;
+	justify-content: center;
+}
+
+.selected-projects-ctas {
+	display: inline-grid;
+	grid-template-columns: 1fr 1fr;
+	justify-content: center;
+	width: 100%;
+	gap: 2rem;
+}
+
+.selected-projects-ctas .selected-projects-cta {
+	width: 100%;
+	box-sizing: border-box;
+	white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+	.selected-projects-ctas {
+		display: inline-grid;
+		width: auto;
+		margin-inline: auto;
+		gap: 4.5rem;
+	}
+}
+
 .selected-projects-cta:hover {
 	opacity: 0.75;
 	border-color: color-mix(in srgb, var(--fg) 55%, transparent);

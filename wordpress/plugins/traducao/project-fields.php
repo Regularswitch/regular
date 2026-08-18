@@ -577,18 +577,25 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
 
 function rs_project_render_youtube_row(int $index, string $url = '', bool $is_template = false): void {
     $name = $is_template ? 'rs_project_youtube[__INDEX__][url]' : 'rs_project_youtube[' . $index . '][url]';
+    $locked = !$is_template && $url !== '';
     $display = $is_template ? ' style="display:none;"' : '';
+    $row_class = 'rs-project-youtube-row' . ($locked ? ' is-locked' : '');
     ?>
-    <div class="rs-project-youtube-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
+    <div class="<?php echo esc_attr($row_class); ?>" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
         <input
             type="url"
             class="rs-project-youtube-url regular-text"
             name="<?php echo esc_attr($name); ?>"
             value="<?php echo esc_attr($url); ?>"
             placeholder="https://www.youtube.com/watch?v=…"
-            style="flex:1;min-width:0;width:100%;"
+            <?php echo $locked ? 'readonly' : ''; ?>
         />
-        <button type="button" class="button-link-delete rs-project-remove-youtube">Remover</button>
+        <button type="button" class="button button-primary rs-project-confirm-youtube"<?php echo ($locked || $url === '') ? ' hidden' : ''; ?>>Concluir</button>
+        <button type="button" class="rs-project-remove-youtube" title="Remover" aria-label="Remover vídeo">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M9 3h6l1 2h5v2H3V5h5l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM6.2 7h11.6l-.9 12.2A2 2 0 0 1 14.9 21H9.1a2 2 0 0 1-2-1.8L6.2 7Z"/>
+            </svg>
+        </button>
     </div>
     <?php
 }
@@ -667,7 +674,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.8)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.26)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -700,7 +707,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>YouTube (antes da galeria)</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Cole o link do YouTube (watch, youtu.be, Shorts ou embed). Cada vídeo ocupa as <strong>duas colunas</strong> no desktop, acima da galeria.</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Cole o link do YouTube (watch, youtu.be, Shorts ou embed) e clique em <strong>Concluir</strong> para fixar. Um vídeo por projeto; ocupa as <strong>duas colunas</strong> no desktop, acima da galeria.</p>';
     echo '<p id="rs-project-youtube-empty" class="description"' . ($youtube_videos ? ' style="display:none;"' : '') . '>Nenhum vídeo. Use <strong>+ Adicionar vídeo</strong> quando precisar.</p>';
     echo '<div id="rs-project-youtube-list">';
     foreach ($youtube_videos as $index => $video) {
@@ -710,7 +717,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-youtube-template" hidden>';
     rs_project_render_youtube_row(0, '', true);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-project-add-youtube">+ Adicionar vídeo</button></p>';
+    echo '<p id="rs-project-add-youtube-wrap" style="margin:12px 0 0;' . ($youtube_videos ? 'display:none;' : '') . '"><button type="button" class="button button-secondary" id="rs-project-add-youtube">+ Adicionar vídeo</button></p>';
     echo '<input type="hidden" id="rs-project-youtube-json" name="rs_project_youtube_json" value="" />';
     echo '</fieldset>';
 
@@ -1063,8 +1070,47 @@ function rs_project_render_admin_footer_script(): void {
         .rs-project-youtube-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             margin: 0 0 8px;
+        }
+        .rs-project-youtube-url {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+        .rs-project-youtube-url[readonly] {
+            background: #f6f7f7;
+            color: #1d2327;
+        }
+        .rs-project-youtube-row.is-invalid .rs-project-youtube-url {
+            border-color: #d63638;
+            box-shadow: 0 0 0 1px #d63638;
+        }
+        .rs-project-confirm-youtube[hidden] {
+            display: none !important;
+        }
+        .rs-project-remove-youtube {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 1px solid #dcdcde;
+            border-radius: 4px;
+            background: #fff;
+            color: #b32d2e;
+            cursor: pointer;
+        }
+        .rs-project-remove-youtube:hover,
+        .rs-project-remove-youtube:focus {
+            background: #b32d2e;
+            border-color: #b32d2e;
+            color: #fff;
+        }
+        .rs-project-remove-youtube svg {
+            display: block;
         }
     </style>
     <script>
@@ -1148,9 +1194,42 @@ function rs_project_render_admin_footer_script(): void {
             $('#rs-project-youtube-json').val(JSON.stringify(urls));
         }
 
+        function parseYouTubeId(value) {
+            value = String(value || '').trim();
+            if (!value) {
+                return '';
+            }
+            if (/^[A-Za-z0-9_-]{11}$/.test(value)) {
+                return value;
+            }
+            const match = value.match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
+            return match ? match[1] : '';
+        }
+
+        function syncYoutubeRowConfirm(row) {
+            const confirm = row.find('.rs-project-confirm-youtube');
+            if (row.hasClass('is-locked')) {
+                confirm.attr('hidden', true);
+                return;
+            }
+            const hasValue = Boolean((row.find('.rs-project-youtube-url').val() || '').trim());
+            confirm.prop('hidden', !hasValue);
+        }
+
+        function lockYoutubeRow(row, url) {
+            const input = row.find('.rs-project-youtube-url');
+            row.addClass('is-locked').removeClass('is-invalid');
+            input.prop('readonly', true);
+            if (url) {
+                input.val(url);
+            }
+            row.find('.rs-project-confirm-youtube').attr('hidden', true);
+        }
+
         function syncYoutubeEmptyState() {
             const hasRows = $('#rs-project-youtube-list .rs-project-youtube-row').length > 0;
             $('#rs-project-youtube-empty').toggle(!hasRows);
+            $('#rs-project-add-youtube-wrap').toggle(!hasRows);
         }
 
         function initEditor(id) {
@@ -1337,15 +1416,52 @@ function rs_project_render_admin_footer_script(): void {
 
         $('#rs-project-add-youtube').on('click', function (event) {
             event.preventDefault();
+            if ($('#rs-project-youtube-list .rs-project-youtube-row').length > 0) {
+                return;
+            }
             const template = $('#rs-project-youtube-template .rs-project-youtube-row').first().clone();
             template.removeAttr('style');
+            template.removeClass('is-locked is-invalid');
             template.attr('data-index', String(nextYoutubeIndex));
             template.find('.rs-project-youtube-url')
                 .val('')
+                .prop('readonly', false)
                 .attr('name', 'rs_project_youtube[' + nextYoutubeIndex + '][url]');
+            template.find('.rs-project-confirm-youtube').attr('hidden', true);
             $('#rs-project-youtube-list').append(template);
             nextYoutubeIndex += 1;
             syncYoutubeEmptyState();
+            template.find('.rs-project-youtube-url').trigger('focus');
+        });
+
+        $(document).on('input paste change', '.rs-project-youtube-url', function () {
+            const row = $(this).closest('.rs-project-youtube-row');
+            row.removeClass('is-invalid');
+            syncYoutubeRowConfirm(row);
+        });
+
+        $(document).on('keydown', '.rs-project-youtube-url', function (event) {
+            if (event.key !== 'Enter') {
+                return;
+            }
+            event.preventDefault();
+            const row = $(this).closest('.rs-project-youtube-row');
+            if (!row.hasClass('is-locked')) {
+                row.find('.rs-project-confirm-youtube').trigger('click');
+            }
+        });
+
+        $(document).on('click', '.rs-project-confirm-youtube', function (event) {
+            event.preventDefault();
+            const row = $(this).closest('.rs-project-youtube-row');
+            const input = row.find('.rs-project-youtube-url');
+            const id = parseYouTubeId(input.val());
+            if (!id) {
+                row.addClass('is-invalid');
+                input.trigger('focus');
+                return;
+            }
+            lockYoutubeRow(row, 'https://www.youtube.com/watch?v=' + id);
         });
 
         $(document).on('click', '.rs-project-remove-youtube', function (event) {

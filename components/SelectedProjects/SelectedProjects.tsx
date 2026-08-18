@@ -67,7 +67,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 				))}
 			</div>
 
-			<div className="mt-12 flex flex-wrap justify-center gap-3 md:mt-16 md:gap-4">
+			<div className="selected-projects-ctas mt-12 md:mt-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
 				</Link>
