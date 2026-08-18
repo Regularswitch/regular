@@ -105,7 +105,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 					))}
 				</div>
 
-				<FooterSocialIcons links={socialLinks} />
+				<FooterSocialIcons links={socialLinks} title="Social" />
 			</div>
 
 			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
