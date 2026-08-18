@@ -320,27 +320,30 @@ html:not(.dark) .brand-mark {
 .selected-projects-ctas {
 	display: flex;
 	justify-content: center;
-}
-
-.selected-projects-ctas {
-	display: inline-grid;
-	grid-template-columns: 1fr 1fr;
-	justify-content: center;
 	width: 100%;
 	gap: 2rem;
 }
 
+.selected-projects-ctas:has(> :nth-child(2)) {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	width: max-content;
+	max-width: 100%;
+	margin-inline: auto;
+}
+
 .selected-projects-ctas .selected-projects-cta {
-	width: 100%;
 	box-sizing: border-box;
 	white-space: nowrap;
+	text-align: center;
+}
+
+.selected-projects-ctas:has(> :nth-child(2)) .selected-projects-cta {
+	width: 100%;
 }
 
 @media (min-width: 768px) {
 	.selected-projects-ctas {
-		display: inline-grid;
-		width: auto;
-		margin-inline: auto;
 		gap: 4.5rem;
 	}
 }

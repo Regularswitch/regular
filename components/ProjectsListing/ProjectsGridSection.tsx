@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import { CONTACT_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import type { Category, Projects } from '../../types';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import { getGridSpan, PROJECTS_BATCH_SIZE } from './constants';
@@ -35,6 +38,8 @@ export default function ProjectsGridSection({
 	const hasMore = visibleCount < sorted.length;
 	const siteUi = useSiteUiLocale(locale);
 	const buttonLabel = cta ?? siteUi.labels.seeMoreProjects;
+	const contactHref = withLocalePrefix(pagePath(CONTACT_PAGE_SLUG), locale);
+	const contactCta = locale === 'pt' ? 'Contato' : 'Contact';
 
 	if (!sorted.length) return null;
 
@@ -52,17 +57,20 @@ export default function ProjectsGridSection({
 				))}
 			</div>
 
-			{hasMore ? (
-				<div className="mt-12 flex justify-center md:mt-16">
+			<div className="selected-projects-ctas mt-12 md:mt-16">
+				{hasMore ? (
 					<button
 						type="button"
 						onClick={() => setVisibleCount((count) => count + PROJECTS_BATCH_SIZE)}
-						className="selected-projects-cta selected-projects-cta--full-mobile font-hk"
+						className="selected-projects-cta font-hk"
 					>
 						{buttonLabel}
 					</button>
-				</div>
-			) : null}
+				) : null}
+				<Link href={contactHref} className="selected-projects-cta font-hk">
+					{contactCta}
+				</Link>
+			</div>
 		</section>
 	);
 }
