@@ -374,6 +374,8 @@ function rs_sync_project_media(int $from_id, int $to_id): void {
     }
 
     update_post_meta($to_id, RS_PROJECT_GALLERY_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_GALLERY_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_FEATURED_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_YOUTUBE_KEY, get_post_meta($from_id, RS_PROJECT_YOUTUBE_KEY, true));
     update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
     update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
 }

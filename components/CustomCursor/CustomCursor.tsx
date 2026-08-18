@@ -21,7 +21,7 @@ function getHoverTarget(element: EventTarget | null): HTMLElement | null {
 	return target instanceof HTMLElement ? target : null;
 }
 
-export default function CustomCursor() {
+export default function CustomCursor({ palette }: { palette?: string[] }) {
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const [enabled, setEnabled] = useState(false);
 	const [visible, setVisible] = useState(false);
@@ -33,8 +33,8 @@ export default function CustomCursor() {
 	const reduceMotion = useRef(false);
 
 	useEffect(() => {
-		document.documentElement.style.setProperty('--cursor-color', pickRandomCursorColor());
-	}, []);
+		document.documentElement.style.setProperty('--cursor-color', pickRandomCursorColor(palette));
+	}, [palette]);
 
 	useEffect(() => {
 		const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');

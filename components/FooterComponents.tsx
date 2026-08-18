@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import type { FooterContent, FooterLink } from '../types';
+import type { FooterContent, FooterLink, FooterSocialLink } from '../types';
 import FontVariante from './FontVariante';
+import FooterSocialIcons from './Footer/FooterSocialIcons';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
 import { useLegalPolicies } from './Legal/LegalPoliciesProvider';
 import { getCookie } from './Translate';
@@ -51,6 +52,18 @@ function resolveFooterLinks(links: FooterLink[]): FooterLink[] {
 	});
 }
 
+function resolveSocialLinks(fromWp: FooterContent | null, fallback: FooterContent): FooterSocialLink[] {
+	if (fromWp?.socialLinks) {
+		return fromWp.socialLinks.filter((item) => item.href?.trim());
+	}
+
+	if (fromWp?.social?.href?.trim()) {
+		return [{ network: 'instagram', href: fromWp.social.href.trim(), label: 'Instagram' }];
+	}
+
+	return (fallback.socialLinks ?? []).filter((item) => item.href?.trim());
+}
+
 export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
 	const pathname = usePathname() ?? '';
 	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
@@ -65,29 +78,34 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	const { brandMark, links: rawLinks } = fromWp ?? fallback;
 	const legal = legalFromProvider;
 	const links = resolveFooterLinks(rawLinks);
+	const socialLinks = resolveSocialLinks(fromWp, fallback);
 
 	return (
 		<footer className="site-footer mt-10 border-t border-white/10 pt-12 md:mt-14 md:pt-16">
-			<div className="grid gap-10 px-7 md:w-1/2 md:grid-cols-3 md:gap-8">
-				{links.map((item: FooterLink) => (
-					<Link
-						key={`${item.title}-${item.href}`}
-						href={withPrefix(item.href, locale)}
-						className="group block max-w-xs"
-						{...(item.external || isExternal(item.href)
-							? { target: '_blank', rel: 'noopener noreferrer' }
-							: {})}
-					>
-						<p
-							className="font-hk text-base font-bold text-(--fg) md:text-lg"
-							dangerouslySetInnerHTML={{ __html: item.title }}
-						/>
-						<p
-							className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80"
-							dangerouslySetInnerHTML={{ __html: item.subtitle }}
-						/>
-					</Link>
-				))}
+			<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
+				<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
+					{links.map((item: FooterLink) => (
+						<Link
+							key={`${item.title}-${item.href}`}
+							href={withPrefix(item.href, locale)}
+							className="group block max-w-xs"
+							{...(item.external || isExternal(item.href)
+								? { target: '_blank', rel: 'noopener noreferrer' }
+								: {})}
+						>
+							<p
+								className="font-hk text-base font-bold text-(--fg) md:text-lg"
+								dangerouslySetInnerHTML={{ __html: item.title }}
+							/>
+							<p
+								className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80"
+								dangerouslySetInnerHTML={{ __html: item.subtitle }}
+							/>
+						</Link>
+					))}
+				</div>
+
+				<FooterSocialIcons links={socialLinks} />
 			</div>
 
 			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">

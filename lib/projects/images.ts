@@ -1,5 +1,6 @@
 import { wpMediaUrl } from '../wp/mediaUrl';
 import { isProjectMediaVideo, normalizeGalleryItems, resolveProjectMediaType } from './gallery';
+import { normalizeYoutubeVideos } from './youtube';
 import type { Project, ProjectStructuredData, ProjectStructuredImage } from '../../types';
 
 export function structuredImageUrl(image?: ProjectStructuredImage | null): string | undefined {
@@ -36,6 +37,7 @@ export function normalizeProjectData(
 		heroImage: normalizeStructuredMedia(data.heroImage) ?? data.heroImage,
 		logoImage: normalizeStructuredMedia(data.logoImage) ?? data.logoImage,
 		gallery: normalizeGalleryItems(data.gallery),
+		youtubeVideos: normalizeYoutubeVideos(data.youtubeVideos),
 	};
 }
 

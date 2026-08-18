@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				/>
 			</head>
 			<body>
-				<CustomCursor />
+				<CustomCursor palette={blob.palette} />
 				<ScrollProgressBar />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
 					<LegalPoliciesProvider

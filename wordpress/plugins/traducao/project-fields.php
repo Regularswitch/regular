@@ -12,6 +12,8 @@ const RS_PROJECT_HERO_KEY = 'rs_project_hero_id';
 const RS_PROJECT_LOGO_KEY = 'rs_project_logo_id';
 const RS_PROJECT_ACCORDION_KEY = 'rs_project_accordion';
 const RS_PROJECT_GALLERY_KEY = 'rs_project_gallery';
+const RS_PROJECT_GALLERY_FEATURED_KEY = 'rs_project_gallery_featured';
+const RS_PROJECT_YOUTUBE_KEY = 'rs_project_youtube';
 const RS_PROJECT_FEATURED_KEY = 'rs_project_featured_home';
 const RS_PROJECT_VIGNETTE_KEY = 'rs_project_show_vignette';
 
@@ -141,6 +143,87 @@ function rs_project_get_gallery_ids(int $post_id): array {
     return array_values(array_filter(array_map('intval', explode(',', $raw))));
 }
 
+/**
+ * IDs da galeria marcados como destaque (duas colunas no desktop).
+ *
+ * @return array<int, int>
+ */
+function rs_project_get_gallery_featured_ids(int $post_id): array {
+    $raw = (string) get_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, true);
+    if ($raw === '') {
+        return [];
+    }
+
+    $featured = array_values(array_filter(array_map('intval', explode(',', $raw))));
+    $in_gallery = array_flip(rs_project_get_gallery_ids($post_id));
+
+    return array_values(array_filter($featured, static function (int $id) use ($in_gallery): bool {
+        return $id > 0 && isset($in_gallery[$id]);
+    }));
+}
+
+function rs_project_parse_youtube_id(string $value): string {
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/^[A-Za-z0-9_-]{11}$/', $value)) {
+        return $value;
+    }
+
+    if (preg_match('~(?:youtube\.com/(?:watch\?(?:[^#]*&)?v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})~i', $value, $match)) {
+        return $match[1];
+    }
+
+    return '';
+}
+
+/**
+ * @return array<int, array{id: string, url: string}>
+ */
+function rs_project_normalize_youtube_videos(array $items): array {
+    $videos = [];
+    $seen = [];
+
+    foreach ($items as $item) {
+        $url = is_string($item) ? $item : (string) ($item['url'] ?? $item['id'] ?? '');
+        $url = trim($url);
+        $id = rs_project_parse_youtube_id($url);
+        if ($id === '' || isset($seen[$id])) {
+            continue;
+        }
+
+        $seen[$id] = true;
+        $videos[] = [
+            'id'  => $id,
+            'url' => $url !== $id ? $url : ('https://www.youtube.com/watch?v=' . $id),
+        ];
+    }
+
+    return $videos;
+}
+
+/**
+ * @return array<int, array{id: string, url: string}>
+ */
+function rs_project_get_youtube_videos(int $post_id): array {
+    $raw = get_post_meta($post_id, RS_PROJECT_YOUTUBE_KEY, true);
+
+    if (is_string($raw) && $raw !== '') {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return rs_project_normalize_youtube_videos($decoded);
+        }
+    }
+
+    if (is_array($raw)) {
+        return rs_project_normalize_youtube_videos($raw);
+    }
+
+    return [];
+}
+
 function rs_project_attachment_info(int $attachment_id): ?array {
     if ($attachment_id <= 0) {
         return null;
@@ -189,9 +272,11 @@ function rs_project_meta_to_payload(int $post_id): array {
     }
 
     $gallery = [];
+    $featured_ids = array_flip(rs_project_get_gallery_featured_ids($post_id));
     foreach (rs_project_get_gallery_ids($post_id) as $attachment_id) {
         $info = rs_project_attachment_info($attachment_id);
         if ($info && !empty($info['url'])) {
+            $info['featured'] = isset($featured_ids[$attachment_id]);
             $gallery[] = $info;
         }
     }
@@ -201,6 +286,7 @@ function rs_project_meta_to_payload(int $post_id): array {
         'logoImage'      => rs_project_attachment_info(rs_project_get_logo_id($post_id)),
         'accordion'      => $accordion,
         'gallery'        => $gallery,
+        'youtubeVideos'  => rs_project_get_youtube_videos($post_id),
         'featuredOnHome' => (bool) get_post_meta($post_id, RS_PROJECT_FEATURED_KEY, true),
         'showVignette'   => get_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, true) === ''
             ? true
@@ -234,6 +320,8 @@ function rs_copy_project_fields(int $from_id, int $to_id): void {
     }
 
     update_post_meta($to_id, RS_PROJECT_GALLERY_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_GALLERY_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_FEATURED_KEY, true));
+    update_post_meta($to_id, RS_PROJECT_YOUTUBE_KEY, get_post_meta($from_id, RS_PROJECT_YOUTUBE_KEY, true));
     update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
     update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
 }
@@ -257,7 +345,7 @@ add_action('init', function () {
         },
     ]);
 
-    foreach ([RS_PROJECT_ACCORDION_KEY, RS_PROJECT_GALLERY_KEY] as $key) {
+    foreach ([RS_PROJECT_ACCORDION_KEY, RS_PROJECT_GALLERY_KEY, RS_PROJECT_GALLERY_FEATURED_KEY, RS_PROJECT_YOUTUBE_KEY] as $key) {
         register_post_meta('project', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -326,6 +414,9 @@ add_action('rest_api_init', function () {
                 }
                 if (empty($payload['gallery']) && !empty($source_payload['gallery'])) {
                     $payload['gallery'] = $source_payload['gallery'];
+                }
+                if (empty($payload['youtubeVideos']) && !empty($source_payload['youtubeVideos'])) {
+                    $payload['youtubeVideos'] = $source_payload['youtubeVideos'];
                 }
                 if (empty($payload['heroImage']['url']) && !empty($source_payload['heroImage']['url'])) {
                     $payload['heroImage'] = $source_payload['heroImage'];
@@ -484,10 +575,30 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
     <?php
 }
 
-function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_template = false): void {
+function rs_project_render_youtube_row(int $index, string $url = '', bool $is_template = false): void {
+    $name = $is_template ? 'rs_project_youtube[__INDEX__][url]' : 'rs_project_youtube[' . $index . '][url]';
+    $display = $is_template ? ' style="display:none;"' : '';
+    ?>
+    <div class="rs-project-youtube-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
+        <input
+            type="url"
+            class="rs-project-youtube-url regular-text"
+            name="<?php echo esc_attr($name); ?>"
+            value="<?php echo esc_attr($url); ?>"
+            placeholder="https://www.youtube.com/watch?v=…"
+            style="flex:1;min-width:0;width:100%;"
+        />
+        <button type="button" class="button-link-delete rs-project-remove-youtube">Remover</button>
+    </div>
+    <?php
+}
+
+function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_template = false, bool $featured = false): void {
     $name = $is_template ? 'rs_project_gallery[__INDEX__][image_id]' : 'rs_project_gallery[' . $index . '][image_id]';
+    $featured_name = $is_template ? 'rs_project_gallery[__INDEX__][featured]' : 'rs_project_gallery[' . $index . '][featured]';
     $field_id = $is_template ? 'rs_project_gallery_image___INDEX__' : 'rs_project_gallery_image_' . $index;
     $display = $is_template ? ' style="display:none;"' : '';
+    $featured = $is_template ? false : $featured;
 
     $url = $attachment_id > 0 ? (string) wp_get_attachment_url($attachment_id) : '';
     $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
@@ -498,7 +609,7 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
     }
     ?>
     <div class="rs-project-gallery-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
-        <div class="rs-project-gallery-tile">
+        <div class="rs-project-gallery-tile<?php echo $featured ? ' is-featured' : ''; ?>">
             <span class="rs-project-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
             <button type="button" class="rs-project-remove-gallery" title="Remover" aria-label="Remover mídia">&times;</button>
             <input
@@ -508,6 +619,12 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
                 value="<?php echo esc_attr((string) $attachment_id); ?>"
                 data-rs-cap-image="1"
                 data-rs-library="media"
+            />
+            <input
+                type="hidden"
+                class="rs-project-gallery-featured-flag"
+                name="<?php echo esc_attr($featured_name); ?>"
+                value="<?php echo $featured ? '1' : '0'; ?>"
             />
             <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
                 <?php if ($url && $is_video) : ?>
@@ -520,6 +637,13 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
+            <button
+                type="button"
+                class="rs-project-gallery-featured"
+                title="Destaque: ocupa duas colunas no desktop"
+                aria-label="Destaque (duas colunas no desktop)"
+                aria-pressed="<?php echo $featured ? 'true' : 'false'; ?>"
+            >★</button>
         </div>
     </div>
     <?php
@@ -531,7 +655,9 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $hero_id = rs_project_get_hero_id($post->ID);
     $logo_id = (int) get_post_meta($post->ID, RS_PROJECT_LOGO_KEY, true);
     $accordion_sections = rs_project_get_accordion_sections($post->ID);
+    $youtube_videos = rs_project_get_youtube_videos($post->ID);
     $gallery_ids = rs_project_get_gallery_ids($post->ID);
+    $gallery_featured_ids = array_flip(rs_project_get_gallery_featured_ids($post->ID));
     $featured = (bool) get_post_meta($post->ID, RS_PROJECT_FEATURED_KEY, true);
     $vignette_meta = get_post_meta($post->ID, RS_PROJECT_VIGNETTE_KEY, true);
     $show_vignette = $vignette_meta === '' ? true : (bool) $vignette_meta;
@@ -572,13 +698,29 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<input type="hidden" id="rs-project-accordion-json" name="rs_project_accordion_json" value="" />';
     echo '</fieldset>';
 
+    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
+    echo '<legend style="font-weight:600;padding:0 6px;"><strong>YouTube (antes da galeria)</strong></legend>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Cole o link do YouTube (watch, youtu.be, Shorts ou embed). Cada vídeo ocupa as <strong>duas colunas</strong> no desktop, acima da galeria.</p>';
+    echo '<p id="rs-project-youtube-empty" class="description"' . ($youtube_videos ? ' style="display:none;"' : '') . '>Nenhum vídeo. Use <strong>+ Adicionar vídeo</strong> quando precisar.</p>';
+    echo '<div id="rs-project-youtube-list">';
+    foreach ($youtube_videos as $index => $video) {
+        rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''));
+    }
+    echo '</div>';
+    echo '<div id="rs-project-youtube-template" hidden>';
+    rs_project_render_youtube_row(0, '', true);
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-project-add-youtube">+ Adicionar vídeo</button></p>';
+    echo '<input type="hidden" id="rs-project-youtube-json" name="rs_project_youtube_json" value="" />';
+    echo '</fieldset>';
+
     echo '<fieldset style="margin:0 0 10px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> as miniaturas para definir a ordem no site.</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> as miniaturas para definir a ordem no site. Clique na <strong>estrela</strong> para destaque (ocupa duas colunas no desktop).</p>';
     echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list" class="rs-project-gallery-grid">';
     foreach ($gallery_ids as $index => $attachment_id) {
-        rs_project_render_gallery_row((int) $index, (int) $attachment_id);
+        rs_project_render_gallery_row((int) $index, (int) $attachment_id, false, isset($gallery_featured_ids[(int) $attachment_id]));
     }
     echo '</div>';
     echo '<div id="rs-project-gallery-template" hidden>';
@@ -589,6 +731,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<span style="align-self:center;color:#646970;font-size:12px;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
     echo '</p>';
     echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="" />';
+    echo '<input type="hidden" id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" value="" />';
     echo '</fieldset>';
 }
 
@@ -659,6 +802,68 @@ function rs_project_parse_gallery_from_request(): array {
     return $ids;
 }
 
+/**
+ * @param array<int, int> $gallery_ids
+ * @return array<int, int>
+ */
+function rs_project_parse_gallery_featured_from_request(array $gallery_ids): array {
+    $featured = [];
+
+    if (!empty($_POST['rs_project_gallery_featured_json'])) {
+        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_gallery_featured_json']), true);
+        if (is_array($decoded)) {
+            $featured = array_map('intval', $decoded);
+        }
+    } elseif (isset($_POST['rs_project_gallery']) && is_array($_POST['rs_project_gallery'])) {
+        foreach (wp_unslash($_POST['rs_project_gallery']) as $key => $row) {
+            if ($key === '__INDEX__' || !is_array($row)) {
+                continue;
+            }
+
+            if (!empty($row['featured'])) {
+                $featured[] = (int) ($row['image_id'] ?? 0);
+            }
+        }
+    }
+
+    $allowed = array_flip($gallery_ids);
+
+    return array_values(array_unique(array_filter($featured, static function (int $id) use ($allowed): bool {
+        return $id > 0 && isset($allowed[$id]);
+    })));
+}
+
+/**
+ * @return array<int, string>
+ */
+function rs_project_parse_youtube_from_request(): array {
+    $items = [];
+
+    if (!empty($_POST['rs_project_youtube_json'])) {
+        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_youtube_json']), true);
+        if (is_array($decoded)) {
+            $items = $decoded;
+        }
+    } elseif (isset($_POST['rs_project_youtube']) && is_array($_POST['rs_project_youtube'])) {
+        foreach (wp_unslash($_POST['rs_project_youtube']) as $key => $row) {
+            if ($key === '__INDEX__') {
+                continue;
+            }
+            if (is_array($row)) {
+                $items[] = (string) ($row['url'] ?? '');
+            } elseif (is_string($row)) {
+                $items[] = $row;
+            }
+        }
+    }
+
+    $videos = rs_project_normalize_youtube_videos($items);
+
+    return array_values(array_map(static function (array $video): string {
+        return $video['url'];
+    }, $videos));
+}
+
 add_action('save_post_project', function (int $post_id) {
     if (!isset($_POST['rs_project_nonce']) || !wp_verify_nonce($_POST['rs_project_nonce'], 'rs_project_save')) {
         return;
@@ -710,6 +915,8 @@ add_action('save_post_project', function (int $post_id) {
 
     $gallery_ids = rs_project_parse_gallery_from_request();
     update_post_meta($post_id, RS_PROJECT_GALLERY_KEY, implode(',', $gallery_ids));
+    update_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, implode(',', rs_project_parse_gallery_featured_from_request($gallery_ids)));
+    update_post_meta($post_id, RS_PROJECT_YOUTUBE_KEY, wp_json_encode(rs_project_parse_youtube_from_request(), JSON_UNESCAPED_SLASHES));
 }, 10);
 
 rs_enqueue_admin_media_picker(['project']);
@@ -753,6 +960,10 @@ function rs_project_render_admin_footer_script(): void {
         .rs-project-gallery-tile:active {
             cursor: grabbing;
         }
+        .rs-project-gallery-tile.is-featured {
+            border-color: #2271b1;
+            box-shadow: 0 0 0 1px #2271b1;
+        }
         .rs-project-gallery-handle {
             position: absolute;
             top: 6px;
@@ -789,6 +1000,27 @@ function rs_project_render_admin_footer_script(): void {
         }
         .rs-project-remove-gallery:hover {
             background: #b32d2e;
+        }
+        .rs-project-gallery-featured {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            z-index: 2;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.55);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .rs-project-gallery-featured:hover,
+        .rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
+            background: #2271b1;
+            color: #fff;
         }
         .rs-project-gallery-preview {
             display: block;
@@ -828,12 +1060,19 @@ function rs_project_render_admin_footer_script(): void {
         .rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
         }
+        .rs-project-youtube-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 8px;
+        }
     </style>
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
         let nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
         let nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row').length;
+        let nextYoutubeIndex = $('#rs-project-youtube-list .rs-project-youtube-row').length;
 
         function syncGalleryEmptyState() {
             const hasRows = $('#rs-project-gallery-list .rs-project-gallery-row').length > 0;
@@ -883,13 +1122,35 @@ function rs_project_render_admin_footer_script(): void {
 
         function collectGalleryJson() {
             const ids = [];
+            const featured = [];
             $('#rs-project-gallery-list .rs-project-gallery-row').each(function () {
-                const imageId = parseInt($(this).find('input[data-rs-cap-image]').val(), 10) || 0;
+                const row = $(this);
+                const imageId = parseInt(row.find('input[data-rs-cap-image]').val(), 10) || 0;
                 if (imageId > 0) {
                     ids.push(imageId);
+                    if (row.find('.rs-project-gallery-featured-flag').val() === '1') {
+                        featured.push(imageId);
+                    }
                 }
             });
             $('#rs-project-gallery-json').val(JSON.stringify(ids));
+            $('#rs-project-gallery-featured-json').val(JSON.stringify(featured));
+        }
+
+        function collectYoutubeJson() {
+            const urls = [];
+            $('#rs-project-youtube-list .rs-project-youtube-row').each(function () {
+                const url = ($(this).find('.rs-project-youtube-url').val() || '').trim();
+                if (url) {
+                    urls.push(url);
+                }
+            });
+            $('#rs-project-youtube-json').val(JSON.stringify(urls));
+        }
+
+        function syncYoutubeEmptyState() {
+            const hasRows = $('#rs-project-youtube-list .rs-project-youtube-row').length > 0;
+            $('#rs-project-youtube-empty').toggle(!hasRows);
         }
 
         function initEditor(id) {
@@ -922,6 +1183,8 @@ function rs_project_render_admin_footer_script(): void {
             row.find('input[data-rs-cap-image]')
                 .attr('name', 'rs_project_gallery[' + index + '][image_id]')
                 .attr('id', fieldId);
+            row.find('.rs-project-gallery-featured-flag')
+                .attr('name', 'rs_project_gallery[' + index + '][featured]');
             row.find('.rs-media-preview').attr('data-target', fieldId);
         }
 
@@ -957,6 +1220,9 @@ function rs_project_render_admin_footer_script(): void {
             template.removeAttr('style');
             template.attr('data-index', String(index));
             template.find('input[data-rs-cap-image]').val(String(attachment.id));
+            template.find('.rs-project-gallery-featured-flag').val('0');
+            template.find('.rs-project-gallery-tile').removeClass('is-featured');
+            template.find('.rs-project-gallery-featured').attr('aria-pressed', 'false');
             template.find('.rs-media-preview').html(galleryPreviewHtml(attachment));
             assignGalleryNames(template, index);
             $('#rs-project-gallery-list').append(template);
@@ -972,6 +1238,7 @@ function rs_project_render_admin_footer_script(): void {
             $('#rs-project-gallery-list').sortable({
                 items: '.rs-project-gallery-row',
                 handle: '.rs-project-gallery-handle, .rs-project-gallery-tile',
+                cancel: '.rs-project-gallery-featured, .rs-project-remove-gallery',
                 placeholder: 'rs-project-gallery-placeholder',
                 tolerance: 'pointer',
                 opacity: 0.9,
@@ -1056,12 +1323,50 @@ function rs_project_render_admin_footer_script(): void {
             syncGalleryEmptyState();
         });
 
+        $(document).on('click', '.rs-project-gallery-featured', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const button = $(this);
+            const tile = button.closest('.rs-project-gallery-tile');
+            const flag = tile.find('.rs-project-gallery-featured-flag');
+            const next = flag.val() === '1' ? '0' : '1';
+            flag.val(next);
+            tile.toggleClass('is-featured', next === '1');
+            button.attr('aria-pressed', next === '1' ? 'true' : 'false');
+        });
+
+        $('#rs-project-add-youtube').on('click', function (event) {
+            event.preventDefault();
+            const template = $('#rs-project-youtube-template .rs-project-youtube-row').first().clone();
+            template.removeAttr('style');
+            template.attr('data-index', String(nextYoutubeIndex));
+            template.find('.rs-project-youtube-url')
+                .val('')
+                .attr('name', 'rs_project_youtube[' + nextYoutubeIndex + '][url]');
+            $('#rs-project-youtube-list').append(template);
+            nextYoutubeIndex += 1;
+            syncYoutubeEmptyState();
+        });
+
+        $(document).on('click', '.rs-project-remove-youtube', function (event) {
+            event.preventDefault();
+            $(this).closest('.rs-project-youtube-row').remove();
+            $('#rs-project-youtube-list .rs-project-youtube-row').each(function (i) {
+                $(this).attr('data-index', String(i));
+                $(this).find('.rs-project-youtube-url').attr('name', 'rs_project_youtube[' + i + '][url]');
+            });
+            nextYoutubeIndex = $('#rs-project-youtube-list .rs-project-youtube-row').length;
+            syncYoutubeEmptyState();
+        });
+
         $('#post').on('submit', function () {
             collectAccordionJson();
             collectGalleryJson();
+            collectYoutubeJson();
         });
 
         syncGalleryEmptyState();
+        syncYoutubeEmptyState();
     });
     </script>
     <?php

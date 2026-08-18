@@ -351,6 +351,18 @@ function isFooterLink(value: unknown): value is FooterContent['links'][number] {
     return typeof item.title === 'string' && typeof item.subtitle === 'string' && typeof item.href === 'string';
 }
 
+function isFooterSocial(value: unknown): value is NonNullable<FooterContent['social']> {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.label === 'string' && typeof item.href === 'string';
+}
+
+function isFooterSocialLink(value: unknown): value is NonNullable<FooterContent['socialLinks']>[number] {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.network === 'string' && typeof item.href === 'string';
+}
+
 function isFooterContent(value: unknown): value is FooterContent {
     if (!value || typeof value !== 'object') return false;
     const item = value as Record<string, unknown>;
@@ -368,7 +380,9 @@ function isFooterContent(value: unknown): value is FooterContent {
         (legal.privacyHref === undefined || typeof legal.privacyHref === 'string') &&
         (legal.cookiesHref === undefined || typeof legal.cookiesHref === 'string') &&
         (legal.privacyBody === undefined || typeof legal.privacyBody === 'string') &&
-        (legal.cookiesBody === undefined || typeof legal.cookiesBody === 'string')
+        (legal.cookiesBody === undefined || typeof legal.cookiesBody === 'string') &&
+        (item.social === undefined || isFooterSocial(item.social)) &&
+        (item.socialLinks === undefined || (Array.isArray(item.socialLinks) && item.socialLinks.every(isFooterSocialLink)))
     );
 }
 

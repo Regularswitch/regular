@@ -22,6 +22,21 @@ const RS_FOOTER_META_KEYS = [
     'rs_footer_legal_brand'     => 'Legal — copyright (texto, sem link)',
     'rs_footer_legal_privacy'   => 'Legal — rótulo Privacidade',
     'rs_footer_legal_cookies'   => 'Legal — rótulo Cookies',
+    'rs_footer_social_instagram_href' => 'Instagram — link',
+    'rs_footer_social_linkedin_href'  => 'LinkedIn — link',
+    'rs_footer_social_youtube_href'   => 'YouTube — link (opcional)',
+    'rs_footer_social_tiktok_href'    => 'TikTok — link (opcional)',
+    'rs_footer_social_x_href'         => 'X / Twitter — link (opcional)',
+    'rs_footer_social_behance_href'   => 'Behance — link (opcional)',
+];
+
+const RS_FOOTER_SOCIAL_NETWORKS = [
+    'instagram' => ['Instagram', 'https://www.instagram.com/regular.switch'],
+    'linkedin'  => ['LinkedIn', 'https://www.linkedin.com/company/regularswitch'],
+    'youtube'   => ['YouTube', ''],
+    'tiktok'    => ['TikTok', ''],
+    'x'         => ['X', ''],
+    'behance'   => ['Behance', ''],
 ];
 
 function rs_footer_get_meta(int $post_id): array {
@@ -29,6 +44,7 @@ function rs_footer_get_meta(int $post_id): array {
     foreach (array_keys(RS_FOOTER_META_KEYS) as $key) {
         $data[$key] = (string) get_post_meta($post_id, $key, true);
     }
+    $data['rs_footer_social_href'] = (string) get_post_meta($post_id, 'rs_footer_social_href', true);
     return $data;
 }
 
@@ -63,7 +79,49 @@ function rs_footer_meta_to_payload(array $meta, string $locale = 'en'): array {
             'cookies'     => $meta['rs_footer_legal_cookies'] ?: ($locale === 'pt' ? 'Política de Cookies' : 'Cookies Policy'),
             'cookiesHref' => '/cookies-policy',
         ],
+        'socialLinks' => rs_footer_social_links_from_meta($meta),
     ];
+}
+
+/**
+ * @param array<string, string> $meta
+ * @return array<int, array{network: string, href: string, label: string}>
+ */
+function rs_footer_social_links_from_meta(array $meta): array {
+    $links = [];
+    $legacy = trim((string) ($meta['rs_footer_social_href'] ?? ''));
+
+    foreach (RS_FOOTER_SOCIAL_NETWORKS as $network => $config) {
+        $href = trim((string) ($meta["rs_footer_social_{$network}_href"] ?? ''));
+        if ($href === '' && $network === 'instagram' && $legacy !== '') {
+            $href = $legacy;
+        }
+        if ($href === '') {
+            continue;
+        }
+
+        $links[] = [
+            'network' => $network,
+            'href'    => $href,
+            'label'   => $config[0],
+        ];
+    }
+
+    if (!$links) {
+        foreach (['instagram', 'linkedin'] as $network) {
+            $config = RS_FOOTER_SOCIAL_NETWORKS[$network];
+            if ($config[1] === '') {
+                continue;
+            }
+            $links[] = [
+                'network' => $network,
+                'href'    => $config[1],
+                'label'   => $config[0],
+            ];
+        }
+    }
+
+    return $links;
 }
 
 add_action('init', function () {
@@ -136,7 +194,7 @@ function rs_footer_render_meta_box(WP_Post $post): void {
         $meta['rs_footer_legal_brand'] = '© ' . gmdate('Y') . ' Regularswitch';
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Os rótulos Privacidade/Cookies abrem os popups. O conteúdo editável fica em <strong>Privacidade &amp; Cookies</strong>. <em>(Plugin Tradução v1.2.15)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Os rótulos Privacidade/Cookies abrem os popups. O conteúdo editável fica em <strong>Privacidade &amp; Cookies</strong>. Ícones sociais: cole o URL; campo vazio esconde a rede. <em>(Plugin Tradução v1.2.25)</em></p>';
 
     $groups = [
         'Marca' => ['rs_footer_brand_mark'],
@@ -147,6 +205,14 @@ function rs_footer_render_meta_box(WP_Post $post): void {
             'rs_footer_legal_brand',
             'rs_footer_legal_privacy',
             'rs_footer_legal_cookies',
+        ],
+        'Social' => [
+            'rs_footer_social_instagram_href',
+            'rs_footer_social_linkedin_href',
+            'rs_footer_social_youtube_href',
+            'rs_footer_social_tiktok_href',
+            'rs_footer_social_x_href',
+            'rs_footer_social_behance_href',
         ],
     ];
 

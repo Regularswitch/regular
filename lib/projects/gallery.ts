@@ -40,6 +40,7 @@ export function normalizeGalleryItems(
 				items.push({
 					url,
 					type: resolveProjectMediaType(url),
+					featured: false,
 				});
 			}
 			continue;
@@ -56,7 +57,14 @@ export function normalizeGalleryItems(
 		const mime = typeof item.mime === 'string' ? item.mime : undefined;
 		const type = resolveProjectMediaType(url, mime, item.type);
 
-		items.push({ url, width, height, mime, type });
+		items.push({
+			url,
+			width,
+			height,
+			mime,
+			type,
+			featured: Boolean(item.featured),
+		});
 	}
 
 	return items;
@@ -67,8 +75,7 @@ export function galleryItemAspectRatio(item: ProjectGalleryImage): number | unde
 	return item.width / item.height;
 }
 
-/** Landscape bem largo → ocupa as três colunas no grid fluido. */
+/** Destaque marcado no WP — ocupa as duas colunas no desktop. */
 export function isGalleryWide(item: ProjectGalleryImage): boolean {
-	const ratio = galleryItemAspectRatio(item);
-	return ratio !== undefined && ratio >= 1.7;
+	return Boolean(item.featured);
 }

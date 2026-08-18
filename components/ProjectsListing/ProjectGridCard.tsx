@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
 import { getVisibleCategoryTags } from '../../lib/projects/categories';
 import type { GridSpan } from './constants';
+import ProjectOpenLink from './ProjectOpenLink';
 
 type ProjectGridCardProps = {
 	project: Project;
@@ -31,7 +31,7 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 
 	return (
 		<article className={itemClass}>
-			<Link href={href} className="group block">
+			<ProjectOpenLink href={href} className="group block">
 				<div className="selected-projects-card-image relative overflow-hidden bg-(--surface)">
 					{cardImage ? (
 						<Image
@@ -65,7 +65,7 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 						))}
 					</ul>
 				) : null}
-			</Link>
+			</ProjectOpenLink>
 		</article>
 	);
 }

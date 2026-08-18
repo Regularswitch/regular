@@ -27,5 +27,5 @@ export function getHomeGridSpan(
 /** Primeira dobra: 1 ciclo 3+2 (listagem) ou 1 destaque + 4 (home). */
 export const INITIAL_BENTO_COUNT = 5;
 
-/** Lotes da listagem /projects (múltiplos do ciclo 3+2). */
-export const BENTO_BATCH_SIZE = 5;
+/** Lotes da listagem /projects: 2 ciclos 3+2 = 4 linhas. */
+export const BENTO_BATCH_SIZE = 10;

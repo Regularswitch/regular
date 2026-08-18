@@ -10,6 +10,7 @@ import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
 import { normalizeGalleryItems } from '../../lib/projects/gallery';
 import { getProjectHeroMedia, structuredImageUrl } from '../../lib/projects/images';
+import { normalizeYoutubeVideos } from '../../lib/projects/youtube';
 import {
 	extractImagesFromHtml,
 	parseAccordionSections,
@@ -17,6 +18,7 @@ import {
 import ProjectAccordion from './ProjectAccordion';
 import ProjectGallery from './ProjectGallery';
 import ProjectHero from './ProjectHero';
+import ProjectYoutubeVideos from './ProjectYoutubeVideos';
 
 type ProjectPageProps = {
 	project: Project;
@@ -73,7 +75,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 	const summary = project.more?.trim() || '';
 	const contentHtml = project.content || '';
 
-	const { accordionSections, galleryImages } = useMemo(() => {
+	const { accordionSections, galleryImages, youtubeVideos } = useMemo(() => {
 		const fromStructured = structuredAccordion(structured, locale);
 		// Com project_data do CMS, acordeão/galeria vêm só dos campos do plugin —
 		// nunca do HTML legado do editor (evitava texto/imagens de outro projeto).
@@ -81,12 +83,14 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 			return {
 				accordionSections: fromStructured ?? [],
 				galleryImages: normalizeGalleryItems(structured.gallery),
+				youtubeVideos: normalizeYoutubeVideos(structured.youtubeVideos),
 			};
 		}
 
 		return {
 			accordionSections: parseAccordionSections(contentHtml, locale),
 			galleryImages: normalizeGalleryItems(extractImagesFromHtml(contentHtml)),
+			youtubeVideos: [],
 		};
 	}, [contentHtml, locale, structured]);
 
@@ -129,6 +133,11 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 					</section>
 				)}
 
+				<ProjectYoutubeVideos
+					videos={youtubeVideos}
+					title={project.title ?? project.slug}
+					locale={locale}
+				/>
 				<ProjectGallery images={galleryImages} title={project.title ?? project.slug} locale={locale} />
 
 				<div className="flex justify-center">

@@ -73,10 +73,23 @@ export type FooterLegal = {
   cookiesBody?: string;
 };
 
+export type FooterSocialLink = {
+  network: string;
+  href: string;
+  label?: string;
+};
+
 export type FooterContent = {
   brandMark: string;
   links: FooterLink[];
   legal: FooterLegal;
+  /** @deprecated Use socialLinks. */
+  social?: {
+    label: string;
+    href: string;
+  };
+  /** Ícones de redes no footer (editável no WP). */
+  socialLinks?: FooterSocialLink[];
 };
 
 export type CapabilitySection = {
@@ -154,6 +167,8 @@ export type ProjectGalleryImage = {
   height?: number;
   mime?: string;
   type?: ProjectMediaType;
+  /** Ocupa as duas colunas no desktop. */
+  featured?: boolean;
 };
 
 export type ProjectStructuredData = {
@@ -162,6 +177,8 @@ export type ProjectStructuredData = {
   accordion?: Array<{ index: number; title?: string; body: string }>;
   /** URLs (legado) ou objetos com dimensões para grid fluido. */
   gallery?: Array<string | ProjectGalleryImage>;
+  /** Vídeos do YouTube exibidos antes da galeria (largura total). */
+  youtubeVideos?: Array<{ id: string; url: string }>;
   /** Destaque único na home (apenas um projeto deve estar true). */
   featuredOnHome?: boolean;
   /** Exibe vignette/logo no canto inferior esquerdo do hero. */

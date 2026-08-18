@@ -220,7 +220,7 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     echo 'Paleta única para a home em <strong>inglês e português</strong>. ';
     echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
     echo 'Principal e secundária são escolhidas a partir dela. ';
-    echo '<em>(Plugin Tradução v1.2.19)</em>';
+    echo '<em>(Plugin Tradução v1.2.24)</em>';
     echo '</p>';
 
     echo '<div class="rs-blob-field" data-rs-blob-palette>';
@@ -337,11 +337,14 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
         }
         .rs-blob-native-color {
             position: fixed;
-            left: -9999px;
-            top: 0;
-            width: 32px;
-            height: 32px;
+            z-index: 100000;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            margin: 0;
+            border: 0;
             opacity: 0;
+            pointer-events: none;
         }
     </style>
     <script>
@@ -476,20 +479,49 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
             });
         }
 
-        function openNativeColor(native, startColor) {
+        var SUGGESTED_COLORS = ['#7b00ff', '#d400ff', '#ff5faf', '#304ffe', '#ffd500', '#4af117', '#fe4857', '#00e5ff'];
+
+        function unusedColor(palette) {
+            for (var i = 0; i < SUGGESTED_COLORS.length; i++) {
+                if (palette.indexOf(SUGGESTED_COLORS[i]) === -1) return SUGGESTED_COLORS[i];
+            }
+            var tries = 0;
+            while (tries < 40) {
+                var hex = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+                if (palette.indexOf(hex) === -1) return hex;
+                tries += 1;
+            }
+            return '#111111';
+        }
+
+        function placeNativeOver(anchor) {
+            if (!paletteNative) return;
+            var rect = anchor && typeof anchor.getBoundingClientRect === 'function'
+                ? anchor.getBoundingClientRect()
+                : { left: window.innerWidth / 2 - 14, top: 120, width: 28, height: 28 };
+            paletteNative.style.left = Math.max(8, rect.left) + 'px';
+            paletteNative.style.top = Math.max(8, rect.top) + 'px';
+            paletteNative.style.width = Math.max(28, rect.width) + 'px';
+            paletteNative.style.height = Math.max(28, rect.height) + 'px';
+        }
+
+        function openNativeColor(native, startColor, anchor) {
             if (!native) return;
             var hex = normalizeHex(startColor) || '#7b00ff';
+            placeNativeOver(anchor);
             native.defaultValue = hex;
             native.value = hex;
-            try {
-                if (typeof native.showPicker === 'function') {
-                    native.showPicker();
-                } else {
+            window.requestAnimationFrame(function () {
+                try {
+                    if (typeof native.showPicker === 'function') {
+                        native.showPicker();
+                    } else {
+                        native.click();
+                    }
+                } catch (err) {
                     native.click();
                 }
-            } catch (err) {
-                native.click();
-            }
+            });
         }
 
         document.querySelectorAll('[data-rs-blob-picker]').forEach(function (field) {
@@ -523,13 +555,18 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
 
                 if (event.target.closest('#rs-blob-palette-add')) {
                     event.preventDefault();
-                    if (getPalette().length >= MAX_COLORS) {
+                    var colors = getPalette();
+                    if (colors.length >= MAX_COLORS) {
                         window.alert('Máximo de ' + MAX_COLORS + ' cores na paleta.');
                         return;
                     }
-                    mode = 'add';
-                    editIndex = -1;
-                    openNativeColor(paletteNative, '#7b00ff');
+                    var next = unusedColor(colors);
+                    colors.push(next);
+                    setPalette(colors);
+                    mode = 'edit';
+                    editIndex = getPalette().indexOf(next);
+                    var added = paletteList && paletteList.querySelector('[data-palette-index="' + editIndex + '"]');
+                    openNativeColor(paletteNative, next, added || event.target.closest('#rs-blob-palette-add'));
                     return;
                 }
 
@@ -538,7 +575,7 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
                     event.preventDefault();
                     mode = 'edit';
                     editIndex = parseInt(edit.getAttribute('data-palette-index') || '-1', 10);
-                    openNativeColor(paletteNative, edit.getAttribute('data-color'));
+                    openNativeColor(paletteNative, edit.getAttribute('data-color'), edit);
                 }
             });
         }
@@ -560,20 +597,15 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
                 var colors = getPalette();
 
                 if (mode === 'edit' && editIndex >= 0 && editIndex < colors.length) {
+                    if (colors.indexOf(color) !== -1 && colors[editIndex] !== color) {
+                        window.alert('Essa cor já está na paleta.');
+                        return;
+                    }
                     var oldColor = colors[editIndex];
                     var map = {};
                     map[oldColor] = color;
                     colors[editIndex] = color;
                     setPalette(colors, map);
-                    editIndex = getPalette().indexOf(color);
-                    if (editIndex < 0) mode = 'idle';
-                    return;
-                }
-
-                if (mode === 'add') {
-                    colors.push(color);
-                    setPalette(colors);
-                    mode = 'edit';
                     editIndex = getPalette().indexOf(color);
                     if (editIndex < 0) mode = 'idle';
                 }

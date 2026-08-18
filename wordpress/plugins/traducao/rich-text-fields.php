@@ -76,6 +76,8 @@ function rs_field_is_plain_text_key(string $key): bool {
         || $key === 'rs_footer_legal_brand'
         || $key === 'rs_footer_legal_privacy'
         || $key === 'rs_footer_legal_cookies'
+        || $key === 'rs_footer_social_label'
+        || str_starts_with($key, 'rs_footer_social_')
         || str_ends_with($key, '_image_slug')
         || (str_contains($key, 'rs_footer_link_') && str_ends_with($key, '_title'));
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
+import { CONTACT_PAGE_SLUG, pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
 import { isHomeProject } from '../../lib/projects/categories';
 import { homeFeaturedSlotIndex, orderHomeProjects } from '../../lib/projects/featured';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
@@ -35,8 +35,10 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 	const featuredIndex =
 		layout.homeColumns === 1 ? 0 : homeFeaturedSlotIndex(selected.length);
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
+	const contactHref = withLocalePrefix(pagePath(CONTACT_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
+	const contactCta = locale === 'pt' ? 'Contato' : 'Contact';
 	const gridClass =
 		layout.homeColumns === 1
 			? 'selected-projects-grid selected-projects-grid--cols-1'
@@ -65,9 +67,12 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 				))}
 			</div>
 
-			<div className="mt-12 flex justify-center md:mt-16">
+			<div className="mt-12 flex flex-wrap justify-center gap-3 md:mt-16 md:gap-4">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
 					{cta}
+				</Link>
+				<Link href={contactHref} className="selected-projects-cta font-hk">
+					{contactCta}
 				</Link>
 			</div>
 		</section>
