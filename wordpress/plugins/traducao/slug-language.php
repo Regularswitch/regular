@@ -115,6 +115,41 @@ function rs_ensure_page_parent(string $base_slug): int {
     return is_wp_error($id) ? 0 : (int) $id;
 }
 
+function rs_get_locale_cpt_post_id(string $post_type, string $locale): int {
+    $locale = rs_normalize_locale($locale) ?? 'en';
+
+    $resolver_map = [
+        'capabilities'  => 'rs_capabilities_get_post_id_by_locale',
+        'about'         => 'rs_about_get_post_id_by_locale',
+        'education'     => 'rs_education_get_post_id_by_locale',
+        'contact'       => 'rs_contact_get_post_id_by_locale',
+        'legal'         => 'rs_legal_get_post_id_by_locale',
+        'projects-page' => 'rs_projects_page_get_post_id_by_locale',
+        'site-ui'       => 'rs_site_ui_get_post_id_by_locale',
+    ];
+
+    if (isset($resolver_map[$post_type]) && function_exists($resolver_map[$post_type])) {
+        $resolved = (int) call_user_func($resolver_map[$post_type], $locale);
+        if ($resolved > 0) {
+            return $resolved;
+        }
+    }
+
+    if (!in_array($post_type, RS_LOCALE_CPT_TYPES, true)) {
+        return 0;
+    }
+
+    $posts = get_posts([
+        'post_type'      => $post_type,
+        'post_status'    => 'publish',
+        'name'           => $locale,
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+    ]);
+
+    return !empty($posts[0]) ? (int) $posts[0] : 0;
+}
+
 function rs_apply_locale_slug(int $post_id): void {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;

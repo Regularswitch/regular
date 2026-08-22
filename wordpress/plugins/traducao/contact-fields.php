@@ -251,6 +251,10 @@ function rs_contact_meta_to_payload(int $post_id): array {
 }
 
 function rs_contact_get_post_id_by_locale(string $locale): int {
+    $locale = function_exists('rs_normalize_locale')
+        ? (rs_normalize_locale($locale) ?? 'en')
+        : (in_array(strtolower($locale), ['en', 'pt'], true) ? strtolower($locale) : 'en');
+
     $posts = get_posts([
         'post_type'      => 'contact',
         'post_status'    => 'publish',
@@ -259,7 +263,45 @@ function rs_contact_get_post_id_by_locale(string $locale): int {
         'fields'         => 'ids',
     ]);
 
-    return !empty($posts[0]) ? (int) $posts[0] : 0;
+    if (!empty($posts[0])) {
+        return (int) $posts[0];
+    }
+
+    $by_meta = get_posts([
+        'post_type'      => 'contact',
+        'post_status'    => 'publish',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'meta_query'     => [
+            [
+                'key'     => 'rs_locale',
+                'value'   => $locale,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    if (!empty($by_meta[0])) {
+        return (int) $by_meta[0];
+    }
+
+    $all = get_posts([
+        'post_type'      => 'contact',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+    ]);
+
+    foreach ($all as $post_id) {
+        if (!function_exists('rs_detect_post_locale')) {
+            break;
+        }
+        if (rs_detect_post_locale((int) $post_id) === $locale) {
+            return (int) $post_id;
+        }
+    }
+
+    return 0;
 }
 
 function rs_contact_seed_post(int $post_id, string $locale): void {
@@ -280,6 +322,10 @@ function rs_contact_seed_post(int $post_id, string $locale): void {
 }
 
 function rs_contact_ensure_locale_posts(): void {
+    if (get_option('rs_contact_posts_ensured_v2')) {
+        return;
+    }
+
     foreach (['en', 'pt'] as $locale) {
         $post_id = rs_contact_get_post_id_by_locale($locale);
         if ($post_id <= 0) {
@@ -300,6 +346,69 @@ function rs_contact_ensure_locale_posts(): void {
     update_option('rs_contact_posts_ensured_v2', 1);
 }
 
+/**
+ * Remove PT duplicado (ensure + Language) e religa EN↔PT canônico.
+ */
+function rs_contact_reconcile_duplicate_locales_once(): void {
+    if (get_option('rs_contact_dupes_reconciled_v1')) {
+        return;
+    }
+
+    $en_id = rs_contact_get_post_id_by_locale('en');
+    $canonical_pt = 0;
+
+    if ($en_id > 0) {
+        $linked = (int) get_post_meta($en_id, 'PT', true);
+        $linked_post = $linked > 0 ? get_post($linked) : null;
+        if ($linked_post && $linked_post->post_type === 'contact' && $linked_post->post_status !== 'trash') {
+            $canonical_pt = $linked;
+        }
+    }
+
+    if ($canonical_pt <= 0) {
+        $canonical_pt = rs_contact_get_post_id_by_locale('pt');
+    }
+
+    $all = get_posts([
+        'post_type'      => 'contact',
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+    ]);
+
+    foreach ($all as $post_id) {
+        $post_id = (int) $post_id;
+        if ($post_id === $en_id || $post_id === $canonical_pt) {
+            continue;
+        }
+
+        if (!function_exists('rs_detect_post_locale') || rs_detect_post_locale($post_id) !== 'pt') {
+            continue;
+        }
+
+        if ($canonical_pt <= 0) {
+            $canonical_pt = $post_id;
+            continue;
+        }
+
+        wp_trash_post($post_id);
+    }
+
+    if ($en_id > 0 && $canonical_pt > 0 && function_exists('rs_translate_link_pair')) {
+        rs_translate_link_pair($en_id, 'PT', $canonical_pt);
+    }
+
+    if ($canonical_pt > 0 && function_exists('rs_apply_locale_slug')) {
+        rs_apply_locale_slug($canonical_pt);
+    }
+
+    if ($en_id > 0 && function_exists('rs_apply_locale_slug')) {
+        rs_apply_locale_slug($en_id);
+    }
+
+    update_option('rs_contact_dupes_reconciled_v1', 1);
+}
+
 add_action('init', function () {
     foreach ([RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY, RS_CONTACT_HEADLINE_KEY, RS_CONTACT_BLOCKS_KEY, RS_CONTACT_INFO_KEY] as $key) {
         register_post_meta('contact', $key, [
@@ -314,6 +423,7 @@ add_action('init', function () {
 }, 20);
 
 add_action('init', 'rs_contact_ensure_locale_posts', 25);
+add_action('init', 'rs_contact_reconcile_duplicate_locales_once', 26);
 
 add_action('rest_api_init', function () {
     register_rest_field('contact', 'contact_data', [

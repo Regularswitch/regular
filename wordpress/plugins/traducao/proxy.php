@@ -177,6 +177,7 @@ function translate_proxy($request) {
 
     $current_lang = rs_translate_post_lang($source_id);
     $target_type = rs_translate_target_post_type($the_post);
+    $is_project = $the_post->post_type === 'project';
     $edit_url = static function (int $id): string {
         return get_site_url() . "/wp-admin/post.php?post={$id}&action=edit";
     };
@@ -194,10 +195,31 @@ function translate_proxy($request) {
 
     $post_translate_id = rs_translate_find_existing($source_id, $lang, $target_type);
 
+    if ($post_translate_id === 0 && !$is_project && function_exists('rs_get_locale_cpt_post_id')) {
+        $existing_locale_id = rs_get_locale_cpt_post_id($target_type, strtolower($lang));
+        if ($existing_locale_id > 0 && $existing_locale_id !== $source_id) {
+            if (rs_translate_link_pair($source_id, $lang, $existing_locale_id)) {
+                if ($current_lang === 'EN' && $lang === 'PT') {
+                    rs_copy_translation_fields($source_id, $existing_locale_id, $target_type);
+                }
+                if (function_exists('rs_apply_locale_slug')) {
+                    rs_apply_locale_slug($existing_locale_id);
+                }
+
+                $parans['go'] = $edit_url($existing_locale_id);
+                $parans['action'] = 'link';
+                $parans['post_translate_id'] = $existing_locale_id;
+                $parans['lang'] = $lang;
+                $parans['post_type'] = $target_type;
+
+                return rest_ensure_response($parans);
+            }
+        }
+    }
+
     if ($post_translate_id === 0) {
         $locale_slug = strtolower($lang);
         // Projetos: não copiar post_content legado e não usar slug "pt"/"en".
-        $is_project = $the_post->post_type === 'project';
         $post_name = $is_project
             ? sanitize_title(wp_strip_all_tags($the_post->post_title) . '-' . $locale_slug)
             : $locale_slug;
