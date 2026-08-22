@@ -373,41 +373,59 @@ function rs_contact_render_meta_box(WP_Post $post): void {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Headline</strong></legend>';
     rs_render_rich_text_field(RS_CONTACT_HEADLINE_KEY, RS_CONTACT_HEADLINE_KEY, $headline, 'inline');
     echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
     echo '</fieldset>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Contato</strong></legend>';
+    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
+    echo '<div class="rs-metabox-tablist" role="tablist">';
+    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="contact">Contato</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="address">Endereço</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="jobs">Vagas</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="internship">Estágio</button>';
+    echo '</div>';
+
+    echo '<div class="rs-metabox-tabpanel is-active" data-tab="contact" role="tabpanel">';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Contato</strong></legend>';
     rs_contact_render_text_field('rs_contact_info[contact_title]', 'Título', $info['contact_title'], 'CONTACT');
     rs_contact_render_text_field('rs_contact_info[contact_location]', 'Cidade / localização', $info['contact_location'], 'São Paulo – Brazil');
     rs_contact_render_text_field('rs_contact_info[contact_phone]', 'Telefone (exibição)', $info['contact_phone'], '+55 11 (9) 4540-8448');
     rs_contact_render_text_field('rs_contact_info[contact_phone_tel]', 'Telefone para o link (só números)', $info['contact_phone_tel'], '5511945408448');
     rs_contact_render_text_field('rs_contact_info[contact_email]', 'E-mail', $info['contact_email'], 'contact@regularswitch.com');
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Endereço</strong></legend>';
+    echo '<div class="rs-metabox-tabpanel" data-tab="address" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Endereço</strong></legend>';
     rs_contact_render_text_field('rs_contact_info[address_title]', 'Título', $info['address_title'], 'ADDRESS');
     rs_contact_render_text_field('rs_contact_info[address_location]', 'Cidade / localização', $info['address_location'], 'São Paulo – Brazil');
     rs_contact_render_text_field('rs_contact_info[address_street]', 'Rua / endereço', $info['address_street'], 'Rua da Consolação, 65');
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Vagas</strong></legend>';
+    echo '<div class="rs-metabox-tabpanel" data-tab="jobs" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Vagas</strong></legend>';
     rs_contact_render_text_field('rs_contact_info[jobs_title]', 'Título', $info['jobs_title'], 'JOBS');
     rs_contact_render_text_field('rs_contact_info[jobs_text]', 'Texto', $info['jobs_text'], 'We are not hiring at the moment.');
     rs_contact_render_text_field('rs_contact_info[jobs_email]', 'E-mail', $info['jobs_email'], 'join-us@regularswitch.com');
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Estágio</strong></legend>';
+    echo '<div class="rs-metabox-tabpanel" data-tab="internship" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Estágio</strong></legend>';
     rs_contact_render_text_field('rs_contact_info[internship_title]', 'Título', $info['internship_title'], 'INTERNSHIP');
     rs_contact_render_text_field('rs_contact_info[internship_text]', 'Texto', $info['internship_text'], 'Send us an e-mail to apply.');
     rs_contact_render_text_field('rs_contact_info[internship_email]', 'E-mail', $info['internship_email'], 'join-us@regularswitch.com');
     echo '</fieldset>';
+    echo '</div>';
+
+    echo '</div>';
 }
 
 /**
