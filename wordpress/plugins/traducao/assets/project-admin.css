@@ -213,3 +213,27 @@
 	border-radius: 4px;
 	background: #f0f6fc;
 }
+
+.rs-project-toast {
+	position: fixed;
+	top: 46px;
+	right: 20px;
+	z-index: 100100;
+	max-width: 360px;
+	padding: 12px 16px;
+	border-radius: 4px;
+	background: #1d2327;
+	color: #fff;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	font-size: 13px;
+	line-height: 1.4;
+	opacity: 0;
+	transform: translateY(-8px);
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	pointer-events: none;
+}
+
+.rs-project-toast.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}

@@ -121,6 +121,43 @@ jQuery(function ($) {
 		});
 	}
 
+	function initSaveToast() {
+		var params = new URLSearchParams(window.location.search);
+		var message = params.get('message');
+		var $msg = $('#message');
+		if (!$msg.length) {
+			return;
+		}
+
+		var successIds = ['1', '4', '6', '7', '8', '10'];
+		var isSuccess =
+			$msg.hasClass('notice-success') ||
+			$msg.hasClass('updated') ||
+			successIds.indexOf(String(message || '')) !== -1;
+		if (!isSuccess) {
+			return;
+		}
+
+		var text = $.trim($msg.find('p').first().text() || $msg.text());
+		$msg.remove();
+		if (!text) {
+			return;
+		}
+
+		var $toast = $('<div class="rs-project-toast" role="status"></div>').text(text);
+		$('body').append($toast);
+		window.requestAnimationFrame(function () {
+			$toast.addClass('is-visible');
+		});
+		window.setTimeout(function () {
+			$toast.removeClass('is-visible');
+			window.setTimeout(function () {
+				$toast.remove();
+			}, 280);
+		}, 4000);
+	}
+
+	initSaveToast();
 	initNoticeBell();
 	initTabs();
 	initAccordionUi();
