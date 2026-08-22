@@ -157,8 +157,8 @@ function translate_proxy($request) {
             return $new_post_id;
         }
 
-        rs_copy_translation_fields($source_id, $new_post_id, $target_type);
         rs_translate_link_pair($source_id, $lang, $new_post_id);
+        rs_copy_translation_fields($source_id, $new_post_id, $target_type);
 
         if (function_exists('rs_apply_locale_slug')) {
             rs_apply_locale_slug($new_post_id);
@@ -177,7 +177,7 @@ function translate_proxy($request) {
             && !empty($parans['sync'])
             && function_exists('rs_copy_project_fields')
         ) {
-            rs_copy_project_fields($source_id, $post_translate_id);
+            rs_copy_project_fields($source_id, $post_translate_id, true);
             wp_update_post([
                 'ID'           => $post_translate_id,
                 'post_content' => '',

@@ -355,6 +355,30 @@ function rs_sync_education_media(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_json_encode(array_values($out), JSON_UNESCAPED_UNICODE));
 }
 
+function rs_sync_project_terms(int $from_id, int $to_id): void {
+    if ($from_id <= 0 || $to_id <= 0 || $from_id === $to_id) {
+        return;
+    }
+
+    $taxonomies = get_object_taxonomies(get_post_type($from_id) ?: 'project', 'names');
+    if (!is_array($taxonomies) || !$taxonomies) {
+        return;
+    }
+
+    foreach ($taxonomies as $taxonomy) {
+        if ($taxonomy === 'post_format') {
+            continue;
+        }
+
+        $term_ids = wp_get_object_terms($from_id, $taxonomy, ['fields' => 'ids']);
+        if (is_wp_error($term_ids)) {
+            continue;
+        }
+
+        wp_set_object_terms($to_id, array_map('intval', $term_ids), $taxonomy, false);
+    }
+}
+
 function rs_sync_project_media(int $from_id, int $to_id): void {
     $hero_id = function_exists('rs_project_get_hero_id') ? rs_project_get_hero_id($from_id) : (int) get_post_meta($from_id, RS_PROJECT_HERO_KEY, true);
     if ($hero_id > 0) {
@@ -378,6 +402,8 @@ function rs_sync_project_media(int $from_id, int $to_id): void {
     update_post_meta($to_id, RS_PROJECT_YOUTUBE_KEY, get_post_meta($from_id, RS_PROJECT_YOUTUBE_KEY, true));
     update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
     update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
+
+    rs_sync_project_terms($from_id, $to_id);
 }
 
 function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
@@ -485,6 +511,29 @@ foreach (rs_sync_media_post_types() as $post_type) {
         rs_sync_media_en_to_pt($post_id, $post_type);
     }, 99);
 }
+
+add_action('save_post_project', function (int $post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (wp_is_post_revision($post_id)) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $en_id = (int) get_post_meta($post_id, 'EN', true);
+    if ($en_id > 0) {
+        rs_sync_project_terms($en_id, $post_id);
+        return;
+    }
+
+    $pt_id = (int) get_post_meta($post_id, 'PT', true);
+    if ($pt_id > 0) {
+        rs_sync_project_terms($post_id, $pt_id);
+    }
+}, 20);
 
 add_action('admin_init', function () {
     if (get_option('rs_sync_media_bootstrap_v123')) {

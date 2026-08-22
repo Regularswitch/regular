@@ -28,15 +28,45 @@ const RS_PROJECT_LEGACY_ACCORDION_LABELS = [
  * @return 'en'|'pt'
  */
 function rs_project_guess_locale(int $post_id): string {
-    if ((int) get_post_meta($post_id, 'en', true) > 0) {
+    if (function_exists('rs_project_locale_badge')) {
+        return strtoupper(rs_project_locale_badge($post_id)) === 'PT' ? 'pt' : 'en';
+    }
+
+    if ((int) get_post_meta($post_id, 'EN', true) > 0 || (int) get_post_meta($post_id, 'en', true) > 0) {
         return 'pt';
     }
 
-    if ((int) get_post_meta($post_id, 'pt', true) > 0) {
-        return 'en';
+    return 'en';
+}
+
+function rs_project_localize_accordion_title(string $title, string $locale): string {
+    $title = trim($title);
+    if ($title === '') {
+        return $title;
     }
 
-    return 'en';
+    foreach (RS_PROJECT_LEGACY_ACCORDION_LABELS as $label) {
+        $parts = array_map('trim', explode('/', $label));
+        $pt = $parts[0] ?? $label;
+        $en = $parts[1] ?? $parts[0] ?? $label;
+        if (strcasecmp($title, $en) === 0 || strcasecmp($title, $pt) === 0 || strcasecmp($title, $label) === 0) {
+            return $locale === 'pt' ? $pt : $en;
+        }
+    }
+
+    return $title;
+}
+
+/**
+ * @param array<int, array{title: string, body: string}> $sections
+ * @return array<int, array{title: string, body: string}>
+ */
+function rs_project_accordion_for_locale(array $sections, string $locale): array {
+    foreach ($sections as $index => $section) {
+        $sections[$index]['title'] = rs_project_localize_accordion_title((string) ($section['title'] ?? ''), $locale);
+    }
+
+    return $sections;
 }
 
 /**
@@ -99,13 +129,8 @@ function rs_project_get_accordion_sections(int $post_id): array {
             continue;
         }
 
-        $parts = array_map('trim', explode('/', $label));
-        $title = $locale === 'pt'
-            ? ($parts[0] ?? $label)
-            : ($parts[1] ?? $parts[0] ?? $label);
-
         $legacy[] = [
-            'title' => $title,
+            'title' => rs_project_localize_accordion_title($label, $locale),
             'body'  => $body,
         ];
     }
@@ -294,36 +319,28 @@ function rs_project_meta_to_payload(int $post_id): array {
     ];
 }
 
-function rs_copy_project_fields(int $from_id, int $to_id): void {
-    $hero_id = rs_project_get_hero_id($from_id);
-    if ($hero_id > 0) {
-        update_post_meta($to_id, RS_PROJECT_HERO_KEY, $hero_id);
-        update_post_meta($to_id, 'etc_upload_image', $hero_id);
-    } else {
-        delete_post_meta($to_id, RS_PROJECT_HERO_KEY);
-        delete_post_meta($to_id, 'etc_upload_image');
+function rs_copy_project_fields(int $from_id, int $to_id, bool $force_accordion = false): void {
+    if (function_exists('rs_sync_project_media')) {
+        rs_sync_project_media($from_id, $to_id);
     }
 
-    $logo_id = (int) get_post_meta($from_id, RS_PROJECT_LOGO_KEY, true);
-    if ($logo_id > 0) {
-        update_post_meta($to_id, RS_PROJECT_LOGO_KEY, $logo_id);
-        set_post_thumbnail($to_id, $logo_id);
-    } else {
-        delete_post_meta($to_id, RS_PROJECT_LOGO_KEY);
+    $existing = rs_project_get_accordion_sections($to_id);
+    if ($force_accordion || !$existing) {
+        $dest_locale = rs_project_guess_locale($to_id);
+        if ((int) get_post_meta($from_id, 'EN', true) === 0) {
+            $dest_locale = 'pt';
+        }
+        $sections = rs_project_accordion_for_locale(
+            rs_project_get_accordion_sections($from_id),
+            $dest_locale
+        );
+        update_post_meta($to_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
+
+        foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
+            $key = "rs_project_acc_{$index}_body";
+            update_post_meta($to_id, $key, $sections[$index - 1]['body'] ?? get_post_meta($from_id, $key, true));
+        }
     }
-
-    update_post_meta($to_id, RS_PROJECT_ACCORDION_KEY, get_post_meta($from_id, RS_PROJECT_ACCORDION_KEY, true));
-
-    foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
-        $key = "rs_project_acc_{$index}_body";
-        update_post_meta($to_id, $key, get_post_meta($from_id, $key, true));
-    }
-
-    update_post_meta($to_id, RS_PROJECT_GALLERY_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_GALLERY_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_FEATURED_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_YOUTUBE_KEY, get_post_meta($from_id, RS_PROJECT_YOUTUBE_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
 }
 
 add_action('init', function () {
@@ -674,7 +691,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. <em>(Plugin Tradução v1.2.26)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. Categorias do PT são copiadas do EN ao salvar. <em>(Plugin Tradução v1.2.28)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -913,11 +930,42 @@ add_action('save_post_project', function (int $post_id) {
     update_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, $show_vignette);
 
     $accordion = rs_project_parse_accordion_from_request();
-    update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($accordion, JSON_UNESCAPED_UNICODE));
+    $has_accordion = !empty($_POST['rs_project_accordion_json'])
+        || (isset($_POST['rs_project_accordion']) && is_array($_POST['rs_project_accordion']));
 
-    foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
-        $legacy_body = $accordion[$index - 1]['body'] ?? '';
-        update_post_meta($post_id, "rs_project_acc_{$index}_body", $legacy_body);
+    if ($has_accordion) {
+        $locale = rs_project_guess_locale($post_id);
+
+        if ($locale === 'pt') {
+            $en_id = (int) get_post_meta($post_id, 'EN', true) ?: (int) get_post_meta($post_id, 'en', true);
+            $existing = rs_project_get_accordion_sections($post_id);
+            $en_sections = $en_id > 0 ? rs_project_get_accordion_sections($en_id) : [];
+
+            foreach ($accordion as $index => $section) {
+                $submitted = trim((string) ($section['title'] ?? ''));
+                $en_title = trim((string) ($en_sections[$index]['title'] ?? ''));
+                $existing_title = trim((string) ($existing[$index]['title'] ?? ''));
+
+                if (
+                    $submitted !== ''
+                    && $en_title !== ''
+                    && strcasecmp($submitted, $en_title) === 0
+                    && $existing_title !== ''
+                    && strcasecmp($existing_title, $en_title) !== 0
+                ) {
+                    $accordion[$index]['title'] = $existing_title;
+                }
+            }
+        }
+
+        $accordion = rs_project_accordion_for_locale($accordion, $locale);
+
+        update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($accordion, JSON_UNESCAPED_UNICODE));
+
+        foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
+            $legacy_body = $accordion[$index - 1]['body'] ?? '';
+            update_post_meta($post_id, "rs_project_acc_{$index}_body", $legacy_body);
+        }
     }
 
     $gallery_ids = rs_project_parse_gallery_from_request();
