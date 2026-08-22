@@ -491,37 +491,44 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
     $name_prefix = $is_template ? 'rs_project_accordion[__INDEX__]' : 'rs_project_accordion[' . $index . ']';
     $editor_id = $is_template ? 'rs_project_accordion_body___INDEX__' : 'rs_project_accordion_body_' . $index;
     $display = $is_template ? ' style="display:none;"' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = $title !== '' ? $title : 'Seção do acordeão';
+    $row_class = 'rs-project-accordion-row' . ($is_open ? ' is-open' : '');
     ?>
-    <fieldset class="rs-project-accordion-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-            <legend style="font-weight:600;padding:0;margin:0;"><strong>Seção do acordeão</strong></legend>
+    <fieldset class="<?php echo esc_attr($row_class); ?>" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
+        <div class="rs-project-accordion-head">
+            <span class="rs-project-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-project-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <span class="rs-project-accordion-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
             <button type="button" class="button-link-delete rs-project-remove-accordion">Remover</button>
         </div>
+        <div class="rs-project-accordion-panel">
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
+                <input
+                    type="text"
+                    style="width:100%;"
+                    class="rs-project-accordion-title"
+                    <?php if (!$is_template) : ?>
+                        name="<?php echo esc_attr($name_prefix); ?>[title]"
+                        value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+                    <?php endif; ?>
+                />
+            </div>
 
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
-            <input
-                type="text"
-                style="width:100%;"
-                class="rs-project-accordion-title"
-                <?php if (!$is_template) : ?>
-                    name="<?php echo esc_attr($name_prefix); ?>[title]"
-                    value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+                <?php if ($is_template) : ?>
+                    <textarea
+                        class="rs-project-accordion-body large-text"
+                        style="width:100%;min-height:120px;"
+                        id="<?php echo esc_attr($editor_id); ?>"
+                    ></textarea>
+                <?php else : ?>
+                    <?php rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph'); ?>
                 <?php endif; ?>
-            />
-        </div>
-
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
-            <?php if ($is_template) : ?>
-                <textarea
-                    class="rs-project-accordion-body large-text"
-                    style="width:100%;min-height:120px;"
-                    id="<?php echo esc_attr($editor_id); ?>"
-                ></textarea>
-            <?php else : ?>
-                <?php rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph'); ?>
-            <?php endif; ?>
+            </div>
         </div>
     </fieldset>
     <?php
@@ -957,7 +964,7 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
     $base = plugin_dir_url(__FILE__);
     $ver = '1.2.29';
     wp_enqueue_style('rs-project-admin', $base . 'assets/project-admin.css', [], $ver);
-    wp_enqueue_script('rs-project-admin', $base . 'assets/project-admin.js', ['jquery'], $ver, true);
+    wp_enqueue_script('rs-project-admin', $base . 'assets/project-admin.js', ['jquery', 'jquery-ui-sortable'], $ver, true);
 });
 
 function rs_project_render_admin_footer_script(): void {
@@ -1346,6 +1353,22 @@ function rs_project_render_admin_footer_script(): void {
                     reindexGallery();
                 }
             });
+
+            $('#rs-project-accordion-list').sortable({
+                items: '.rs-project-accordion-row',
+                handle: '.rs-project-accordion-drag',
+                cancel: 'input, textarea, button, .mce-container, .wp-editor-wrap',
+                placeholder: 'rs-project-accordion-placeholder',
+                tolerance: 'pointer',
+                opacity: 0.92,
+                update: function () {
+                    $('#rs-project-accordion-list .rs-project-accordion-row').each(function (i) {
+                        $(this).attr('data-index', String(i));
+                        assignAccordionNames($(this), i);
+                    });
+                    nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+                }
+            });
         }
 
         $('#rs-project-add-accordion').on('click', function (event) {
@@ -1364,14 +1387,33 @@ function rs_project_render_admin_footer_script(): void {
             assignAccordionNames(template, nextAccordionIndex);
             $('#rs-project-accordion-list').append(template);
             initEditor('rs_project_accordion_body_' + nextAccordionIndex);
+            template.addClass('is-open');
+            $('#rs-project-accordion-list .rs-project-accordion-row').not(template)
+                .removeClass('is-open')
+                .find('.rs-project-accordion-toggle')
+                .attr('aria-expanded', 'false');
+            template.find('.rs-project-accordion-toggle').attr('aria-expanded', 'true');
+            template.find('.rs-project-accordion-head-title').text('Seção do acordeão');
             nextAccordionIndex += 1;
             syncAccordionEmptyState();
+            if (typeof updateAccordionTabCount === 'function') {
+                updateAccordionTabCount();
+            } else {
+                var count = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+                $('.rs-project-tab[data-tab="accordion"]').text('Acordeão (' + count + ')');
+            }
         });
 
         $(document).on('click', '.rs-project-remove-accordion', function (event) {
             event.preventDefault();
+            if (!window.confirm('Remover esta seção do acordeão?')) {
+                return;
+            }
             const row = $(this).closest('.rs-project-accordion-row');
             const editorId = row.find('textarea[id^="rs_project_accordion_body_"]').attr('id');
+            if (typeof tinymce !== 'undefined' && editorId && tinymce.get(editorId)) {
+                tinymce.get(editorId).save();
+            }
             removeEditor(editorId);
             row.remove();
             $('#rs-project-accordion-list .rs-project-accordion-row').each(function (i) {
@@ -1380,6 +1422,8 @@ function rs_project_render_admin_footer_script(): void {
             });
             nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
             syncAccordionEmptyState();
+            var count = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+            $('.rs-project-tab[data-tab="accordion"]').text('Acordeão (' + count + ')');
         });
 
         $('#rs-project-add-gallery').on('click', function (event) {

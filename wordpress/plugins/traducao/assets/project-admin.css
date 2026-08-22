@@ -138,3 +138,78 @@
 	font-weight: 600;
 	padding: 0 6px;
 }
+
+.rs-project-accordion-row {
+	margin: 0 0 10px;
+	padding: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.rs-project-accordion-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	background: #f6f7f7;
+	border-radius: 4px 4px 0 0;
+}
+
+.rs-project-accordion-drag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	color: #646970;
+	cursor: grab;
+	font-size: 12px;
+	letter-spacing: -1px;
+	user-select: none;
+}
+
+.rs-project-accordion-toggle {
+	flex: 1;
+	min-width: 0;
+	padding: 4px 0;
+	border: 0;
+	background: transparent;
+	color: #1d2327;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: left;
+}
+
+.rs-project-accordion-head-title {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rs-project-accordion-panel {
+	max-height: 0;
+	overflow: hidden;
+	padding: 0 12px;
+	transition: max-height 0.2s ease;
+}
+
+.rs-project-accordion-row.is-open .rs-project-accordion-panel {
+	max-height: 4800px;
+	overflow: visible;
+	padding: 12px 12px 4px;
+}
+
+.rs-project-accordion-row.ui-sortable-helper {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.rs-project-accordion-placeholder {
+	min-height: 44px;
+	margin: 0 0 10px;
+	border: 2px dashed #2271b1;
+	border-radius: 4px;
+	background: #f0f6fc;
+}

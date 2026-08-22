@@ -86,6 +86,42 @@ jQuery(function ($) {
 		}
 	}
 
+	function updateAccordionTabCount() {
+		var count = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+		$('.rs-project-tab[data-tab="accordion"]').text('Acordeão (' + count + ')');
+	}
+
+	function openAccordionRow($row) {
+		if (!$row || !$row.length) {
+			return;
+		}
+		$('#rs-project-accordion-list .rs-project-accordion-row')
+			.not($row)
+			.removeClass('is-open')
+			.find('.rs-project-accordion-toggle')
+			.attr('aria-expanded', 'false');
+		$row.addClass('is-open').find('.rs-project-accordion-toggle').attr('aria-expanded', 'true');
+	}
+
+	function initAccordionUi() {
+		$(document).on('click', '.rs-project-accordion-toggle', function (event) {
+			event.preventDefault();
+			var $row = $(this).closest('.rs-project-accordion-row');
+			if ($row.hasClass('is-open')) {
+				$row.removeClass('is-open');
+				$(this).attr('aria-expanded', 'false');
+				return;
+			}
+			openAccordionRow($row);
+		});
+
+		$(document).on('input', '.rs-project-accordion-title', function () {
+			var title = ($(this).val() || '').trim() || 'Seção do acordeão';
+			$(this).closest('.rs-project-accordion-row').find('.rs-project-accordion-head-title').text(title);
+		});
+	}
+
 	initNoticeBell();
 	initTabs();
+	initAccordionUi();
 });
