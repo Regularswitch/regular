@@ -15,24 +15,45 @@ function rs_translate_opposite_lang(string $lang): string {
     return $lang === 'PT' ? 'EN' : 'PT';
 }
 
+/**
+ * Idioma “real” do post: PT se aponta para um EN; senão EN.
+ */
+function rs_translate_post_lang(int $post_id): string {
+    if (function_exists('rs_project_locale_badge')) {
+        return strtoupper(rs_project_locale_badge($post_id));
+    }
+
+    return (int) get_post_meta($post_id, 'EN', true) > 0 ? 'PT' : 'EN';
+}
+
+/**
+ * Gêmeo já ligado nos dois sentidos (EN↔PT).
+ * Projetos: nunca reaproveita órfão (meta de volta vazia) — isso roubava o PT de outro case.
+ */
 function rs_translate_find_existing(int $source_id, string $lang, string $target_type): int {
+    $lang = strtoupper($lang);
     $opposite = rs_translate_opposite_lang($lang);
+    $require_back = $target_type === 'project';
+
     $direct_id = (int) get_post_meta($source_id, $lang, true);
     if ($direct_id > 0) {
         $linked = get_post($direct_id);
         if ($linked && $linked->post_type === $target_type && $linked->post_status !== 'trash') {
             $back = (int) get_post_meta($direct_id, $opposite, true);
-            // Só reutiliza se o gêmeo aponta de volta (ou ainda não tem vínculo).
-            if ($back === 0 || $back === $source_id) {
+            if ($back === $source_id || (!$require_back && $back === 0)) {
+                if ($back === 0) {
+                    update_post_meta($direct_id, $opposite, $source_id);
+                }
                 return $direct_id;
             }
         }
+        // Ponteiro quebrado/roubado: limpa só o lado do source (não apaga EN do gêmeo alheio).
         delete_post_meta($source_id, $lang);
     }
 
     $reverse = get_posts([
         'post_type'      => $target_type,
-        'post_status'    => 'any',
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
         'posts_per_page' => 1,
         'fields'         => 'ids',
         'meta_query'     => [
@@ -53,24 +74,23 @@ function rs_translate_find_existing(int $source_id, string $lang, string $target
     return 0;
 }
 
-function rs_translate_link_pair(int $source_id, string $lang, int $target_id): void {
+/**
+ * Liga o par. Nunca rouba gêmeo que já pertence a outro post.
+ * Não apaga meta EN/PT do gêmeo anterior (órfãos viravam “EN” em Todos).
+ */
+function rs_translate_link_pair(int $source_id, string $lang, int $target_id): bool {
+    $lang = strtoupper($lang);
     $opposite = rs_translate_opposite_lang($lang);
     $back = (int) get_post_meta($target_id, $opposite, true);
-    // Não “roubar” um gêmeo que já pertence a outro post.
-    if ($back > 0 && $back !== $source_id) {
-        return;
-    }
 
-    $previous = (int) get_post_meta($source_id, $lang, true);
-    if ($previous > 0 && $previous !== $target_id) {
-        $prev_back = (int) get_post_meta($previous, $opposite, true);
-        if ($prev_back === $source_id) {
-            delete_post_meta($previous, $opposite);
-        }
+    if ($back > 0 && $back !== $source_id) {
+        return false;
     }
 
     update_post_meta($source_id, $lang, $target_id);
     update_post_meta($target_id, $opposite, $source_id);
+
+    return true;
 }
 
 function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type): void {
@@ -151,13 +171,32 @@ function translate_proxy($request) {
         return new WP_Error('not_found', 'Post não encontrado', ['status' => 404]);
     }
 
+    if (!in_array($lang, ['EN', 'PT'], true)) {
+        return new WP_Error('bad_lang', 'Idioma inválido', ['status' => 400]);
+    }
+
+    $current_lang = rs_translate_post_lang($source_id);
     $target_type = rs_translate_target_post_type($the_post);
+    $edit_url = static function (int $id): string {
+        return get_site_url() . "/wp-admin/post.php?post={$id}&action=edit";
+    };
+
+    // Clicou no idioma atual → só abre o post (não cria outro EN/PT).
+    if ($lang === $current_lang) {
+        $parans['go'] = $edit_url($source_id);
+        $parans['action'] = 'self';
+        $parans['post_translate_id'] = $source_id;
+        $parans['lang'] = $lang;
+        $parans['post_type'] = $target_type;
+
+        return rest_ensure_response($parans);
+    }
+
     $post_translate_id = rs_translate_find_existing($source_id, $lang, $target_type);
 
     if ($post_translate_id === 0) {
         $locale_slug = strtolower($lang);
-        // Projetos: não copiar post_content legado (misturava imagens/texto de outro case)
-        // e não usar slug "pt"/"en" (colidia entre traduções).
+        // Projetos: não copiar post_content legado e não usar slug "pt"/"en".
         $is_project = $the_post->post_type === 'project';
         $post_name = $is_project
             ? sanitize_title(wp_strip_all_tags($the_post->post_title) . '-' . $locale_slug)
@@ -177,24 +216,38 @@ function translate_proxy($request) {
             return $new_post_id;
         }
 
-        rs_translate_link_pair($source_id, $lang, $new_post_id);
-        rs_copy_translation_fields($source_id, $new_post_id, $target_type);
+        if (!rs_translate_link_pair($source_id, $lang, $new_post_id)) {
+            wp_trash_post($new_post_id);
 
-        if (function_exists('rs_apply_locale_slug')) {
+            return new WP_Error(
+                'link_failed',
+                'Não foi possível ligar a tradução (gêmeo já pertence a outro post).',
+                ['status' => 409]
+            );
+        }
+
+        // Só copia campos EN → PT (nunca o contrário na criação).
+        if ($current_lang === 'EN' && $lang === 'PT') {
+            rs_copy_translation_fields($source_id, $new_post_id, $target_type);
+        }
+
+        if (!$is_project && function_exists('rs_apply_locale_slug')) {
             rs_apply_locale_slug($new_post_id);
         }
 
-        $parans['go'] = get_site_url() . "/wp-admin/post.php?post={$new_post_id}&action=edit";
+        $parans['go'] = $edit_url($new_post_id);
         $parans['action'] = 'create';
         $parans['post_translate_id'] = $new_post_id;
     } else {
+        // Já existe: só garante o vínculo se estiver incompleto (não reescreve título/mídia).
         rs_translate_link_pair($source_id, $lang, $post_translate_id);
 
-        // Re-sincroniza campos do projeto a partir do EN quando ?sync=1
-        // (útil quando a PT ficou com conteúdo antigo/errado).
+        // Re-sincroniza campos do projeto a partir do EN quando ?sync=1.
         if (
             $the_post->post_type === 'project'
             && !empty($parans['sync'])
+            && $current_lang === 'EN'
+            && $lang === 'PT'
             && function_exists('rs_copy_project_fields')
         ) {
             rs_copy_project_fields($source_id, $post_translate_id, true);
@@ -206,7 +259,7 @@ function translate_proxy($request) {
             ]);
         }
 
-        $parans['go'] = get_site_url() . "/wp-admin/post.php?post={$post_translate_id}&action=edit";
+        $parans['go'] = $edit_url($post_translate_id);
         $parans['action'] = 'edit';
         $parans['post_translate_id'] = $post_translate_id;
     }

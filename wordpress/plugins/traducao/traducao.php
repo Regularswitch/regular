@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.30
+ * Version: 1.2.31
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -55,13 +55,13 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
     }
 
     $badge = rs_project_locale_badge($post_ID);
+    $opposite = $badge === 'PT' ? 'EN' : 'PT';
     echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
 
-    foreach (['en', 'pt'] as $slug) {
-        $slug = strtoupper($slug);
-        $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$slug}";
-        echo "<a href=\"#\" data-href=\"" . esc_url($url) . "\" onclick=\"rs_link_translate(event, this)\" title=\"Abrir {$slug}\">{$slug}</a> ";
-    }
+    // Só o idioma oposto: clicar em EN no EN (ou PT no PT) criava posts duplicados.
+    $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}";
+    $label = $badge === 'EN' ? 'Abrir/criar PT' : 'Abrir EN';
+    echo '<a href="#" data-href="' . esc_url($url) . '" onclick="rs_link_translate(event, this)" title="' . esc_attr($label) . '">' . esc_html($opposite) . '</a> ';
 
     // Reimporta acordeão/galeria do EN na PT (não sobrescreve ao só abrir PT).
     if (get_post_type($post_ID) === 'project' && $badge === 'EN' && (int) get_post_meta($post_ID, 'PT', true) > 0) {
@@ -85,10 +85,16 @@ function rs_link_translate_script(): void {
             event.preventDefault();
             const url = el.getAttribute('data-href');
             fetch(url)
-                .then((res) => res.json())
-                .then((res) => {
-                    window.location.href = res.go;
-                });
+                .then(async (res) => {
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.go) {
+                        const msg = (data && data.message) ? data.message : 'Falha ao abrir tradução.';
+                        window.alert(msg);
+                        return;
+                    }
+                    window.location.href = data.go;
+                })
+                .catch(() => window.alert('Falha ao abrir tradução.'));
         }
     </script>
     <?php

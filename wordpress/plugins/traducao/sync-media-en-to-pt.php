@@ -89,15 +89,11 @@ function rs_sync_media_pt_twin_id(int $en_id): int {
         $pt = get_post($pt_id);
         if ($pt && $pt->post_status !== 'trash') {
             $back = (int) get_post_meta($pt_id, 'EN', true);
-            // Meta PT apontando para o gêmeo de outro EN — vínculo roubado/quebrado.
-            if ($back > 0 && $back !== $en_id) {
-                delete_post_meta($en_id, 'PT');
-            } else {
-                if ($back === 0) {
-                    update_post_meta($pt_id, 'EN', $en_id);
-                }
+            // Só aceita par bidirecional. Órfão (EN vazio) ou de outro EN = ponteiro inválido.
+            if ($back === $en_id) {
                 return $pt_id;
             }
+            delete_post_meta($en_id, 'PT');
         } else {
             delete_post_meta($en_id, 'PT');
         }
