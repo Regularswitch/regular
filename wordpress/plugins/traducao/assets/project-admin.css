@@ -74,3 +74,67 @@
 		margin: 8px 0;
 	}
 }
+
+.rs-project-tabs {
+	position: relative;
+	margin-top: 12px;
+}
+
+.rs-project-tablist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 14px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.rs-project-tab {
+	margin: 0 0 -1px;
+	padding: 8px 14px;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 4px 4px 0 0;
+	background: transparent;
+	color: #2271b1;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.rs-project-tab:hover,
+.rs-project-tab:focus {
+	color: #135e96;
+}
+
+.rs-project-tab.is-active {
+	border-color: #dcdcde;
+	background: #fff;
+	color: #1d2327;
+}
+
+.rs-project-tabpanel {
+	position: relative;
+}
+
+/* Fora da tela em vez de display:none — TinyMCE permanece montado. */
+.rs-project-tabpanel[hidden] {
+	display: block !important;
+	position: absolute;
+	left: -10000px;
+	top: 0;
+	width: 100%;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.rs-project-fieldset {
+	margin: 0 0 20px;
+	padding: 12px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.rs-project-fieldset legend {
+	font-weight: 600;
+	padding: 0 6px;
+}

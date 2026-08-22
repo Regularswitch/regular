@@ -485,71 +485,6 @@ function rs_project_move_excerpt_and_slug(): void {
 }
 add_action('add_meta_boxes_project', 'rs_project_move_excerpt_and_slug', 99);
 
-function rs_project_render_after_title(WP_Post $post): void {
-    if ($post->post_type !== 'project') {
-        return;
-    }
-
-    $excerpt = (string) $post->post_excerpt;
-    $slug = (string) $post->post_name;
-    ?>
-    <div id="rs-project-title-fields" style="margin:12px 0 16px;">
-        <div class="postbox" style="margin-bottom:12px;">
-            <div class="postbox-header">
-                <h2 class="hndle">Resumo</h2>
-            </div>
-            <div class="inside">
-                <p style="margin-top:0;color:#646970;font-size:12px;">
-                    Aparece na coluna esquerda da página do projeto, abaixo do título.
-                </p>
-                <label class="screen-reader-text" for="excerpt">Resumo</label>
-                <textarea
-                    rows="4"
-                    cols="40"
-                    name="excerpt"
-                    id="excerpt"
-                    class="large-text"
-                    style="width:100%;"
-                ><?php echo esc_textarea($excerpt); ?></textarea>
-            </div>
-        </div>
-
-        <div class="postbox" style="margin-bottom:0;">
-            <div class="postbox-header">
-                <h2 class="hndle">Slug</h2>
-            </div>
-            <div class="inside">
-                <p style="margin-top:0;color:#646970;font-size:12px;">
-                    URL do projeto: <code>/project/<span id="rs-project-slug-preview"><?php echo esc_html($slug !== '' ? $slug : '…'); ?></span></code>
-                </p>
-                <label class="screen-reader-text" for="post_name">Slug</label>
-                <input
-                    type="text"
-                    name="post_name"
-                    id="post_name"
-                    value="<?php echo esc_attr($slug); ?>"
-                    class="regular-text"
-                    style="width:100%;max-width:420px;"
-                    autocomplete="off"
-                    spellcheck="false"
-                />
-            </div>
-        </div>
-    </div>
-    <script>
-    (function () {
-        var input = document.getElementById('post_name');
-        var preview = document.getElementById('rs-project-slug-preview');
-        if (!input || !preview) return;
-        input.addEventListener('input', function () {
-            preview.textContent = input.value.trim() || '…';
-        });
-    })();
-    </script>
-    <?php
-}
-add_action('edit_form_after_title', 'rs_project_render_after_title');
-
 function rs_project_render_accordion_row(int $index, array $section, bool $is_template = false): void {
     $title = $section['title'] ?? '';
     $body = $section['body'] ?? '';
@@ -691,26 +626,47 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }
 
     $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. O <strong>resumo</strong> (coluna esquerda do site, abaixo do título) fica no campo <em>Resumo</em> logo abaixo do título deste post. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. Categorias do PT são copiadas do EN ao salvar. <em>(Plugin Tradução v1.2.28)</em></p>';
+    $excerpt = (string) $post->post_excerpt;
+    $slug = (string) $post->post_name;
+    $accordion_count = count($accordion_sections);
+    $media_count = ($hero_id > 0 ? 1 : 0) + ($logo_id > 0 ? 1 : 0) + count($youtube_videos) + count($gallery_ids);
+
+    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. Categorias do PT são copiadas do EN ao salvar. <em>(Plugin Tradução v1.2.29)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero (topo)</strong></legend>';
-    rs_render_media_field('rs_project_hero_id', 'Fundo (imagem, GIF ou vídeo mp4) — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', true, 'media');
-    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a mídia no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
-    echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
-    echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
+    echo '<div class="rs-project-tabs">';
+    echo '<div class="rs-project-tablist" role="tablist">';
+    echo '<button type="button" class="rs-project-tab is-active" role="tab" aria-selected="true" data-tab="base">Conteúdo Base</button>';
+    echo '<button type="button" class="rs-project-tab" role="tab" aria-selected="false" data-tab="accordion">Acordeão (' . (int) $accordion_count . ')</button>';
+    echo '<button type="button" class="rs-project-tab" role="tab" aria-selected="false" data-tab="media">Mídia (' . (int) $media_count . ')</button>';
+    echo '</div>';
+
+    echo '<div class="rs-project-tabpanel is-active" data-tab="base" role="tabpanel">';
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Resumo</strong></legend>';
+    echo '<p class="description" style="margin-top:0;">Aparece na coluna esquerda da página do projeto, abaixo do título.</p>';
+    echo '<label class="screen-reader-text" for="excerpt">Resumo</label>';
+    echo '<textarea rows="4" cols="40" name="excerpt" id="excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt) . '</textarea>';
     echo '</fieldset>';
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Home</strong></legend>';
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Slug</strong></legend>';
+    echo '<p class="description" style="margin-top:0;">URL do projeto: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code></p>';
+    echo '<label class="screen-reader-text" for="post_name">Slug</label>';
+    echo '<input type="text" name="post_name" id="post_name" value="' . esc_attr($slug) . '" class="regular-text" style="width:100%;max-width:420px;" autocomplete="off" spellcheck="false" />';
+    echo '</fieldset>';
+
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Home</strong></legend>';
     echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto deve estar marcado)</label></p>';
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Acordeão (coluna direita)</strong></legend>';
+    echo '<div class="rs-project-tabpanel" data-tab="accordion" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Acordeão (coluna direita)</strong></legend>';
     echo '<p id="rs-project-accordion-empty" class="description"' . ($accordion_sections ? ' style="display:none;"' : '') . '>Nenhuma seção. Use <strong>+ Adicionar seção</strong> quando precisar.</p>';
     echo '<div id="rs-project-accordion-list">';
     foreach ($accordion_sections as $index => $section) {
@@ -721,9 +677,19 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-project-add-accordion">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-project-accordion-json" name="rs_project_accordion_json" value="" />';
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>YouTube (antes da galeria)</strong></legend>';
+    echo '<div class="rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Hero (topo)</strong></legend>';
+    rs_render_media_field('rs_project_hero_id', 'Fundo (imagem, GIF ou vídeo mp4) — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', true, 'media');
+    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a mídia no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
+    echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
+    echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
+    echo '</fieldset>';
+
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>YouTube (antes da galeria)</strong></legend>';
     echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Cole o link do YouTube (watch, youtu.be, Shorts ou embed) e clique em <strong>Concluir</strong> para fixar. Um vídeo por projeto; ocupa as <strong>duas colunas</strong> no desktop, acima da galeria.</p>';
     echo '<p id="rs-project-youtube-empty" class="description"' . ($youtube_videos ? ' style="display:none;"' : '') . '>Nenhum vídeo. Use <strong>+ Adicionar vídeo</strong> quando precisar.</p>';
     echo '<div id="rs-project-youtube-list">';
@@ -738,8 +704,8 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<input type="hidden" id="rs-project-youtube-json" name="rs_project_youtube_json" value="" />';
     echo '</fieldset>';
 
-    echo '<fieldset style="margin:0 0 10px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Galeria</strong></legend>';
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Galeria</strong></legend>';
     echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> as miniaturas para definir a ordem no site. Clique na <strong>estrela</strong> para destaque (ocupa duas colunas no desktop).</p>';
     echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list" class="rs-project-gallery-grid">';
@@ -757,6 +723,9 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="" />';
     echo '<input type="hidden" id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" value="" />';
     echo '</fieldset>';
+    echo '</div>';
+
+    echo '</div>';
 }
 
 /**
