@@ -353,37 +353,6 @@ html:not(.dark) .brand-mark {
 	border-color: color-mix(in srgb, var(--fg) 55%, transparent);
 }
 
-@keyframes project-open-pulse {
-	0% {
-		transform: scale(1);
-	}
-	40% {
-		transform: scale(0.965);
-	}
-	100% {
-		transform: scale(1.03);
-	}
-}
-
-.selected-projects-item a.is-opening,
-.latest-projects-card.is-opening {
-	animation: project-open-pulse 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-	transform-origin: center center;
-}
-
-.selected-projects-item a.is-opening .selected-projects-card-image img,
-.latest-projects-card.is-opening .latest-projects-card-image img {
-	transform: none;
-	transition: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.selected-projects-item a.is-opening,
-	.latest-projects-card.is-opening {
-		animation: none;
-	}
-}
-
 /* 404 — blob no lugar do zero */
 .not-found-page {
 	position: relative;
@@ -585,8 +554,7 @@ html:not(.dark) .brand-mark {
 }
 
 .latest-projects-card:hover .latest-projects-card-title,
-.latest-projects-card:focus-visible .latest-projects-card-title,
-.latest-projects-card.is-opening .latest-projects-card-title {
+.latest-projects-card:focus-visible .latest-projects-card-title {
 	opacity: 1;
 	transform: translateY(0);
 }
@@ -1193,13 +1161,62 @@ html:not(.dark) .brand-mark {
 	background: var(--cursor-color, #fff);
 	opacity: 0;
 	pointer-events: none;
+	transform-origin: center center;
 	transform: translateZ(0);
 	transition: opacity 0.15s ease;
-	will-change: left, top, width, height;
+	will-change: left, top, width, height, transform;
+}
+
+.custom-cursor::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	border: 1.5px solid var(--cursor-color, #fff);
+	opacity: 0;
+	pointer-events: none;
 }
 
 .custom-cursor.is-visible {
 	opacity: 1;
+}
+
+.custom-cursor.is-clicking {
+	animation: custom-cursor-press 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.custom-cursor.is-clicking::after {
+	animation: custom-cursor-ripple 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes custom-cursor-press {
+	0% {
+		transform: scale(1);
+	}
+	30% {
+		transform: scale(0.58);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes custom-cursor-ripple {
+	0% {
+		opacity: 0.9;
+		transform: scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(2.55);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.custom-cursor.is-clicking,
+	.custom-cursor.is-clicking::after {
+		animation: none;
+	}
 }
 
 @media (hover: hover) and (pointer: fine) {

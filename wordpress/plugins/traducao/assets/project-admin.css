@@ -116,13 +116,18 @@
 	position: relative;
 }
 
-/* Fora da tela em vez de display:none — TinyMCE permanece montado. */
+/* Recorta a altura — left:-10000px ainda esticava o documento por causa do TinyMCE. */
 .rs-project-tabpanel[hidden] {
 	display: block !important;
 	position: absolute;
-	left: -10000px;
+	left: 0;
 	top: 0;
-	width: 100%;
+	right: 0;
+	height: 0 !important;
+	max-height: 0 !important;
+	margin: 0;
+	padding: 0;
+	overflow: hidden !important;
 	visibility: hidden;
 	pointer-events: none;
 }

@@ -121,11 +121,29 @@ export default function CustomCursor({ palette }: { palette?: string[] }) {
 			}
 		};
 
+		const onDown = (event: PointerEvent) => {
+			if (event.pointerType !== 'mouse' || reduceMotion.current) return;
+
+			const el = cursorRef.current;
+			if (!el) return;
+
+			el.classList.remove('is-clicking');
+			void el.offsetWidth;
+			el.classList.add('is-clicking');
+		};
+
+		const onClickAnimEnd = (event: AnimationEvent) => {
+			if (event.animationName !== 'custom-cursor-press') return;
+			cursorRef.current?.classList.remove('is-clicking');
+		};
+
 		window.addEventListener('mousemove', onMove);
+		window.addEventListener('pointerdown', onDown);
 		document.addEventListener('mouseover', onOver);
 		document.addEventListener('mouseout', onOut);
 		document.documentElement.addEventListener('mouseleave', onLeave);
 		document.documentElement.addEventListener('mouseenter', onEnter);
+		cursorRef.current?.addEventListener('animationend', onClickAnimEnd);
 
 		let frame = 0;
 		const tick = () => {
@@ -151,12 +169,16 @@ export default function CustomCursor({ palette }: { palette?: string[] }) {
 
 		frame = window.requestAnimationFrame(tick);
 
+		const cursorEl = cursorRef.current;
+
 		return () => {
 			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('pointerdown', onDown);
 			document.removeEventListener('mouseover', onOver);
 			document.removeEventListener('mouseout', onOut);
 			document.documentElement.removeEventListener('mouseleave', onLeave);
 			document.documentElement.removeEventListener('mouseenter', onEnter);
+			cursorEl?.removeEventListener('animationend', onClickAnimEnd);
 			window.cancelAnimationFrame(frame);
 		};
 	}, [enabled]);

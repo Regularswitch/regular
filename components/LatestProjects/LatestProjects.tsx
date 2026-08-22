@@ -1,9 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useRef } from 'react';
-
-import ProjectOpenLink from '../ProjectsListing/ProjectOpenLink';
 
 import { sortProjectsByDate } from '../../lib/projects/sort';
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
@@ -106,7 +105,7 @@ function LatestProjectCard({ project, href }: { project: Project; href: string }
 	const cardImage = getProjectHeroImage(project);
 
 	return (
-		<ProjectOpenLink href={href} data-latest-card className="latest-projects-card group block shrink-0">
+		<Link href={href} data-latest-card className="latest-projects-card group block shrink-0">
 			<div className="latest-projects-card-image relative overflow-hidden bg-(--surface)">
 				{cardImage ? (
 					<Image
@@ -123,6 +122,6 @@ function LatestProjectCard({ project, href }: { project: Project; href: string }
 					<h3 className="latest-projects-card-title font-hk">{project.title}</h3>
 				) : null}
 			</div>
-		</ProjectOpenLink>
+		</Link>
 	);
 }

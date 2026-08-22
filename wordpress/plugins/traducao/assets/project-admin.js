@@ -70,6 +70,21 @@ jQuery(function ($) {
 				$panel.prop('hidden', !active);
 			});
 
+			if (tab === 'accordion' && typeof tinymce !== 'undefined') {
+				window.setTimeout(function () {
+					tinymce.editors.forEach(function (editor) {
+						if (!editor || String(editor.id).indexOf('rs_project_accordion_body_') !== 0) {
+							return;
+						}
+						try {
+							editor.fire('ResizeEditor');
+						} catch (err) {
+							/* ignore */
+						}
+					});
+				}, 50);
+			}
+
 			var slugInput = document.getElementById('post_name');
 			var preview = document.getElementById('rs-project-slug-preview');
 			if (slugInput && preview) {
