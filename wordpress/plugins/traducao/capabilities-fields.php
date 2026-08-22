@@ -224,49 +224,62 @@ function rs_capabilities_render_section_row(int $index, array $section, bool $is
     $image_field_id = $is_template ? 'rs_cap_image___INDEX__' : 'rs_cap_image_' . $index;
     $editor_id = $is_template ? 'rs_cap_section_text___INDEX__' : 'rs_cap_section_text_' . $index;
     $display = $is_template ? ' style="display:none;"' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = $title !== '' ? $title : 'Seção';
+    $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
+    $editor_ids = $is_template ? '' : esc_attr($editor_id);
     ?>
-    <fieldset class="rs-cap-section" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-            <legend style="font-weight:600;padding:0;margin:0;"><strong>Seção</strong></legend>
-            <button type="button" class="button-link-delete rs-cap-remove-section">Remover</button>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        <?php echo $editor_ids !== '' ? ' data-rs-editor-ids="' . $editor_ids . '"' : ''; ?>
+        <?php echo $display; ?>
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <span class="rs-metabox-accordion-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-cap-remove-section">Remover</button>
         </div>
+        <div class="rs-metabox-accordion-panel">
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
+                <input
+                    type="text"
+                    style="width:100%;"
+                    class="rs-metabox-accordion-title rs-cap-section-title"
+                    <?php if (!$is_template) : ?>
+                        name="<?php echo esc_attr($name_prefix); ?>[title]"
+                        value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+                    <?php endif; ?>
+                    placeholder="Ex: BRANDING &amp; VISUAL SYSTEMS"
+                />
+            </div>
 
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
-            <input
-                type="text"
-                style="width:100%;"
-                class="rs-cap-section-title"
-                <?php if (!$is_template) : ?>
-                    name="<?php echo esc_attr($name_prefix); ?>[title]"
-                    value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+                <?php if ($is_template) : ?>
+                    <textarea
+                        class="rs-cap-section-text large-text"
+                        style="width:100%;min-height:120px;"
+                        id="<?php echo esc_attr($editor_id); ?>"
+                    ></textarea>
+                <?php else : ?>
+                    <?php rs_render_rich_text_field($editor_id, $name_prefix . '[text]', $text, 'paragraph'); ?>
                 <?php endif; ?>
-                placeholder="Ex: BRANDING &amp; VISUAL SYSTEMS"
-            />
-        </div>
+            </div>
 
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
-            <?php if ($is_template) : ?>
-                <textarea
-                    class="rs-cap-section-text large-text"
-                    style="width:100%;min-height:120px;"
-                    id="<?php echo esc_attr($editor_id); ?>"
-                ></textarea>
-            <?php else : ?>
-                <?php rs_render_rich_text_field($editor_id, $name_prefix . '[text]', $text, 'paragraph'); ?>
-            <?php endif; ?>
+            <?php
+            rs_render_media_field(
+                $name_prefix . '[image_id]',
+                'Imagem',
+                $image_id,
+                $image_field_id,
+                !$is_template,
+            );
+            ?>
         </div>
-
-        <?php
-        rs_render_media_field(
-            $name_prefix . '[image_id]',
-            'Imagem',
-            $image_id,
-            $image_field_id,
-            !$is_template,
-        );
-        ?>
     </fieldset>
     <?php
 }
@@ -286,8 +299,8 @@ function rs_capabilities_render_meta_box(WP_Post $post): void {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Headline</strong></legend>';
     rs_render_rich_text_field(
         RS_CAPABILITIES_HEADLINE_KEY,
         RS_CAPABILITIES_HEADLINE_KEY,
@@ -297,19 +310,23 @@ function rs_capabilities_render_meta_box(WP_Post $post): void {
     echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
     echo '</fieldset>';
 
-    echo '<div id="rs-cap-sections-list">';
+    echo '<div data-rs-accordion>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Seções</strong></legend>';
+    echo '<div id="rs-cap-sections-list" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_capabilities_render_section_row((int) $index, $section);
     }
     echo '</div>';
-
+    echo '<div id="rs-cap-section-template" hidden>';
     rs_capabilities_render_section_row(0, ['title' => '', 'text' => '', 'image_id' => 0], true);
-
-    echo '<p style="margin:16px 0 0;">';
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;">';
     echo '<button type="button" class="button button-secondary" id="rs-cap-add-section">+ Adicionar seção</button>';
     echo '</p>';
-
     echo '<input type="hidden" id="rs-cap-sections-json" name="rs_cap_sections_json" value="" />';
+    echo '</fieldset>';
+    echo '</div>';
 }
 
 /**
@@ -320,7 +337,7 @@ function rs_capabilities_parse_sections_from_request(): array {
 
     if (!empty($_POST['rs_cap_sections_json'])) {
         $decoded = json_decode(wp_unslash((string) $_POST['rs_cap_sections_json']), true);
-        if (is_array($decoded)) {
+        if (is_array($decoded) && $decoded !== []) {
             foreach ($decoded as $section) {
                 if (!is_array($section)) {
                     continue;
@@ -341,7 +358,9 @@ function rs_capabilities_parse_sections_from_request(): array {
                 ];
             }
 
-            return $sections;
+            if ($sections !== []) {
+                return $sections;
+            }
         }
     }
 
@@ -405,7 +424,7 @@ function rs_copy_capabilities_fields(int $from_id, int $to_id): void {
 
 rs_enqueue_admin_media_picker(['capabilities']);
 
-add_action('admin_footer-post.php', function () {
+function rs_capabilities_render_admin_footer_script(): void {
     $screen = get_current_screen();
     if (!$screen || $screen->post_type !== 'capabilities') {
         return;
@@ -414,11 +433,15 @@ add_action('admin_footer-post.php', function () {
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
-        let nextIndex = $('#rs-cap-sections-list .rs-cap-section').length;
+        let nextIndex = $('#rs-cap-sections-list .rs-metabox-accordion-item').length;
+        const $accordionRoot = document.querySelector('[data-rs-accordion]');
 
         function syncAllEditors() {
             if (typeof tinymce !== 'undefined') {
                 tinymce.triggerSave();
+            }
+            if (typeof wp !== 'undefined' && wp.editor && wp.editor.save) {
+                wp.editor.save('<?php echo esc_js(RS_CAPABILITIES_HEADLINE_KEY); ?>');
             }
             $('textarea[id^="rs_cap_section_text_"]').each(function () {
                 const id = $(this).attr('id');
@@ -432,7 +455,7 @@ add_action('admin_footer-post.php', function () {
             const editorId = textarea.attr('id');
             if (editorId && typeof tinymce !== 'undefined') {
                 const editor = tinymce.get(editorId);
-                if (editor) {
+                if (editor && !editor.isHidden()) {
                     return editor.getContent();
                 }
             }
@@ -442,7 +465,7 @@ add_action('admin_footer-post.php', function () {
         function collectSectionsJson() {
             syncAllEditors();
             const sections = [];
-            $('#rs-cap-sections-list .rs-cap-section').each(function () {
+            $('#rs-cap-sections-list .rs-metabox-accordion-item').each(function () {
                 const section = $(this);
                 const title = (section.find('.rs-cap-section-title').val() || '').trim();
                 const text = readSectionText(section.find('textarea[id^="rs_cap_section_text_"]'));
@@ -483,10 +506,12 @@ add_action('admin_footer-post.php', function () {
             section.find('.rs-cap-section-title').attr('name', 'rs_cap_sections[' + index + '][title]');
             section.find('textarea[id^="rs_cap_section_text_"]').attr('name', 'rs_cap_sections[' + index + '][text]');
             section.find('input[data-rs-cap-image]').attr('name', 'rs_cap_sections[' + index + '][image_id]');
+            const editorId = 'rs_cap_section_text_' + index;
+            section.attr('data-rs-editor-ids', editorId);
         }
 
         function reindexSections() {
-            $('#rs-cap-sections-list .rs-cap-section').each(function (i) {
+            $('#rs-cap-sections-list .rs-metabox-accordion-item').each(function (i) {
                 $(this).attr('data-index', String(i));
                 assignSectionNames($(this), i);
                 $(this).find('[id^="rs_cap_image_"]').each(function () {
@@ -495,17 +520,51 @@ add_action('admin_footer-post.php', function () {
                     $(this).attr('id', newId);
                     $(this).closest('.rs-media-field').find('[data-target="' + oldId + '"]').attr('data-target', newId);
                 });
+                const textarea = $(this).find('textarea[id^="rs_cap_section_text_"]');
+                const oldEditorId = textarea.attr('id');
+                const newEditorId = 'rs_cap_section_text_' + i;
+                if (oldEditorId && oldEditorId !== newEditorId) {
+                    removeEditor(oldEditorId);
+                    textarea.attr('id', newEditorId);
+                    initEditor(newEditorId);
+                }
             });
-            nextIndex = $('#rs-cap-sections-list .rs-cap-section').length;
+            nextIndex = $('#rs-cap-sections-list .rs-metabox-accordion-item').length;
+        }
+
+        let accordionApi = null;
+        if ($accordionRoot && window.RsMetaboxUi) {
+            accordionApi = window.RsMetaboxUi.initAccordion($accordionRoot, {
+                defaultTitle: 'Seção',
+                onExpand: function ($item, editorIds) {
+                    window.RsMetaboxUi.resizeEditors(editorIds);
+                },
+                onRemove: function (event, $section) {
+                    event.preventDefault();
+                    if ($('#rs-cap-sections-list .rs-metabox-accordion-item').length <= 1) {
+                        window.alert('Mantenha pelo menos uma seção.');
+                        return;
+                    }
+                    const editorId = $section.find('textarea[id^="rs_cap_section_text_"]').attr('id');
+                    removeEditor(editorId);
+                    $section.remove();
+                    reindexSections();
+                },
+                onSortUpdate: function () {
+                    reindexSections();
+                },
+            });
         }
 
         $('#rs-cap-add-section').on('click', function (event) {
             event.preventDefault();
-            const template = $('.rs-cap-section[data-index="__INDEX__"]').first().clone();
-            template.removeAttr('style');
+            const template = $('#rs-cap-section-template .rs-metabox-accordion-item').first().clone();
+            template.removeAttr('style').removeClass('is-open');
             template.attr('data-index', String(nextIndex));
             template.find('.rs-cap-section-title').val('');
             template.find('textarea').val('');
+            template.find('.rs-metabox-accordion-head-title').text('Seção');
+            template.find('.rs-metabox-accordion-toggle').attr('aria-expanded', 'false');
             template.find('input[data-rs-cap-image]').val('0');
             template.find('.rs-media-preview').empty();
             template.find('[id]').each(function () {
@@ -523,24 +582,20 @@ add_action('admin_footer-post.php', function () {
             assignSectionNames(template, nextIndex);
             $('#rs-cap-sections-list').append(template);
             initEditor('rs_cap_section_text_' + nextIndex);
+            if (accordionApi) {
+                accordionApi.openItem(template);
+            }
             nextIndex += 1;
         });
 
-        $(document).on('click', '.rs-cap-remove-section', function (event) {
-            event.preventDefault();
-            if ($('#rs-cap-sections-list .rs-cap-section').length <= 1) {
-                window.alert('Mantenha pelo menos uma seção.');
-                return;
-            }
-            const section = $(this).closest('.rs-cap-section');
-            const editorId = section.find('textarea[id^="rs_cap_section_text_"]').attr('id');
-            removeEditor(editorId);
-            section.remove();
-            reindexSections();
-        });
-
         $('#post').on('submit', collectSectionsJson);
+        $('#publish, #save-post').on('click', function () {
+            window.setTimeout(collectSectionsJson, 0);
+        });
     });
     </script>
     <?php
-});
+}
+
+add_action('admin_footer-post.php', 'rs_capabilities_render_admin_footer_script');
+add_action('admin_footer-post-new.php', 'rs_capabilities_render_admin_footer_script');

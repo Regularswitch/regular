@@ -1,0 +1,100 @@
+/* Chrome admin — sino de avisos + toast de sucesso (CPTs do plugin Tradução). */
+
+.rs-admin-notice-bell {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 0 0 10px;
+	padding: 0;
+	width: 36px;
+	height: 36px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	background: #fff;
+	color: #1d2327;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+.rs-admin-notice-bell:hover,
+.rs-admin-notice-bell:focus {
+	border-color: #2271b1;
+	color: #2271b1;
+}
+
+.rs-admin-notice-bell[aria-expanded="true"] {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.rs-admin-notice-bell svg {
+	display: block;
+}
+
+.rs-admin-notice-count {
+	position: absolute;
+	top: -6px;
+	right: -6px;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 4px;
+	border-radius: 9px;
+	background: #d63638;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 18px;
+	text-align: center;
+}
+
+.rs-admin-notice-panel {
+	margin: 8px 0 12px;
+	padding: 0;
+}
+
+.rs-admin-notice-panel[hidden] {
+	display: none !important;
+}
+
+.rs-admin-notice-panel .notice,
+.rs-admin-notice-panel .updated,
+.rs-admin-notice-panel .error {
+	margin: 0 0 8px;
+}
+
+.wrap > .rs-admin-notice-bell {
+	float: right;
+	margin: 6px 0 0;
+}
+
+@media screen and (max-width: 782px) {
+	.wrap > .rs-admin-notice-bell {
+		float: none;
+		margin: 8px 0;
+	}
+}
+
+.rs-admin-toast {
+	position: fixed;
+	top: 46px;
+	right: 20px;
+	z-index: 100100;
+	max-width: 360px;
+	padding: 12px 16px;
+	border-radius: 4px;
+	background: #1d2327;
+	color: #fff;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	font-size: 13px;
+	line-height: 1.4;
+	opacity: 0;
+	transform: translateY(-8px);
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	pointer-events: none;
+}
+
+.rs-admin-toast.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}

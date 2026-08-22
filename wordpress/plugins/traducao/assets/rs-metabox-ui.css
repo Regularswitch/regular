@@ -1,11 +1,11 @@
-/* Só enfileirado em post.php / post-new.php do CPT project. */
+/* Abas + acordeão genéricos — conteúdo de cada painel vem do CPT. */
 
-.rs-project-tabs {
+.rs-metabox-tabs {
 	position: relative;
 	margin-top: 12px;
 }
 
-.rs-project-tablist {
+.rs-metabox-tablist {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
@@ -13,7 +13,7 @@
 	border-bottom: 1px solid #dcdcde;
 }
 
-.rs-project-tab {
+.rs-metabox-tab {
 	margin: 0 0 -1px;
 	padding: 8px 14px;
 	border: 1px solid transparent;
@@ -26,23 +26,22 @@
 	font-weight: 600;
 }
 
-.rs-project-tab:hover,
-.rs-project-tab:focus {
+.rs-metabox-tab:hover,
+.rs-metabox-tab:focus {
 	color: #135e96;
 }
 
-.rs-project-tab.is-active {
+.rs-metabox-tab.is-active {
 	border-color: #dcdcde;
 	background: #fff;
 	color: #1d2327;
 }
 
-.rs-project-tabpanel {
+.rs-metabox-tabpanel {
 	position: relative;
 }
 
-/* Recorta a altura — left:-10000px ainda esticava o documento por causa do TinyMCE. */
-.rs-project-tabpanel[hidden] {
+.rs-metabox-tabpanel[hidden] {
 	display: block !important;
 	position: absolute;
 	left: 0;
@@ -57,19 +56,19 @@
 	pointer-events: none;
 }
 
-.rs-project-fieldset {
+.rs-metabox-fieldset {
 	margin: 0 0 20px;
 	padding: 12px 14px;
 	border: 1px solid #dcdcde;
 	border-radius: 4px;
 }
 
-.rs-project-fieldset legend {
+.rs-metabox-fieldset legend {
 	font-weight: 600;
 	padding: 0 6px;
 }
 
-.rs-project-accordion-row {
+.rs-metabox-accordion-item {
 	margin: 0 0 10px;
 	padding: 0;
 	border: 1px solid #dcdcde;
@@ -77,7 +76,7 @@
 	background: #fff;
 }
 
-.rs-project-accordion-head {
+.rs-metabox-accordion-head {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -86,7 +85,7 @@
 	border-radius: 4px 4px 0 0;
 }
 
-.rs-project-accordion-drag {
+.rs-metabox-accordion-drag {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -99,8 +98,11 @@
 	user-select: none;
 }
 
-.rs-project-accordion-toggle {
+.rs-metabox-accordion-toggle {
+	display: flex;
 	flex: 1;
+	align-items: center;
+	gap: 8px;
 	min-width: 0;
 	padding: 4px 0;
 	border: 0;
@@ -112,34 +114,84 @@
 	text-align: left;
 }
 
-.rs-project-accordion-head-title {
+.rs-metabox-accordion-head-title {
 	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.rs-project-accordion-panel {
+.rs-metabox-accordion-head-thumb {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 4px;
+	overflow: hidden;
+	background: #dcdcde;
+}
+
+.rs-metabox-accordion-head-thumb img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rs-metabox-accordion-panel {
 	max-height: 0;
 	overflow: hidden;
 	padding: 0 12px;
 	transition: max-height 0.2s ease;
 }
 
-.rs-project-accordion-row.is-open .rs-project-accordion-panel {
+.rs-metabox-accordion-item.is-open .rs-metabox-accordion-panel {
 	max-height: 4800px;
 	overflow: visible;
 	padding: 12px 12px 4px;
 }
 
-.rs-project-accordion-row.ui-sortable-helper {
+.rs-metabox-accordion-item.ui-sortable-helper {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-.rs-project-accordion-placeholder {
+.rs-metabox-accordion-placeholder {
 	min-height: 44px;
 	margin: 0 0 10px;
 	border: 2px dashed #2271b1;
 	border-radius: 4px;
 	background: #f0f6fc;
+}
+
+.rs-media-thumb {
+	position: relative;
+	aspect-ratio: 1;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f6f7f7;
+	overflow: hidden;
+}
+
+.rs-media-thumb img,
+.rs-media-thumb video {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rs-media-thumb .rs-media-thumb-actions {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	background: rgba(0, 0, 0, 0.45);
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.rs-media-thumb:hover .rs-media-thumb-actions,
+.rs-media-thumb:focus-within .rs-media-thumb-actions {
+	opacity: 1;
 }

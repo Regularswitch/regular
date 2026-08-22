@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.31
+ * Version: 1.2.33
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -26,6 +26,7 @@ include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
 include __DIR__ . "/hide-themerain-meta.php";
 include __DIR__ . "/filter-project-translations.php";
+include __DIR__ . "/metabox-ui.php";
 include __DIR__ . "/sync-media-en-to-pt.php";
 include __DIR__ . "/slug-language.php";
 include __DIR__ . "/rest-translate.php";
