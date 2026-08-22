@@ -595,7 +595,10 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
             <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
                 <?php if ($url && $is_video) : ?>
                     <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
-                    <span class="rs-project-gallery-badge">vídeo</span>
+                    <span class="rs-project-gallery-badge" title="Vídeo">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg>
+                        vídeo
+                    </span>
                 <?php elseif ($thumb || $url) : ?>
                     <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
                     <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
@@ -1016,6 +1019,8 @@ function rs_project_render_admin_footer_script(): void {
             line-height: 1;
             letter-spacing: -1px;
             user-select: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
         }
         .rs-project-remove-gallery {
             position: absolute;
@@ -1032,6 +1037,8 @@ function rs_project_render_admin_footer_script(): void {
             font-size: 16px;
             line-height: 1;
             cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease, background 0.15s ease;
         }
         .rs-project-remove-gallery:hover {
             background: #b32d2e;
@@ -1051,11 +1058,19 @@ function rs_project_render_admin_footer_script(): void {
             font-size: 13px;
             line-height: 1;
             cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
         }
         .rs-project-gallery-featured:hover,
         .rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
             background: #2271b1;
             color: #fff;
+        }
+        .rs-project-gallery-tile.is-featured .rs-project-gallery-featured,
+        .rs-project-gallery-tile:hover .rs-project-gallery-handle,
+        .rs-project-gallery-tile:hover .rs-project-remove-gallery,
+        .rs-project-gallery-tile:hover .rs-project-gallery-featured {
+            opacity: 1;
         }
         .rs-project-gallery-preview {
             display: block;
@@ -1077,14 +1092,21 @@ function rs_project_render_admin_footer_script(): void {
             bottom: 6px;
             left: 6px;
             z-index: 2;
-            padding: 2px 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 7px;
             border-radius: 3px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.72);
             color: #fff;
             font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+        }
+        .rs-project-gallery-badge svg {
+            display: block;
+            flex: 0 0 auto;
         }
         .rs-project-gallery-placeholder {
             aspect-ratio: 1;
@@ -1094,6 +1116,13 @@ function rs_project_render_admin_footer_script(): void {
         }
         .rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        }
+        @media (hover: none), (pointer: coarse) {
+            .rs-project-gallery-handle,
+            .rs-project-remove-gallery,
+            .rs-project-gallery-featured {
+                opacity: 1;
+            }
         }
         .rs-project-youtube-row {
             display: flex;
@@ -1308,8 +1337,8 @@ function rs_project_render_admin_footer_script(): void {
                 return '';
             }
             const mime = attachment.mime || '';
-            if (mime.indexOf('video/') === 0) {
-                return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-project-gallery-badge">vídeo</span>';
+            if (mime.indexOf('video/') === 0 || /\.mp4(\?|$)/i.test(attachment.url)) {
+                return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-project-gallery-badge" title="Vídeo"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg> vídeo</span>';
             }
             const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
                 || attachment.url;
