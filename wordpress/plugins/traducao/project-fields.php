@@ -985,6 +985,10 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
         return;
     }
     wp_enqueue_script('jquery-ui-sortable');
+    $base = plugin_dir_url(__FILE__);
+    $ver = '1.2.29';
+    wp_enqueue_style('rs-project-admin', $base . 'assets/project-admin.css', [], $ver);
+    wp_enqueue_script('rs-project-admin', $base . 'assets/project-admin.js', ['jquery'], $ver, true);
 });
 
 function rs_project_render_admin_footer_script(): void {
