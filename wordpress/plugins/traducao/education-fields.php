@@ -409,37 +409,51 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
     $body = $section['body'] ?? '';
     $name_prefix = $is_template ? 'rs_education_sections[__INDEX__]' : 'rs_education_sections[' . $index . ']';
     $editor_id = $is_template ? 'rs_education_section_text___INDEX__' : 'rs_education_section_text_' . $index;
+    $display = $is_template ? ' style="display:none;"' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = $title !== '' ? $title : 'Seção';
+    $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
+    $editor_ids = $is_template ? '' : esc_attr($editor_id);
     ?>
-    <fieldset class="rs-education-section" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>" style="margin:0 0 14px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;background:#fff;<?php echo $is_template ? 'display:none;' : ''; ?>">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-            <legend style="font-weight:600;padding:0;margin:0;"><strong>Seção do acordeão</strong></legend>
-            <button type="button" class="button-link-delete rs-education-remove-section">Remover</button>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        <?php echo $editor_ids !== '' ? ' data-rs-editor-ids="' . $editor_ids . '"' : ''; ?>
+        <?php echo $display; ?>
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <span class="rs-metabox-accordion-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-section">Remover</button>
         </div>
+        <div class="rs-metabox-accordion-panel">
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
+                <input
+                    type="text"
+                    style="width:100%;"
+                    class="rs-metabox-accordion-title rs-education-section-title"
+                    <?php if (!$is_template) : ?>
+                        name="<?php echo esc_attr($name_prefix); ?>[title]"
+                        value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+                    <?php endif; ?>
+                />
+            </div>
 
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
-            <input
-                type="text"
-                style="width:100%;"
-                class="rs-education-section-title"
-                <?php if (!$is_template) : ?>
-                    name="<?php echo esc_attr($name_prefix); ?>[title]"
-                    value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
+            <div style="margin:0 0 12px;">
+                <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+                <?php if ($is_template) : ?>
+                    <textarea
+                        class="rs-education-section-text large-text"
+                        style="width:100%;min-height:120px;"
+                        id="<?php echo esc_attr($editor_id); ?>"
+                    ></textarea>
+                <?php else : ?>
+                    <?php rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph'); ?>
                 <?php endif; ?>
-            />
-        </div>
-
-        <div style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
-            <?php if ($is_template) : ?>
-                <textarea
-                    class="rs-education-section-text large-text"
-                    style="width:100%;min-height:120px;"
-                    id="<?php echo esc_attr($editor_id); ?>"
-                ></textarea>
-            <?php else : ?>
-                <?php rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph'); ?>
-            <?php endif; ?>
+            </div>
         </div>
     </fieldset>
     <?php
@@ -500,7 +514,7 @@ function rs_education_render_gallery_fields(string $name_prefix, string $label, 
                     <div class="rs-education-gallery-tile">
                         <span class="rs-education-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
                         <button type="button" class="rs-education-remove-gallery-item" title="Remover" aria-label="Remover imagem">&times;</button>
-                        <div class="rs-education-gallery-thumb">
+                        <div class="rs-education-gallery-thumb rs-media-thumb">
                             <?php if ($is_video) : ?>
                                 <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
                                 <span class="rs-education-gallery-badge">vídeo</span>
@@ -540,7 +554,6 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     $description = (string) ($institution['description'] ?? '');
     $name_prefix = $is_template ? 'rs_education_institutions[__INDEX__]' : 'rs_education_institutions[' . $index . ']';
     $logo_field_id = $is_template ? 'rs_education_inst_logo___INDEX__' : 'rs_education_inst_logo_' . $index;
-    $display = $is_template ? 'display:none;' : '';
 
     $mid_raw = is_array($institution['midGallery'] ?? null) ? $institution['midGallery'] : null;
     $top_raw = is_array($institution['topGallery'] ?? null) ? $institution['topGallery'] : null;
@@ -554,13 +567,32 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     $bottom = is_array($institution['bottomGallery'] ?? null)
         ? $institution['bottomGallery']
         : ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''];
+    $display = $is_template ? ' display:none;' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = $name !== '' ? $name : 'Instituição';
+    $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
+    $logo_thumb = '';
+    if (!$is_template && $logo_id > 0) {
+        $logo_url = wp_get_attachment_image_url($logo_id, 'thumbnail');
+        if ($logo_url) {
+            $logo_thumb = '<span class="rs-metabox-accordion-head-thumb"><img src="' . esc_url($logo_url) . '" alt="" /></span>';
+        }
+    }
     ?>
-    <fieldset class="rs-education-institution" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>" style="margin:0 0 16px;padding:14px;border:1px solid #dcdcde;border-radius:4px;background:#fff;<?php echo esc_attr($display); ?>">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-            <legend style="font-weight:600;padding:0;margin:0;"><strong>Instituição</strong></legend>
-            <button type="button" class="button-link-delete rs-education-remove-institution">Remover</button>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <?php echo $logo_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <span class="rs-metabox-accordion-head-title rs-education-institution-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-institution">Remover</button>
         </div>
-
+        <div class="rs-metabox-accordion-panel">
         <p style="margin:0 0 12px;">
             <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
             <input
@@ -613,6 +645,7 @@ function rs_education_render_institution_row(int $index, array $institution, boo
             !$is_template
         );
         ?>
+        </div>
     </fieldset>
     <?php
 }
@@ -638,41 +671,59 @@ function rs_education_render_meta_box(WP_Post $post): void {
         ]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.12)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.33)</em></p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
 
-    if (function_exists('rs_section_render_hero_fields')) {
-        rs_section_render_hero_fields($post->ID, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
-    }
+    $section_count = count($sections);
+    $institution_count = count($institutions);
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Headline</strong></legend>';
+    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
+    echo '<div class="rs-metabox-tablist" role="tablist">';
+    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="base">Conteúdo Base</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="accordion">Acordeão (' . (int) $section_count . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="institutions">Instituições (' . (int) $institution_count . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="media">Mídia</button>';
+    echo '</div>';
+
+    echo '<div class="rs-metabox-tabpanel is-active" data-tab="base" role="tabpanel">';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Headline</strong></legend>';
     rs_render_rich_text_field(RS_EDUCATION_HEADLINE_KEY, RS_EDUCATION_HEADLINE_KEY, $headline, 'inline');
     echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
     echo '</fieldset>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Acordeão</strong></legend>';
-    echo '<div id="rs-education-sections-list">';
+    echo '<div class="rs-metabox-tabpanel" data-tab="accordion" role="tabpanel" hidden>';
+    echo '<div id="rs-education-sections-accordion" data-rs-accordion>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Seções do acordeão</strong></legend>';
+    echo '<div id="rs-education-sections-list" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_education_render_section_row((int) $index, $section);
     }
     echo '</div>';
+    echo '<div id="rs-education-section-template" hidden>';
     rs_education_render_section_row(0, ['title' => '', 'body' => ''], true);
+    echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-education-add-section">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-education-sections-json" name="rs_education_sections_json" value="" />';
     echo '</fieldset>';
+    echo '</div>';
+    echo '</div>';
 
-    echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Instituições</strong></legend>';
+    echo '<div class="rs-metabox-tabpanel" data-tab="institutions" role="tabpanel" hidden>';
+    echo '<div id="rs-education-institutions-accordion" data-rs-accordion>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Instituições</strong></legend>';
     echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Ordem no site: <strong>logo + nome</strong> → <strong>galeria</strong> (opcional) → <strong>texto</strong> → <strong>galeria após o texto</strong> (opcional).</p>';
-    echo '<div id="rs-education-institutions-list">';
+    echo '<div id="rs-education-institutions-list" data-rs-accordion-list>';
     foreach ($institutions as $index => $institution) {
         rs_education_render_institution_row((int) $index, $institution);
     }
     echo '</div>';
+    echo '<div id="rs-education-institution-template" hidden>';
     rs_education_render_institution_row(0, [
         'name'          => '',
         'logo_id'       => 0,
@@ -680,9 +731,23 @@ function rs_education_render_meta_box(WP_Post $post): void {
         'midGallery'    => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
         'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
     ], true);
+    echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
     echo '<input type="hidden" id="rs-education-institutions-json" name="rs_education_institutions_json" value="" />';
     echo '</fieldset>';
+    echo '</div>';
+    echo '</div>';
+
+    echo '<div class="rs-metabox-tabpanel" data-tab="media" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Hero</strong></legend>';
+    if (function_exists('rs_section_render_hero_fields')) {
+        rs_section_render_hero_fields($post->ID, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
+    }
+    echo '</fieldset>';
+    echo '</div>';
+
+    echo '</div>';
 }
 
 /**
@@ -691,8 +756,11 @@ function rs_education_render_meta_box(WP_Post $post): void {
 function rs_education_parse_sections_from_request(): array {
     if (!empty($_POST['rs_education_sections_json'])) {
         $decoded = json_decode(wp_unslash((string) $_POST['rs_education_sections_json']), true);
-        if (is_array($decoded)) {
-            return rs_education_normalize_sections($decoded);
+        if (is_array($decoded) && $decoded !== []) {
+            $normalized = rs_education_normalize_sections($decoded);
+            if ($normalized !== []) {
+                return $normalized;
+            }
         }
     }
 
@@ -930,8 +998,10 @@ function rs_education_admin_footer_script(): void {
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
-        let nextSectionIndex = $('#rs-education-sections-list .rs-education-section').length;
-        let nextInstitutionIndex = $('#rs-education-institutions-list .rs-education-institution').length;
+        let nextSectionIndex = $('#rs-education-sections-list .rs-metabox-accordion-item').length;
+        let nextInstitutionIndex = $('#rs-education-institutions-list .rs-metabox-accordion-item').length;
+        const $sectionsAccordionRoot = document.querySelector('#rs-education-sections-accordion');
+        const $institutionsAccordionRoot = document.querySelector('#rs-education-institutions-accordion');
 
         function syncAllEditors() {
             if (typeof tinymce !== 'undefined') {
@@ -945,7 +1015,9 @@ function rs_education_admin_footer_script(): void {
             });
             if (typeof tinymce !== 'undefined') {
                 const headline = tinymce.get('<?php echo esc_js(RS_EDUCATION_HEADLINE_KEY); ?>');
-                if (headline) headline.save();
+                if (headline) {
+                    headline.save();
+                }
             }
         }
 
@@ -953,7 +1025,9 @@ function rs_education_admin_footer_script(): void {
             const editorId = textarea.attr('id');
             if (editorId && typeof tinymce !== 'undefined') {
                 const editor = tinymce.get(editorId);
-                if (editor) return editor.getContent();
+                if (editor && !editor.isHidden()) {
+                    return editor.getContent();
+                }
             }
             return textarea.val() || '';
         }
@@ -961,14 +1035,31 @@ function rs_education_admin_footer_script(): void {
         function collectSectionsJson() {
             syncAllEditors();
             const sections = [];
-            $('#rs-education-sections-list .rs-education-section').each(function () {
+            $('#rs-education-sections-list .rs-metabox-accordion-item').each(function () {
                 const section = $(this);
                 const title = (section.find('.rs-education-section-title').val() || '').trim();
                 const body = readSectionBody(section.find('textarea[id^="rs_education_section_text_"]'));
-                if (!title && !body) return;
+                if (!title && !body) {
+                    return;
+                }
                 sections.push({ title: title || 'Seção', body });
             });
             $('#rs-education-sections-json').val(JSON.stringify(sections));
+            $('.rs-metabox-tab[data-tab="accordion"]').text('Acordeão (' + sections.length + ')');
+        }
+
+        function syncInstitutionHeadThumb($row) {
+            const $toggle = $row.find('.rs-metabox-accordion-toggle').first();
+            const $previewImg = $row.find('.rs-media-preview img').first();
+            $row.find('.rs-metabox-accordion-head-thumb').remove();
+            if ($previewImg.length) {
+                $toggle.prepend(
+                    $('<span class="rs-metabox-accordion-head-thumb"><img alt="" /></span>')
+                        .find('img')
+                        .attr('src', $previewImg.attr('src'))
+                        .end()
+                );
+            }
         }
 
         function syncGalleryIds($block) {
@@ -992,7 +1083,7 @@ function rs_education_admin_footer_script(): void {
 
         function collectInstitutionsJson() {
             const institutions = [];
-            $('#rs-education-institutions-list .rs-education-institution').each(function () {
+            $('#rs-education-institutions-list .rs-metabox-accordion-item').each(function () {
                 const row = $(this);
                 const name = (row.find('.rs-education-institution-name').val() || '').trim();
                 const logoId = parseInt(row.find('input[data-rs-cap-image]').val(), 10) || 0;
@@ -1000,7 +1091,9 @@ function rs_education_admin_footer_script(): void {
                 const galleries = {};
                 row.find('.rs-education-gallery-block').each(function () {
                     const key = $(this).find('.rs-education-gallery-layout').data('gallery');
-                    if (key) galleries[key] = readGallery($(this));
+                    if (key) {
+                        galleries[key] = readGallery($(this));
+                    }
                 });
 
                 if (!name && !logoId && !description
@@ -1019,6 +1112,7 @@ function rs_education_admin_footer_script(): void {
                 });
             });
             $('#rs-education-institutions-json').val(JSON.stringify(institutions));
+            $('.rs-metabox-tab[data-tab="institutions"]').text('Instituições (' + institutions.length + ')');
         }
 
         function initEditor(id) {
@@ -1034,8 +1128,26 @@ function rs_education_admin_footer_script(): void {
         }
 
         function assignSectionNames(section, index) {
+            const editorId = 'rs_education_section_text_' + index;
             section.find('.rs-education-section-title').attr('name', 'rs_education_sections[' + index + '][title]');
             section.find('textarea[id^="rs_education_section_text_"]').attr('name', 'rs_education_sections[' + index + '][body]');
+            section.attr('data-rs-editor-ids', editorId);
+        }
+
+        function reindexSections() {
+            $('#rs-education-sections-list .rs-metabox-accordion-item').each(function (i) {
+                $(this).attr('data-index', String(i));
+                assignSectionNames($(this), i);
+                const textarea = $(this).find('textarea[id^="rs_education_section_text_"]');
+                const oldEditorId = textarea.attr('id');
+                const newEditorId = 'rs_education_section_text_' + i;
+                if (oldEditorId && oldEditorId !== newEditorId) {
+                    removeEditor(oldEditorId);
+                    textarea.attr('id', newEditorId);
+                    initEditor(newEditorId);
+                }
+            });
+            nextSectionIndex = $('#rs-education-sections-list .rs-metabox-accordion-item').length;
         }
 
         function assignInstitutionNames(row, index) {
@@ -1050,6 +1162,20 @@ function rs_education_admin_footer_script(): void {
                 $(this).find('.rs-education-gallery-ids').attr('name', prefix + '[' + key + '][image_ids]');
                 $(this).find('.rs-education-gallery-caption').attr('name', prefix + '[' + key + '][caption]');
             });
+        }
+
+        function reindexInstitutions() {
+            $('#rs-education-institutions-list .rs-metabox-accordion-item').each(function (i) {
+                $(this).attr('data-index', String(i));
+                assignInstitutionNames($(this), i);
+                $(this).find('[id^="rs_education_inst_logo_"]').each(function () {
+                    const newId = 'rs_education_inst_logo_' + i;
+                    const oldId = $(this).attr('id');
+                    $(this).attr('id', newId);
+                    $(this).closest('.rs-media-field').find('[data-target="' + oldId + '"]').attr('data-target', newId);
+                });
+            });
+            nextInstitutionIndex = $('#rs-education-institutions-list .rs-metabox-accordion-item').length;
         }
 
         function replaceIndexAttrs($el, index) {
@@ -1093,7 +1219,7 @@ function rs_education_admin_footer_script(): void {
                     '<div class="rs-education-gallery-tile">' +
                         '<span class="rs-education-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>' +
                         '<button type="button" class="rs-education-remove-gallery-item" title="Remover" aria-label="Remover imagem">&times;</button>' +
-                        '<div class="rs-education-gallery-thumb"></div>' +
+                        '<div class="rs-education-gallery-thumb rs-media-thumb"></div>' +
                     '</div>' +
                 '</div>'
             );
@@ -1126,43 +1252,95 @@ function rs_education_admin_footer_script(): void {
             });
         }
 
+        let sectionsAccordionApi = null;
+        let institutionsAccordionApi = null;
+
+        if ($sectionsAccordionRoot && window.RsMetaboxUi) {
+            sectionsAccordionApi = window.RsMetaboxUi.initAccordion($sectionsAccordionRoot, {
+                onExpand: function (_$item, editorIds) {
+                    window.RsMetaboxUi.resizeEditors(editorIds);
+                },
+                onRemove: function (event, $section) {
+                    event.preventDefault();
+                    if ($('#rs-education-sections-list .rs-metabox-accordion-item').length <= 1) {
+                        window.alert('Mantenha pelo menos uma seção.');
+                        return;
+                    }
+                    removeEditor($section.find('textarea[id^="rs_education_section_text_"]').attr('id'));
+                    $section.remove();
+                    reindexSections();
+                },
+                onSortUpdate: function () {
+                    reindexSections();
+                },
+            });
+        }
+
+        if ($institutionsAccordionRoot && window.RsMetaboxUi) {
+            institutionsAccordionApi = window.RsMetaboxUi.initAccordion($institutionsAccordionRoot, {
+                titleInputSelector: '.rs-education-institution-name',
+                headTitleSelector: '.rs-education-institution-head-title',
+                defaultTitle: 'Instituição',
+                onRemove: function (event, $row) {
+                    event.preventDefault();
+                    $row.remove();
+                    reindexInstitutions();
+                },
+                onSortUpdate: function () {
+                    reindexInstitutions();
+                },
+            });
+        }
+
+        $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, tab) {
+            if (tab === 'accordion') {
+                window.setTimeout(function () {
+                    $('#rs-education-sections-list .rs-metabox-accordion-item.is-open').each(function () {
+                        window.RsMetaboxUi.resizeEditors(window.RsMetaboxUi.parseEditorIds($(this)));
+                    });
+                }, 50);
+            }
+        });
+
+        $(document).on('click', '#rs-education-institutions-list .rs-media-pick, #rs-education-institutions-list .rs-media-clear', function () {
+            const $row = $(this).closest('.rs-metabox-accordion-item');
+            if (!$row.length) {
+                return;
+            }
+            window.setTimeout(function () {
+                syncInstitutionHeadThumb($row);
+            }, 120);
+        });
+
         $('#rs-education-add-section').on('click', function (event) {
             event.preventDefault();
-            const template = $('.rs-education-section[data-index="__INDEX__"]').first().clone();
-            template.removeAttr('style').attr('style', 'margin:0 0 14px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;background:#fff;');
+            const template = $('#rs-education-section-template .rs-metabox-accordion-item').first().clone();
+            template.removeAttr('style').removeClass('is-open');
             template.attr('data-index', String(nextSectionIndex));
             template.find('.rs-education-section-title').val('');
             template.find('textarea').val('');
+            template.find('.rs-metabox-accordion-head-title').text('Seção');
+            template.find('.rs-metabox-accordion-toggle').attr('aria-expanded', 'false');
             replaceIndexAttrs(template, nextSectionIndex);
             assignSectionNames(template, nextSectionIndex);
             $('#rs-education-sections-list').append(template);
             initEditor('rs_education_section_text_' + nextSectionIndex);
-            nextSectionIndex += 1;
-        });
-
-        $(document).on('click', '.rs-education-remove-section', function (event) {
-            event.preventDefault();
-            if ($('#rs-education-sections-list .rs-education-section').length <= 1) {
-                window.alert('Mantenha pelo menos uma seção.');
-                return;
+            if (sectionsAccordionApi) {
+                sectionsAccordionApi.openItem(template);
             }
-            const section = $(this).closest('.rs-education-section');
-            removeEditor(section.find('textarea[id^="rs_education_section_text_"]').attr('id'));
-            section.remove();
-            $('#rs-education-sections-list .rs-education-section').each(function (i) {
-                $(this).attr('data-index', String(i));
-                assignSectionNames($(this), i);
-            });
-            nextSectionIndex = $('#rs-education-sections-list .rs-education-section').length;
+            nextSectionIndex += 1;
         });
 
         $('#rs-education-add-institution').on('click', function (event) {
             event.preventDefault();
-            const template = $('.rs-education-institution[data-index="__INDEX__"]').first().clone();
-            template.attr('style', 'margin:0 0 16px;padding:14px;border:1px solid #dcdcde;border-radius:4px;background:#fff;');
+            const template = $('#rs-education-institution-template .rs-metabox-accordion-item').first().clone();
+            template.removeAttr('style').removeClass('is-open');
             template.attr('data-index', String(nextInstitutionIndex));
             template.find('.rs-education-institution-name').val('');
             template.find('.rs-education-institution-description').val('');
+            template.find('.rs-metabox-accordion-head-title').text('Instituição');
+            template.find('.rs-metabox-accordion-head-thumb').remove();
+            template.find('.rs-metabox-accordion-toggle').attr('aria-expanded', 'false');
             template.find('input[data-rs-cap-image]').val('0');
             template.find('.rs-media-preview').empty();
             template.find('.rs-education-gallery-ids').val('');
@@ -1177,23 +1355,10 @@ function rs_education_admin_footer_script(): void {
             assignInstitutionNames(template, nextInstitutionIndex);
             $('#rs-education-institutions-list').append(template);
             initAllGallerySortables(template);
+            if (institutionsAccordionApi) {
+                institutionsAccordionApi.openItem(template);
+            }
             nextInstitutionIndex += 1;
-        });
-
-        $(document).on('click', '.rs-education-remove-institution', function (event) {
-            event.preventDefault();
-            $(this).closest('.rs-education-institution').remove();
-            $('#rs-education-institutions-list .rs-education-institution').each(function (i) {
-                $(this).attr('data-index', String(i));
-                assignInstitutionNames($(this), i);
-                $(this).find('[id^="rs_education_inst_logo_"]').each(function () {
-                    const newId = 'rs_education_inst_logo_' + i;
-                    const oldId = $(this).attr('id');
-                    $(this).attr('id', newId);
-                    $(this).closest('.rs-media-field').find('[data-target="' + oldId + '"]').attr('data-target', newId);
-                });
-            });
-            nextInstitutionIndex = $('#rs-education-institutions-list .rs-education-institution').length;
         });
 
         $(document).on('click', '.rs-education-add-gallery-images', function (event) {
@@ -1233,6 +1398,13 @@ function rs_education_admin_footer_script(): void {
             });
             collectSectionsJson();
             collectInstitutionsJson();
+        });
+
+        $('#publish, #save-post').on('click', function () {
+            window.setTimeout(function () {
+                collectSectionsJson();
+                collectInstitutionsJson();
+            }, 0);
         });
 
         initAllGallerySortables();
