@@ -16,15 +16,20 @@ function rs_translate_opposite_lang(string $lang): string {
 }
 
 function rs_translate_find_existing(int $source_id, string $lang, string $target_type): int {
+    $opposite = rs_translate_opposite_lang($lang);
     $direct_id = (int) get_post_meta($source_id, $lang, true);
     if ($direct_id > 0) {
         $linked = get_post($direct_id);
-        if ($linked && $linked->post_type === $target_type) {
-            return $direct_id;
+        if ($linked && $linked->post_type === $target_type && $linked->post_status !== 'trash') {
+            $back = (int) get_post_meta($direct_id, $opposite, true);
+            // Só reutiliza se o gêmeo aponta de volta (ou ainda não tem vínculo).
+            if ($back === 0 || $back === $source_id) {
+                return $direct_id;
+            }
         }
+        delete_post_meta($source_id, $lang);
     }
 
-    $opposite = rs_translate_opposite_lang($lang);
     $reverse = get_posts([
         'post_type'      => $target_type,
         'post_status'    => 'any',
@@ -49,8 +54,23 @@ function rs_translate_find_existing(int $source_id, string $lang, string $target
 }
 
 function rs_translate_link_pair(int $source_id, string $lang, int $target_id): void {
+    $opposite = rs_translate_opposite_lang($lang);
+    $back = (int) get_post_meta($target_id, $opposite, true);
+    // Não “roubar” um gêmeo que já pertence a outro post.
+    if ($back > 0 && $back !== $source_id) {
+        return;
+    }
+
+    $previous = (int) get_post_meta($source_id, $lang, true);
+    if ($previous > 0 && $previous !== $target_id) {
+        $prev_back = (int) get_post_meta($previous, $opposite, true);
+        if ($prev_back === $source_id) {
+            delete_post_meta($previous, $opposite);
+        }
+    }
+
     update_post_meta($source_id, $lang, $target_id);
-    update_post_meta($target_id, rs_translate_opposite_lang($lang), $source_id);
+    update_post_meta($target_id, $opposite, $source_id);
 }
 
 function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type): void {

@@ -75,64 +75,100 @@ function rs_sync_media_is_en_source(int $post_id): bool {
 }
 
 /**
- * Resolve o post PT gêmeo: meta PT, ou slug/locale `pt` no mesmo CPT.
+ * Resolve o post PT gêmeo: meta PT, ou (só em páginas de seção) slug `pt`.
+ * Projetos nunca usam slug/locale — cada um tem o próprio gêmeo via meta Language.
  */
 function rs_sync_media_pt_twin_id(int $en_id): int {
-    $pt_id = (int) get_post_meta($en_id, 'PT', true);
-    if ($pt_id > 0) {
-        $pt = get_post($pt_id);
-        if ($pt && $pt->post_status !== 'trash') {
-            return $pt_id;
-        }
-    }
-
     $en = get_post($en_id);
     if (!$en) {
         return 0;
     }
 
-    // Páginas de seção: about/en + about/pt
-    if ($en->post_name === 'en' || (function_exists('rs_detect_post_locale') && rs_detect_post_locale($en_id) === 'en')) {
-        $siblings = get_posts([
-            'post_type'      => $en->post_type,
+    $pt_id = (int) get_post_meta($en_id, 'PT', true);
+    if ($pt_id > 0) {
+        $pt = get_post($pt_id);
+        if ($pt && $pt->post_status !== 'trash') {
+            $back = (int) get_post_meta($pt_id, 'EN', true);
+            // Meta PT apontando para o gêmeo de outro EN — vínculo roubado/quebrado.
+            if ($back > 0 && $back !== $en_id) {
+                delete_post_meta($en_id, 'PT');
+            } else {
+                if ($back === 0) {
+                    update_post_meta($pt_id, 'EN', $en_id);
+                }
+                return $pt_id;
+            }
+        } else {
+            delete_post_meta($en_id, 'PT');
+        }
+    }
+
+    // Projetos: só meta explícita (já checada acima). Nunca adivinhar por slug "pt".
+    if ($en->post_type === 'project') {
+        $reverse = get_posts([
+            'post_type'      => 'project',
             'post_status'    => ['publish', 'draft', 'pending', 'private'],
-            'name'           => 'pt',
             'posts_per_page' => 1,
             'fields'         => 'ids',
+            'meta_query'     => [
+                [
+                    'key'     => 'EN',
+                    'value'   => $en_id,
+                    'compare' => '=',
+                ],
+            ],
         ]);
-
-        if (empty($siblings[0])) {
-            // Fallback: post com locale/título PT no mesmo CPT
-            $candidates = get_posts([
-                'post_type'      => $en->post_type,
-                'post_status'    => ['publish', 'draft', 'pending', 'private'],
-                'posts_per_page' => 20,
-                'fields'         => 'ids',
-                'exclude'        => [$en_id],
-            ]);
-            foreach ($candidates as $candidate_id) {
-                $candidate_id = (int) $candidate_id;
-                if ((int) get_post_meta($candidate_id, 'EN', true) === $en_id) {
-                    $siblings = [$candidate_id];
-                    break;
-                }
-                $cand = get_post($candidate_id);
-                if ($cand && $cand->post_name === 'pt') {
-                    $siblings = [$candidate_id];
-                    break;
-                }
-                if (function_exists('rs_detect_post_locale') && rs_detect_post_locale($candidate_id) === 'pt') {
-                    $siblings = [$candidate_id];
-                    break;
-                }
-            }
-        }
-
-        if (!empty($siblings[0])) {
-            $found = (int) $siblings[0];
+        if (!empty($reverse[0])) {
+            $found = (int) $reverse[0];
             rs_sync_media_link_pair($en_id, $found);
             return $found;
         }
+        return 0;
+    }
+
+    // Páginas de seção: about/en + about/pt (um único par por CPT).
+    if (!in_array($en->post_type, rs_sync_media_section_post_types(), true)) {
+        return 0;
+    }
+
+    if ($en->post_name !== 'en' && !(function_exists('rs_detect_post_locale') && rs_detect_post_locale($en_id) === 'en')) {
+        return 0;
+    }
+
+    $siblings = get_posts([
+        'post_type'      => $en->post_type,
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
+        'name'           => 'pt',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+    ]);
+
+    if (empty($siblings[0])) {
+        $candidates = get_posts([
+            'post_type'      => $en->post_type,
+            'post_status'    => ['publish', 'draft', 'pending', 'private'],
+            'posts_per_page' => 20,
+            'fields'         => 'ids',
+            'exclude'        => [$en_id],
+        ]);
+        foreach ($candidates as $candidate_id) {
+            $candidate_id = (int) $candidate_id;
+            if ((int) get_post_meta($candidate_id, 'EN', true) === $en_id) {
+                $siblings = [$candidate_id];
+                break;
+            }
+            $cand = get_post($candidate_id);
+            if ($cand && $cand->post_name === 'pt') {
+                $siblings = [$candidate_id];
+                break;
+            }
+        }
+    }
+
+    if (!empty($siblings[0])) {
+        $found = (int) $siblings[0];
+        rs_sync_media_link_pair($en_id, $found);
+        return $found;
     }
 
     return 0;
