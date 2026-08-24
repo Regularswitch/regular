@@ -36,16 +36,11 @@ function file_info($file_id) {
 }
 
 function campos_personalizados( $data ) {
-    $posts = get_posts( array(
+    $posts = get_posts([
         'numberposts' => -1,
         'post_type'   => 'project',
-        'meta_query'  => array(
-            array(
-                'key'     => 'EN',
-                'compare' => 'NOT EXISTS',
-            ),
-        ),
-    ) );
+        'post_status' => 'publish',
+    ]);
     $response = array();
     foreach( $posts as $post ) {
         // wp_get_attachment_url

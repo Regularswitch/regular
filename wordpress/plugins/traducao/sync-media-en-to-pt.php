@@ -444,6 +444,10 @@ function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
         return;
     }
 
+    if ($post_type === 'project' && get_option('rs_project_i18n_migrated_v1')) {
+        return;
+    }
+
     if (!rs_sync_media_is_en_source($en_id)) {
         return;
     }
@@ -545,6 +549,10 @@ foreach (rs_sync_media_post_types() as $post_type) {
 }
 
 add_action('save_post_project', function (int $post_id) {
+    if (get_option('rs_project_i18n_migrated_v1')) {
+        return;
+    }
+
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }

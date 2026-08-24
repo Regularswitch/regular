@@ -112,6 +112,10 @@ function rs_project_replace_view_count(string $html, int $count): string {
  * Pedidos por slug específico continuam encontrando o post pedido.
  */
 add_filter('rest_project_query', function (array $args, WP_REST_Request $request) {
+    if (get_option('rs_project_i18n_migrated_v1')) {
+        return $args;
+    }
+
     $slug = $request->get_param('slug');
     if (!empty($slug)) {
         return $args;
@@ -147,6 +151,10 @@ add_filter('rest_project_query', function (array $args, WP_REST_Request $request
  */
 add_action('pre_get_posts', function (WP_Query $query) {
     if (!is_admin() || !$query->is_main_query()) {
+        return;
+    }
+
+    if (get_option('rs_project_i18n_migrated_v1')) {
         return;
     }
 

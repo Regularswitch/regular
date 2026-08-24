@@ -279,6 +279,14 @@ function rs_project_attachment_info(int $attachment_id): ?array {
 }
 
 function rs_project_meta_to_payload(int $post_id): array {
+    $canonical_id = function_exists('rs_project_resolve_canonical_id')
+        ? rs_project_resolve_canonical_id($post_id)
+        : $post_id;
+
+    if (function_exists('rs_project_meta_to_payload_for_locale')) {
+        return rs_project_meta_to_payload_for_locale($canonical_id, 'en');
+    }
+
     $accordion = [];
     $index = 1;
 
@@ -403,47 +411,23 @@ add_action('init', function () {
 add_action('rest_api_init', function () {
     register_rest_field('project', 'project_data', [
         'get_callback' => function (array $post, $attr, $request = null) {
-            $source_id = (int) $post['id'];
-            $post_id = $source_id;
+            $post_id = function_exists('rs_project_resolve_canonical_id')
+                ? rs_project_resolve_canonical_id((int) $post['id'])
+                : (int) $post['id'];
 
-            $lang = null;
+            $locale = 'en';
             if ($request instanceof WP_REST_Request) {
                 $raw = $request->get_param('translate');
-                if (is_string($raw) && $raw !== '') {
-                    $lang = strtoupper($raw);
+                if (is_string($raw) && strtoupper($raw) === 'PT') {
+                    $locale = 'pt';
                 }
             }
 
-            if ($lang) {
-                $translated_id = (int) get_post_meta($source_id, $lang, true);
-                if ($translated_id > 0) {
-                    $post_id = $translated_id;
-                }
+            if (function_exists('rs_project_meta_to_payload_for_locale')) {
+                return rs_project_meta_to_payload_for_locale($post_id, $locale);
             }
 
-            $payload = rs_project_meta_to_payload($post_id);
-
-            // Tradução PT sem campos preenchidos → herda do EN.
-            if ($post_id !== $source_id) {
-                $source_payload = rs_project_meta_to_payload($source_id);
-                if (empty($payload['accordion']) && !empty($source_payload['accordion'])) {
-                    $payload['accordion'] = $source_payload['accordion'];
-                }
-                if (empty($payload['gallery']) && !empty($source_payload['gallery'])) {
-                    $payload['gallery'] = $source_payload['gallery'];
-                }
-                if (empty($payload['youtubeVideos']) && !empty($source_payload['youtubeVideos'])) {
-                    $payload['youtubeVideos'] = $source_payload['youtubeVideos'];
-                }
-                if (empty($payload['heroImage']['url']) && !empty($source_payload['heroImage']['url'])) {
-                    $payload['heroImage'] = $source_payload['heroImage'];
-                }
-                if (empty($payload['logoImage']['url']) && !empty($source_payload['logoImage']['url'])) {
-                    $payload['logoImage'] = $source_payload['logoImage'];
-                }
-            }
-
-            return $payload;
+            return rs_project_meta_to_payload($post_id);
         },
         'schema' => [
             'description' => 'Dados estruturados do projeto',
@@ -485,11 +469,16 @@ function rs_project_move_excerpt_and_slug(): void {
 }
 add_action('add_meta_boxes_project', 'rs_project_move_excerpt_and_slug', 99);
 
-function rs_project_render_accordion_row(int $index, array $section, bool $is_template = false): void {
+function rs_project_render_accordion_row(int $index, array $section, bool $is_template = false, string $locale = 'en'): void {
+    $locale = in_array($locale, ['en', 'pt'], true) ? $locale : 'en';
     $title = $section['title'] ?? '';
     $body = $section['body'] ?? '';
-    $name_prefix = $is_template ? 'rs_project_accordion[__INDEX__]' : 'rs_project_accordion[' . $index . ']';
-    $editor_id = $is_template ? 'rs_project_accordion_body___INDEX__' : 'rs_project_accordion_body_' . $index;
+    $name_prefix = $is_template
+        ? 'rs_project_accordion_' . $locale . '[__INDEX__]'
+        : 'rs_project_accordion_' . $locale . '[' . $index . ']';
+    $editor_id = $is_template
+        ? 'rs_project_accordion_body_' . $locale . '___INDEX__'
+        : 'rs_project_accordion_body_' . $locale . '_' . $index;
     $display = $is_template ? ' style="display:none;"' : '';
     $is_open = !$is_template && (int) $index === 0;
     $head_title = $title !== '' ? $title : 'Seção do acordeão';
@@ -534,8 +523,11 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
     <?php
 }
 
-function rs_project_render_youtube_row(int $index, string $url = '', bool $is_template = false): void {
-    $name = $is_template ? 'rs_project_youtube[__INDEX__][url]' : 'rs_project_youtube[' . $index . '][url]';
+function rs_project_render_youtube_row(int $index, string $url = '', bool $is_template = false, string $locale = 'en'): void {
+    $locale = in_array($locale, ['en', 'pt'], true) ? $locale : 'en';
+    $name = $is_template
+        ? 'rs_project_youtube_' . $locale . '[__INDEX__][url]'
+        : 'rs_project_youtube_' . $locale . '[' . $index . '][url]';
     $locked = !$is_template && $url !== '';
     $display = $is_template ? ' style="display:none;"' : '';
     $row_class = 'rs-project-youtube-row' . ($locked ? ' is-locked' : '');
@@ -621,97 +613,144 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
 function rs_project_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_project_save', 'rs_project_nonce');
 
-    $hero_id = rs_project_get_hero_id($post->ID);
-    $logo_id = (int) get_post_meta($post->ID, RS_PROJECT_LOGO_KEY, true);
-    $accordion_sections = rs_project_get_accordion_sections($post->ID);
-    $youtube_videos = rs_project_get_youtube_videos($post->ID);
-    $gallery_ids = rs_project_get_gallery_ids($post->ID);
-    $gallery_featured_ids = array_flip(rs_project_get_gallery_featured_ids($post->ID));
-    $featured = (bool) get_post_meta($post->ID, RS_PROJECT_FEATURED_KEY, true);
-    $vignette_meta = get_post_meta($post->ID, RS_PROJECT_VIGNETTE_KEY, true);
-    $show_vignette = $vignette_meta === '' ? true : (bool) $vignette_meta;
+    $canonical_id = function_exists('rs_project_resolve_canonical_id')
+        ? rs_project_resolve_canonical_id((int) $post->ID)
+        : (int) $post->ID;
+    $i18n = function_exists('rs_project_i18n_get')
+        ? rs_project_i18n_get($canonical_id)
+        : (function_exists('rs_project_i18n_default') ? rs_project_i18n_default() : ['shared' => [], 'locales' => ['en' => [], 'pt' => []]]);
 
+    $shared = $i18n['shared'];
+    $en = $i18n['locales']['en'];
+    $pt = $i18n['locales']['pt'];
+
+    $hero_id = (int) ($shared['hero_id'] ?? 0) ?: rs_project_get_hero_id($canonical_id);
+    $logo_id = (int) ($shared['logo_id'] ?? 0);
+    $gallery_ids = array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_ids'] ?? '')))));
     if (!$gallery_ids) {
-        $gallery_ids = [];
+        $gallery_ids = rs_project_get_gallery_ids($canonical_id);
+    }
+    $gallery_featured_ids = array_flip(array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_featured_ids'] ?? '')))));
+    $featured = !empty($shared['featured_home']);
+    $show_vignette = !array_key_exists('show_vignette', $shared) || !empty($shared['show_vignette']);
+
+    $en_accordion = is_array($en['accordion'] ?? null) ? $en['accordion'] : [];
+    $pt_accordion = is_array($pt['accordion'] ?? null) ? $pt['accordion'] : [];
+    if (!$en_accordion) {
+        $en_accordion = rs_project_get_accordion_sections($canonical_id);
     }
 
-    $locale_badge = function_exists('rs_project_locale_badge') ? rs_project_locale_badge((int) $post->ID) : 'EN';
-    $excerpt = (string) $post->post_excerpt;
+    $en_youtube = is_array($en['youtube'] ?? null) ? $en['youtube'] : rs_project_get_youtube_videos($canonical_id);
+    $pt_youtube = is_array($pt['youtube'] ?? null) ? $pt['youtube'] : [];
+
+    $excerpt_en = trim((string) ($en['excerpt'] ?? '')) !== '' ? (string) $en['excerpt'] : (string) $post->post_excerpt;
+    $title_pt = trim((string) ($pt['title'] ?? ''));
+    $excerpt_pt = (string) ($pt['excerpt'] ?? '');
     $slug = (string) $post->post_name;
-    $accordion_count = count($accordion_sections);
-    $media_count = ($hero_id > 0 ? 1 : 0) + ($logo_id > 0 ? 1 : 0) + count($youtube_videos) + count($gallery_ids);
+    $media_count = ($hero_id > 0 ? 1 : 0) + ($logo_id > 0 ? 1 : 0) + count($en_youtube) + count($gallery_ids);
 
-    echo '<p style="margin-top:0;color:#646970;">Edite aqui o que aparece em <code>/project/{slug}</code>. Este post é a versão <strong>' . esc_html($locale_badge) . '</strong>. Com o site em PT, o front lê a versão PT — abra-a pela coluna <strong>Language → PT</strong>. Não crie projetos duplicados com o mesmo título; use EN/PT. Categorias do PT são copiadas do EN ao salvar. <em>(Plugin Tradução v1.2.29)</em></p>';
-    if (function_exists('rs_sync_media_notice_html')) {
-        echo rs_sync_media_notice_html((int) $post->ID);
-    }
+    echo '<p style="margin-top:0;color:#646970;">Um único post por projeto. Edite <strong>English</strong> e <strong>Português</strong> nas abas abaixo; mídia (hero, logo, galeria) é compartilhada. URL: <code>/project/{slug}</code> — o front usa o idioma do visitante. <em>(Plugin Tradução v1.2.35)</em></p>';
 
-    echo '<div class="rs-project-tabs">';
-    echo '<div class="rs-project-tablist" role="tablist">';
-    echo '<button type="button" class="rs-project-tab is-active" role="tab" aria-selected="true" data-tab="base">Conteúdo Base</button>';
-    echo '<button type="button" class="rs-project-tab" role="tab" aria-selected="false" data-tab="accordion">Acordeão (' . (int) $accordion_count . ')</button>';
-    echo '<button type="button" class="rs-project-tab" role="tab" aria-selected="false" data-tab="media">Mídia (' . (int) $media_count . ')</button>';
+    echo '<div class="rs-metabox-tabs rs-project-tabs" data-rs-tabs>';
+    echo '<div class="rs-metabox-tablist rs-project-tablist" role="tablist">';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab is-active" role="tab" aria-selected="true" data-tab="general">Geral</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="en">English (' . count($en_accordion) . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="pt">Português (' . count($pt_accordion) . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="media">Mídia (' . (int) $media_count . ')</button>';
     echo '</div>';
 
-    echo '<div class="rs-project-tabpanel is-active" data-tab="base" role="tabpanel">';
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Resumo</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">Aparece na coluna esquerda da página do projeto, abaixo do título.</p>';
-    echo '<label class="screen-reader-text" for="excerpt">Resumo</label>';
-    echo '<textarea rows="4" cols="40" name="excerpt" id="excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt) . '</textarea>';
-    echo '</fieldset>';
-
-    echo '<fieldset class="rs-project-fieldset">';
+    echo '<div class="rs-metabox-tabpanel rs-project-tabpanel is-active" data-tab="general" role="tabpanel">';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Slug</strong></legend>';
     echo '<p class="description" style="margin-top:0;">URL do projeto: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code></p>';
     echo '<label class="screen-reader-text" for="post_name">Slug</label>';
     echo '<input type="text" name="post_name" id="post_name" value="' . esc_attr($slug) . '" class="regular-text" style="width:100%;max-width:420px;" autocomplete="off" spellcheck="false" />';
     echo '</fieldset>';
-
-    echo '<fieldset class="rs-project-fieldset">';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Home</strong></legend>';
     echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto deve estar marcado)</label></p>';
     echo '</fieldset>';
     echo '</div>';
 
-    echo '<div class="rs-project-tabpanel" data-tab="accordion" role="tabpanel" hidden>';
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Acordeão (coluna direita)</strong></legend>';
-    echo '<p id="rs-project-accordion-empty" class="description"' . ($accordion_sections ? ' style="display:none;"' : '') . '>Nenhuma seção. Use <strong>+ Adicionar seção</strong> quando precisar.</p>';
-    echo '<div id="rs-project-accordion-list">';
-    foreach ($accordion_sections as $index => $section) {
-        rs_project_render_accordion_row((int) $index, $section);
+    echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="en" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>Resumo (EN)</strong></legend>';
+    echo '<p class="description" style="margin-top:0;">Coluna esquerda da página — título EN vem do campo <strong>Título</strong> acima do meta box.</p>';
+    echo '<textarea rows="4" cols="40" name="excerpt" id="excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt_en) . '</textarea>';
+    echo '</fieldset>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>Acordeão (EN)</strong></legend>';
+    echo '<div id="rs-project-accordion-list-en" data-rs-locale="en">';
+    foreach ($en_accordion as $index => $section) {
+        rs_project_render_accordion_row((int) $index, $section, false, 'en');
     }
     echo '</div>';
-    rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true);
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-project-add-accordion">+ Adicionar seção</button></p>';
-    echo '<input type="hidden" id="rs-project-accordion-json" name="rs_project_accordion_json" value="" />';
+    echo '<div id="rs-project-accordion-template-en" hidden>';
+    rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'en');
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="en">+ Adicionar seção</button></p>';
+    echo '<input type="hidden" id="rs-project-accordion-en-json" name="rs_project_accordion_en_json" value="" />';
+    echo '</fieldset>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>YouTube (EN)</strong></legend>';
+    echo '<div id="rs-project-youtube-list-en" data-rs-locale="en">';
+    foreach ($en_youtube as $index => $video) {
+        rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''), false, 'en');
+    }
+    echo '</div>';
+    echo '<div id="rs-project-youtube-template-en" hidden>';
+    rs_project_render_youtube_row(0, '', true, 'en');
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="en">+ Adicionar vídeo</button></p>';
+    echo '<input type="hidden" id="rs-project-youtube-en-json" name="rs_project_youtube_en_json" value="" />';
     echo '</fieldset>';
     echo '</div>';
 
-    echo '<div class="rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
+    echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>Título (PT)</strong></legend>';
+    echo '<input type="text" class="large-text" name="rs_project_pt_title" value="' . esc_attr($title_pt) . '" style="width:100%;" placeholder="Título em português (opcional — usa EN se vazio no front)" />';
+    echo '</fieldset>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>Resumo (PT)</strong></legend>';
+    echo '<textarea rows="4" name="rs_project_pt_excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt_pt) . '</textarea>';
+    echo '</fieldset>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>Acordeão (PT)</strong></legend>';
+    echo '<div id="rs-project-accordion-list-pt" data-rs-locale="pt">';
+    foreach ($pt_accordion as $index => $section) {
+        rs_project_render_accordion_row((int) $index, $section, false, 'pt');
+    }
+    echo '</div>';
+    echo '<div id="rs-project-accordion-template-pt" hidden>';
+    rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'pt');
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="pt">+ Adicionar seção</button></p>';
+    echo '<input type="hidden" id="rs-project-accordion-pt-json" name="rs_project_accordion_pt_json" value="" />';
+    echo '</fieldset>';
+    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
+    echo '<legend><strong>YouTube (PT)</strong></legend>';
+    echo '<p class="description" style="margin-top:0;">Opcional — se vazio, o site usa os vídeos EN.</p>';
+    echo '<div id="rs-project-youtube-list-pt" data-rs-locale="pt">';
+    foreach ($pt_youtube as $index => $video) {
+        rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''), false, 'pt');
+    }
+    echo '</div>';
+    echo '<div id="rs-project-youtube-template-pt" hidden>';
+    rs_project_render_youtube_row(0, '', true, 'pt');
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="pt">+ Adicionar vídeo</button></p>';
+    echo '<input type="hidden" id="rs-project-youtube-pt-json" name="rs_project_youtube_pt_json" value="" />';
+    echo '</fieldset>';
+    echo '</div>';
+
+    echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
     echo '<fieldset class="rs-project-fieldset">';
     echo '<legend><strong>Hero (topo)</strong></legend>';
     rs_render_media_field('rs_project_hero_id', 'Fundo (imagem, GIF ou vídeo mp4) — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', true, 'media');
     rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a mídia no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
     echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
     echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
-    echo '</fieldset>';
-
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>YouTube (antes da galeria)</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Cole o link do YouTube (watch, youtu.be, Shorts ou embed) e clique em <strong>Concluir</strong> para fixar. Um vídeo por projeto; ocupa as <strong>duas colunas</strong> no desktop, acima da galeria.</p>';
-    echo '<p id="rs-project-youtube-empty" class="description"' . ($youtube_videos ? ' style="display:none;"' : '') . '>Nenhum vídeo. Use <strong>+ Adicionar vídeo</strong> quando precisar.</p>';
-    echo '<div id="rs-project-youtube-list">';
-    foreach ($youtube_videos as $index => $video) {
-        rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''));
-    }
-    echo '</div>';
-    echo '<div id="rs-project-youtube-template" hidden>';
-    rs_project_render_youtube_row(0, '', true);
-    echo '</div>';
-    echo '<p id="rs-project-add-youtube-wrap" style="margin:12px 0 0;' . ($youtube_videos ? 'display:none;' : '') . '"><button type="button" class="button button-secondary" id="rs-project-add-youtube">+ Adicionar vídeo</button></p>';
-    echo '<input type="hidden" id="rs-project-youtube-json" name="rs_project_youtube_json" value="" />';
     echo '</fieldset>';
 
     echo '<fieldset class="rs-project-fieldset">';
@@ -884,6 +923,15 @@ add_action('save_post_project', function (int $post_id) {
         return;
     }
 
+    if (function_exists('rs_project_is_legacy_twin') && rs_project_is_legacy_twin($post_id)) {
+        return;
+    }
+
+    if (function_exists('rs_project_i18n_parse_from_request') && function_exists('rs_project_i18n_save')) {
+        rs_project_i18n_save($post_id, rs_project_i18n_parse_from_request($post_id));
+        return;
+    }
+
     $hero_id = isset($_POST['rs_project_hero_id']) ? (int) $_POST['rs_project_hero_id'] : 0;
     if ($hero_id > 0) {
         update_post_meta($post_id, RS_PROJECT_HERO_KEY, $hero_id);
@@ -965,7 +1013,7 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
     }
     wp_enqueue_script('jquery-ui-sortable');
     $base = plugin_dir_url(__FILE__);
-    $ver = '1.2.33';
+    $ver = '1.2.35';
     wp_enqueue_style('rs-project-admin', $base . 'assets/project-admin.css', ['rs-metabox-ui', 'rs-admin-chrome'], $ver);
     wp_enqueue_script('rs-project-admin', $base . 'assets/project-admin.js', ['jquery', 'jquery-ui-sortable', 'rs-metabox-ui', 'rs-admin-chrome'], $ver, true);
 });
@@ -1173,9 +1221,24 @@ function rs_project_render_admin_footer_script(): void {
     <script>
     jQuery(function ($) {
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
-        let nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
+        const locales = ['en', 'pt'];
+        const nextAccordionIndex = {
+            en: $('#rs-project-accordion-list-en .rs-project-accordion-row').length,
+            pt: $('#rs-project-accordion-list-pt .rs-project-accordion-row').length,
+        };
+        const nextYoutubeIndex = {
+            en: $('#rs-project-youtube-list-en .rs-project-youtube-row').length,
+            pt: $('#rs-project-youtube-list-pt .rs-project-youtube-row').length,
+        };
         let nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row').length;
-        let nextYoutubeIndex = $('#rs-project-youtube-list .rs-project-youtube-row').length;
+
+        function accordionList(locale) {
+            return $('#rs-project-accordion-list-' + locale);
+        }
+
+        function youtubeList(locale) {
+            return $('#rs-project-youtube-list-' + locale);
+        }
 
         function syncGalleryEmptyState() {
             const hasRows = $('#rs-project-gallery-list .rs-project-gallery-row').length > 0;
@@ -1198,29 +1261,33 @@ function rs_project_render_admin_footer_script(): void {
             const editorId = textarea.attr('id');
             if (editorId && typeof tinymce !== 'undefined') {
                 const editor = tinymce.get(editorId);
-                if (editor) {
+                if (editor && !editor.isHidden()) {
                     return editor.getContent();
                 }
             }
             return textarea.val() || '';
         }
 
-        function collectAccordionJson() {
+        function collectAccordionJson(locale) {
             syncAllEditors();
             const sections = [];
-            $('#rs-project-accordion-list .rs-project-accordion-row').each(function () {
+            accordionList(locale).find('.rs-project-accordion-row').each(function () {
                 const row = $(this);
                 const title = (row.find('.rs-project-accordion-title').val() || '').trim();
-                const body = readAccordionBody(row.find('textarea[id^="rs_project_accordion_body_"]'));
+                const body = readAccordionBody(row.find('textarea[id^="rs_project_accordion_body_' + locale + '_"]'));
                 if (!title && !body) {
                     return;
                 }
-                sections.push({
-                    title: title || 'Seção',
-                    body,
-                });
+                sections.push({ title: title || 'Seção', body });
             });
-            $('#rs-project-accordion-json').val(JSON.stringify(sections));
+            $('#rs-project-accordion-' + locale + '-json').val(JSON.stringify(sections));
+            $('.rs-metabox-tab[data-tab="' + locale + '"]').text(
+                (locale === 'en' ? 'English' : 'Português') + ' (' + sections.length + ')'
+            );
+        }
+
+        function collectAllAccordionJson() {
+            locales.forEach(collectAccordionJson);
         }
 
         function collectGalleryJson() {
@@ -1240,25 +1307,25 @@ function rs_project_render_admin_footer_script(): void {
             $('#rs-project-gallery-featured-json').val(JSON.stringify(featured));
         }
 
-        function collectYoutubeJson() {
+        function collectYoutubeJson(locale) {
             const urls = [];
-            $('#rs-project-youtube-list .rs-project-youtube-row').each(function () {
+            youtubeList(locale).find('.rs-project-youtube-row').each(function () {
                 const url = ($(this).find('.rs-project-youtube-url').val() || '').trim();
                 if (url) {
                     urls.push(url);
                 }
             });
-            $('#rs-project-youtube-json').val(JSON.stringify(urls));
+            $('#rs-project-youtube-' + locale + '-json').val(JSON.stringify(urls));
+        }
+
+        function collectAllYoutubeJson() {
+            locales.forEach(collectYoutubeJson);
         }
 
         function parseYouTubeId(value) {
             value = String(value || '').trim();
-            if (!value) {
-                return '';
-            }
-            if (/^[A-Za-z0-9_-]{11}$/.test(value)) {
-                return value;
-            }
+            if (!value) return '';
+            if (/^[A-Za-z0-9_-]{11}$/.test(value)) return value;
             const match = value.match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
             return match ? match[1] : '';
         }
@@ -1269,58 +1336,44 @@ function rs_project_render_admin_footer_script(): void {
                 confirm.attr('hidden', true);
                 return;
             }
-            const hasValue = Boolean((row.find('.rs-project-youtube-url').val() || '').trim());
-            confirm.prop('hidden', !hasValue);
+            confirm.prop('hidden', !Boolean((row.find('.rs-project-youtube-url').val() || '').trim()));
         }
 
         function lockYoutubeRow(row, url) {
-            const input = row.find('.rs-project-youtube-url');
             row.addClass('is-locked').removeClass('is-invalid');
-            input.prop('readonly', true);
-            if (url) {
-                input.val(url);
-            }
+            row.find('.rs-project-youtube-url').prop('readonly', true);
+            if (url) row.find('.rs-project-youtube-url').val(url);
             row.find('.rs-project-confirm-youtube').attr('hidden', true);
         }
 
-        function syncYoutubeEmptyState() {
-            const hasRows = $('#rs-project-youtube-list .rs-project-youtube-row').length > 0;
-            $('#rs-project-youtube-empty').toggle(!hasRows);
-            $('#rs-project-add-youtube-wrap').toggle(!hasRows);
-        }
-
         function initEditor(id) {
-            if (!id || id.indexOf('__INDEX__') !== -1) {
-                return;
-            }
-            if (typeof wp === 'undefined' || !wp.editor) {
-                return;
-            }
-            if (typeof tinymce !== 'undefined' && tinymce.get(id)) {
-                return;
-            }
+            if (!id || id.indexOf('__INDEX__') !== -1 || typeof wp === 'undefined' || !wp.editor) return;
+            if (typeof tinymce !== 'undefined' && tinymce.get(id)) return;
             wp.editor.initialize(id, paragraphEditorSettings);
         }
 
         function removeEditor(id) {
-            if (!id || typeof wp === 'undefined' || !wp.editor) {
-                return;
-            }
+            if (!id || typeof wp === 'undefined' || !wp.editor) return;
             wp.editor.remove(id);
         }
 
-        function assignAccordionNames(row, index) {
-            row.find('.rs-project-accordion-title').attr('name', 'rs_project_accordion[' + index + '][title]');
-            row.find('textarea[id^="rs_project_accordion_body_"]').attr('name', 'rs_project_accordion[' + index + '][body]');
+        function assignAccordionNames(row, index, locale) {
+            row.find('.rs-project-accordion-title').attr('name', 'rs_project_accordion_' + locale + '[' + index + '][title]');
+            row.find('textarea[id^="rs_project_accordion_body_' + locale + '_"]').attr('name', 'rs_project_accordion_' + locale + '[' + index + '][body]');
+        }
+
+        function reindexAccordion(locale) {
+            accordionList(locale).find('.rs-project-accordion-row').each(function (i) {
+                $(this).attr('data-index', String(i));
+                assignAccordionNames($(this), i, locale);
+            });
+            nextAccordionIndex[locale] = accordionList(locale).find('.rs-project-accordion-row').length;
         }
 
         function assignGalleryNames(row, index) {
             const fieldId = 'rs_project_gallery_image_' + index;
-            row.find('input[data-rs-cap-image]')
-                .attr('name', 'rs_project_gallery[' + index + '][image_id]')
-                .attr('id', fieldId);
-            row.find('.rs-project-gallery-featured-flag')
-                .attr('name', 'rs_project_gallery[' + index + '][featured]');
+            row.find('input[data-rs-cap-image]').attr('name', 'rs_project_gallery[' + index + '][image_id]').attr('id', fieldId);
+            row.find('.rs-project-gallery-featured-flag').attr('name', 'rs_project_gallery[' + index + '][featured]');
             row.find('.rs-media-preview').attr('data-target', fieldId);
         }
 
@@ -1333,41 +1386,29 @@ function rs_project_render_admin_footer_script(): void {
         }
 
         function galleryPreviewHtml(attachment) {
-            if (!attachment || !attachment.url) {
-                return '';
-            }
+            if (!attachment || !attachment.url) return '';
             const mime = attachment.mime || '';
             if (mime.indexOf('video/') === 0 || /\.mp4(\?|$)/i.test(attachment.url)) {
                 return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-project-gallery-badge" title="Vídeo"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg> vídeo</span>';
             }
-            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
-                || attachment.url;
+            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url) || attachment.url;
             const isGif = mime.indexOf('gif') !== -1 || /\.gif(\?|$)/i.test(attachment.url);
             return '<img src="' + thumb + '" alt="" />' + (isGif ? '<span class="rs-project-gallery-badge">gif</span>' : '');
         }
 
         function appendGalleryAttachment(attachment) {
-            if (!attachment || !attachment.id) {
-                return;
-            }
-
+            if (!attachment || !attachment.id) return;
             const index = nextGalleryIndex;
             const template = $('#rs-project-gallery-template .rs-project-gallery-row').first().clone();
-            template.removeAttr('style');
-            template.attr('data-index', String(index));
+            template.removeAttr('style').attr('data-index', String(index));
             template.find('input[data-rs-cap-image]').val(String(attachment.id));
             template.find('.rs-project-gallery-featured-flag').val('0');
             template.find('.rs-project-gallery-tile').removeClass('is-featured');
-            template.find('.rs-project-gallery-featured').attr('aria-pressed', 'false');
+            template.find('.rs-project-gallery-featured').attr('aria-expanded', 'false');
             template.find('.rs-media-preview').html(galleryPreviewHtml(attachment));
             assignGalleryNames(template, index);
             $('#rs-project-gallery-list').append(template);
             nextGalleryIndex += 1;
-        }
-
-        function syncAccordionEmptyState() {
-            const hasRows = $('#rs-project-accordion-list .rs-project-accordion-row').length > 0;
-            $('#rs-project-accordion-empty').toggle(!hasRows);
         }
 
         if ($.fn.sortable) {
@@ -1378,113 +1419,77 @@ function rs_project_render_admin_footer_script(): void {
                 placeholder: 'rs-project-gallery-placeholder',
                 tolerance: 'pointer',
                 opacity: 0.9,
-                update: function () {
-                    reindexGallery();
-                }
+                update: reindexGallery,
             });
 
-            $('#rs-project-accordion-list').sortable({
-                items: '.rs-project-accordion-row',
-                handle: '.rs-project-accordion-drag',
-                cancel: 'input, textarea, button, .mce-container, .wp-editor-wrap',
-                placeholder: 'rs-project-accordion-placeholder',
-                tolerance: 'pointer',
-                opacity: 0.92,
-                update: function () {
-                    $('#rs-project-accordion-list .rs-project-accordion-row').each(function (i) {
-                        $(this).attr('data-index', String(i));
-                        assignAccordionNames($(this), i);
-                    });
-                    nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
-                }
+            locales.forEach(function (locale) {
+                accordionList(locale).sortable({
+                    items: '.rs-project-accordion-row',
+                    handle: '.rs-project-accordion-drag',
+                    cancel: 'input, textarea, button, .mce-container, .wp-editor-wrap',
+                    placeholder: 'rs-project-accordion-placeholder',
+                    tolerance: 'pointer',
+                    opacity: 0.92,
+                    update: function () {
+                        reindexAccordion(locale);
+                    },
+                });
             });
         }
 
-        $('#rs-project-add-accordion').on('click', function (event) {
+        $(document).on('click', '.rs-project-add-accordion', function (event) {
             event.preventDefault();
-            const template = $('.rs-project-accordion-row[data-index="__INDEX__"]').first().clone();
-            template.removeAttr('style');
-            template.attr('data-index', String(nextAccordionIndex));
+            const locale = $(this).data('locale') || 'en';
+            const index = nextAccordionIndex[locale];
+            const template = $('#rs-project-accordion-template-' + locale + ' .rs-project-accordion-row').first().clone();
+            template.removeAttr('style').attr('data-index', String(index));
             template.find('.rs-project-accordion-title').val('');
             template.find('textarea').val('');
             template.find('[id]').each(function () {
                 const id = $(this).attr('id');
                 if (id && id.indexOf('__INDEX__') !== -1) {
-                    $(this).attr('id', id.replace(/__INDEX__/g, String(nextAccordionIndex)));
+                    $(this).attr('id', id.replace(/__INDEX__/g, String(index)));
                 }
             });
-            assignAccordionNames(template, nextAccordionIndex);
-            $('#rs-project-accordion-list').append(template);
-            initEditor('rs_project_accordion_body_' + nextAccordionIndex);
+            assignAccordionNames(template, index, locale);
+            accordionList(locale).append(template);
+            initEditor('rs_project_accordion_body_' + locale + '_' + index);
             template.addClass('is-open');
-            $('#rs-project-accordion-list .rs-project-accordion-row').not(template)
-                .removeClass('is-open')
-                .find('.rs-project-accordion-toggle')
-                .attr('aria-expanded', 'false');
+            accordionList(locale).find('.rs-project-accordion-row').not(template).removeClass('is-open').find('.rs-project-accordion-toggle').attr('aria-expanded', 'false');
             template.find('.rs-project-accordion-toggle').attr('aria-expanded', 'true');
             template.find('.rs-project-accordion-head-title').text('Seção do acordeão');
-            nextAccordionIndex += 1;
-            syncAccordionEmptyState();
-            if (typeof updateAccordionTabCount === 'function') {
-                updateAccordionTabCount();
-            } else {
-                var count = $('#rs-project-accordion-list .rs-project-accordion-row').length;
-                $('.rs-project-tab[data-tab="accordion"]').text('Acordeão (' + count + ')');
-            }
+            nextAccordionIndex[locale] += 1;
+            collectAccordionJson(locale);
         });
 
         $(document).on('click', '.rs-project-remove-accordion', function (event) {
             event.preventDefault();
-            if (!window.confirm('Remover esta seção do acordeão?')) {
-                return;
-            }
+            if (!window.confirm('Remover esta seção do acordeão?')) return;
             const row = $(this).closest('.rs-project-accordion-row');
+            const list = row.parent();
+            const locale = list.data('rs-locale') || 'en';
             const editorId = row.find('textarea[id^="rs_project_accordion_body_"]').attr('id');
-            if (typeof tinymce !== 'undefined' && editorId && tinymce.get(editorId)) {
-                tinymce.get(editorId).save();
-            }
             removeEditor(editorId);
             row.remove();
-            $('#rs-project-accordion-list .rs-project-accordion-row').each(function (i) {
-                $(this).attr('data-index', String(i));
-                assignAccordionNames($(this), i);
-            });
-            nextAccordionIndex = $('#rs-project-accordion-list .rs-project-accordion-row').length;
-            syncAccordionEmptyState();
-            var count = $('#rs-project-accordion-list .rs-project-accordion-row').length;
-            $('.rs-project-tab[data-tab="accordion"]').text('Acordeão (' + count + ')');
+            reindexAccordion(locale);
+            collectAccordionJson(locale);
         });
 
         $('#rs-project-add-gallery').on('click', function (event) {
             event.preventDefault();
-
-            if (typeof wp === 'undefined' || !wp.media) {
-                window.alert('Biblioteca de mídia indisponível. Recarregue a página.');
-                return;
-            }
-
+            if (typeof wp === 'undefined' || !wp.media) return;
             const frame = wp.media({
                 title: 'Adicionar mídias à galeria',
                 button: { text: 'Adicionar à galeria' },
                 multiple: true,
-                library: {
-                    type: ['image', 'video']
-                }
+                library: { type: ['image', 'video'] },
             });
-
             frame.on('select', function () {
-                const selection = frame.state().get('selection');
-                if (!selection || !selection.length) {
-                    return;
-                }
-
-                selection.each(function (model) {
+                frame.state().get('selection').each(function (model) {
                     appendGalleryAttachment(model.toJSON());
                 });
-
                 syncGalleryEmptyState();
             });
-
             frame.open();
         });
 
@@ -1508,23 +1513,18 @@ function rs_project_render_admin_footer_script(): void {
             button.attr('aria-pressed', next === '1' ? 'true' : 'false');
         });
 
-        $('#rs-project-add-youtube').on('click', function (event) {
+        $(document).on('click', '.rs-project-add-youtube', function (event) {
             event.preventDefault();
-            if ($('#rs-project-youtube-list .rs-project-youtube-row').length > 0) {
-                return;
-            }
-            const template = $('#rs-project-youtube-template .rs-project-youtube-row').first().clone();
-            template.removeAttr('style');
-            template.removeClass('is-locked is-invalid');
-            template.attr('data-index', String(nextYoutubeIndex));
-            template.find('.rs-project-youtube-url')
-                .val('')
-                .prop('readonly', false)
-                .attr('name', 'rs_project_youtube[' + nextYoutubeIndex + '][url]');
+            const locale = $(this).data('locale') || 'en';
+            const list = youtubeList(locale);
+            if (list.find('.rs-project-youtube-row').length > 0) return;
+            const index = nextYoutubeIndex[locale];
+            const template = $('#rs-project-youtube-template-' + locale + ' .rs-project-youtube-row').first().clone();
+            template.removeAttr('style').removeClass('is-locked is-invalid').attr('data-index', String(index));
+            template.find('.rs-project-youtube-url').val('').prop('readonly', false).attr('name', 'rs_project_youtube_' + locale + '[' + index + '][url]');
             template.find('.rs-project-confirm-youtube').attr('hidden', true);
-            $('#rs-project-youtube-list').append(template);
-            nextYoutubeIndex += 1;
-            syncYoutubeEmptyState();
+            list.append(template);
+            nextYoutubeIndex[locale] += 1;
             template.find('.rs-project-youtube-url').trigger('focus');
         });
 
@@ -1535,24 +1535,17 @@ function rs_project_render_admin_footer_script(): void {
         });
 
         $(document).on('keydown', '.rs-project-youtube-url', function (event) {
-            if (event.key !== 'Enter') {
-                return;
-            }
+            if (event.key !== 'Enter') return;
             event.preventDefault();
-            const row = $(this).closest('.rs-project-youtube-row');
-            if (!row.hasClass('is-locked')) {
-                row.find('.rs-project-confirm-youtube').trigger('click');
-            }
+            $(this).closest('.rs-project-youtube-row').find('.rs-project-confirm-youtube').trigger('click');
         });
 
         $(document).on('click', '.rs-project-confirm-youtube', function (event) {
             event.preventDefault();
             const row = $(this).closest('.rs-project-youtube-row');
-            const input = row.find('.rs-project-youtube-url');
-            const id = parseYouTubeId(input.val());
+            const id = parseYouTubeId(row.find('.rs-project-youtube-url').val());
             if (!id) {
                 row.addClass('is-invalid');
-                input.trigger('focus');
                 return;
             }
             lockYoutubeRow(row, 'https://www.youtube.com/watch?v=' + id);
@@ -1560,23 +1553,50 @@ function rs_project_render_admin_footer_script(): void {
 
         $(document).on('click', '.rs-project-remove-youtube', function (event) {
             event.preventDefault();
-            $(this).closest('.rs-project-youtube-row').remove();
-            $('#rs-project-youtube-list .rs-project-youtube-row').each(function (i) {
+            const row = $(this).closest('.rs-project-youtube-row');
+            const list = row.parent();
+            const locale = list.data('rs-locale') || 'en';
+            row.remove();
+            youtubeList(locale).find('.rs-project-youtube-row').each(function (i) {
                 $(this).attr('data-index', String(i));
-                $(this).find('.rs-project-youtube-url').attr('name', 'rs_project_youtube[' + i + '][url]');
+                $(this).find('.rs-project-youtube-url').attr('name', 'rs_project_youtube_' + locale + '[' + i + '][url]');
             });
-            nextYoutubeIndex = $('#rs-project-youtube-list .rs-project-youtube-row').length;
-            syncYoutubeEmptyState();
+            nextYoutubeIndex[locale] = youtubeList(locale).find('.rs-project-youtube-row').length;
         });
 
+        $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, tab) {
+            if (tab !== 'en' && tab !== 'pt') return;
+            window.setTimeout(function () {
+                accordionList(tab).find('.rs-project-accordion-row.is-open textarea[id^="rs_project_accordion_body_"]').each(function () {
+                    const id = $(this).attr('id');
+                    if (id && typeof tinymce !== 'undefined') {
+                        const editor = tinymce.get(id);
+                        if (editor) editor.fire('ResizeEditor');
+                    }
+                });
+            }, 50);
+        });
+
+        const tabParam = new URLSearchParams(window.location.search).get('rs_project_tab');
+        if (tabParam === 'pt') {
+            $('.rs-metabox-tab[data-tab="pt"]').trigger('click');
+        }
+
         $('#post').on('submit', function () {
-            collectAccordionJson();
+            collectAllAccordionJson();
             collectGalleryJson();
-            collectYoutubeJson();
+            collectAllYoutubeJson();
+        });
+
+        $('#publish, #save-post').on('click', function () {
+            window.setTimeout(function () {
+                collectAllAccordionJson();
+                collectGalleryJson();
+                collectAllYoutubeJson();
+            }, 0);
         });
 
         syncGalleryEmptyState();
-        syncYoutubeEmptyState();
     });
     </script>
     <?php

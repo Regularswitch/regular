@@ -53,9 +53,34 @@ function rs_rest_apply_translation(WP_REST_Response $response, WP_Post $post, WP
     return $response;
 }
 
-foreach (['intro', 'brand', 'project', 'post', 'page', 'footer', 'capabilities'] as $post_type) {
+foreach (['intro', 'brand', 'post', 'page', 'footer', 'capabilities'] as $post_type) {
     add_filter("rest_prepare_{$post_type}", 'rs_rest_apply_translation', 10, 3);
 }
+
+add_filter('rest_prepare_project', function (WP_REST_Response $response, WP_Post $post, WP_REST_Request $request): WP_REST_Response {
+    $lang = rs_rest_get_lang($request);
+    if (!$lang || $lang !== 'PT' || !function_exists('rs_project_i18n_get_locale_text')) {
+        return $response;
+    }
+
+    $canonical_id = function_exists('rs_project_resolve_canonical_id')
+        ? rs_project_resolve_canonical_id((int) $post->ID)
+        : (int) $post->ID;
+    $texts = rs_project_i18n_get_locale_text($canonical_id, 'pt');
+    $data = $response->get_data();
+
+    if ($texts['title'] !== '' && isset($data['title']['rendered'])) {
+        $data['title']['rendered'] = $texts['title'];
+    }
+
+    if ($texts['excerpt'] !== '' && isset($data['excerpt']['rendered'])) {
+        $data['excerpt']['rendered'] = apply_filters('the_excerpt', $texts['excerpt']);
+    }
+
+    $response->set_data($data);
+
+    return $response;
+}, 10, 3);
 
 // Categorias de projeto (nomes traduzidos).
 add_filter('rest_prepare_project-category', function ($response, $item, $request) {

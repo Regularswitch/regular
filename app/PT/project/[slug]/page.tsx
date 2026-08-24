@@ -12,7 +12,6 @@ type PageProps = {
 
 export default async function PtProjectSlugPage({ params }: PageProps) {
 	const { slug } = await params;
-	// Listagens usam o slug canônico EN; gêmeos `*-pt` redirecionam para o mesmo conteúdo via translate.
 	const canonicalSlug = slug.replace(/-pt$/i, '');
 
 	const [allPosts, allMetas, latestProjects] = await Promise.all([
@@ -24,17 +23,10 @@ export default async function PtProjectSlugPage({ params }: PageProps) {
 		return [[], [], []] as [Projects, ProjectMeta[], Projects];
 	});
 
-	let project = allPosts[0];
-	if (!project && canonicalSlug !== slug) {
-		const twin = await GetApi('/project/', { slug, _embed: '', translate: 'PT', meta: '1' }).catch(
-			() => [] as Projects,
-		);
-		project = twin[0];
-	}
+	const project = allPosts[0];
 	if (!project) return null;
 
-	const meta =
-		allMetas.find((item) => item.slug === canonicalSlug || item.slug === slug) ?? null;
+	const meta = allMetas.find((item) => item.slug === canonicalSlug) ?? null;
 
 	return (
 		<ProjectPage

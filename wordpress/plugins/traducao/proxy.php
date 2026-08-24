@@ -1,7 +1,7 @@
 <?php
 
 function rs_translate_same_type_cpts(): array {
-    return ['footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'];
+    return ['footer', 'intro', 'brand', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'];
 }
 
 function rs_translate_target_post_type(WP_Post $source): string {
@@ -164,6 +164,10 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
 /**
  * Permission callback da rota translate/proxy.
  * Sem isso a rota fica pública: qualquer GET (bot, scanner, refresh) podia criar posts.
+ *
+ * Precisa vir com "_wpnonce" (action wp_rest) na querystring — sem ele o core da REST
+ * API zera o usuário atual (wp_set_current_user(0)) antes mesmo de chegar aqui, como
+ * proteção padrão contra CSRF em autenticação por cookie.
  */
 function rs_translate_proxy_permission(WP_REST_Request $request) {
     if (!is_user_logged_in()) {
@@ -187,8 +191,9 @@ function translate_proxy($request) {
     $source_id = (int) $parans['id'];
     $lang = strtoupper((string) $parans['lang']);
 
-    // Nonce: evita replay/CSRF em uma rota GET com efeito colateral (cria posts).
-    $nonce = (string) ($parans['_wpnonce'] ?? '');
+    // Nonce próprio: evita replay/reuso do link em outro post (o "_wpnonce" acima é
+    // só o do core, exigido pra manter o login reconhecido via cookie).
+    $nonce = (string) ($parans['rs_nonce'] ?? '');
     if (!wp_verify_nonce($nonce, 'rs_translate_proxy_' . $source_id)) {
         return new WP_Error('bad_nonce', 'Link de tradução expirado, recarregue a página.', ['status' => 403]);
     }

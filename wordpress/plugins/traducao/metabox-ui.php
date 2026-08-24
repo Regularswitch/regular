@@ -18,7 +18,7 @@ function rs_metabox_ui_post_types(): array {
 }
 
 function rs_metabox_ui_asset_version(): string {
-    return '1.2.34';
+    return '1.2.35';
 }
 
 add_action('admin_enqueue_scripts', function (string $hook): void {

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tradução
  * Description: Facilitar A tradução
- * Version: 1.2.34
+ * Version: 1.2.35
  * Author: Undefined
  * Author URI: undefined.com
  */
@@ -24,6 +24,7 @@ include __DIR__ . "/site-ui-fields.php";
 include __DIR__ . "/blob-visual-fields.php";
 include __DIR__ . "/header-menus.php";
 include __DIR__ . "/project-fields.php";
+include __DIR__ . "/project-i18n.php";
 include __DIR__ . "/hide-themerain-meta.php";
 include __DIR__ . "/filter-project-translations.php";
 include __DIR__ . "/metabox-ui.php";
@@ -55,20 +56,33 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
         return;
     }
 
+    if (get_post_type($post_ID) === 'project' && get_option('rs_project_i18n_migrated_v1')) {
+        $edit_pt = add_query_arg(
+            ['rs_project_tab' => 'pt'],
+            admin_url('post.php?post=' . $post_ID . '&action=edit')
+        );
+        echo '<span style="color:#646970;margin-right:6px;">EN · PT</span>';
+        echo '<a href="' . esc_url($edit_pt) . '" title="Abrir aba Português">Editar PT</a>';
+        return;
+    }
+
     $badge = rs_project_locale_badge($post_ID);
     $opposite = $badge === 'PT' ? 'EN' : 'PT';
     echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
 
     // Só o idioma oposto: clicar em EN no EN (ou PT no PT) criava posts duplicados.
-    $nonce = wp_create_nonce('rs_translate_proxy_' . $post_ID);
-    $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}&_wpnonce={$nonce}";
+    // "_wpnonce" (action wp_rest) é exigido pelo core da REST API pra reconhecer o
+    // login via cookie; "rs_nonce" é nosso, específico pra este post/ação.
+    $wp_rest_nonce = wp_create_nonce('wp_rest');
+    $rs_nonce = wp_create_nonce('rs_translate_proxy_' . $post_ID);
+    $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}&_wpnonce={$wp_rest_nonce}&rs_nonce={$rs_nonce}";
     $label = $badge === 'EN' ? 'Abrir/criar PT' : 'Abrir EN';
     echo '<a href="#" data-href="' . esc_url($url) . '" onclick="rs_link_translate(event, this)" title="' . esc_attr($label) . '">' . esc_html($opposite) . '</a> ';
 
     // Reimporta acordeão/galeria do EN na PT (não sobrescreve ao só abrir PT).
     if (get_post_type($post_ID) === 'project' && $badge === 'EN' && (int) get_post_meta($post_ID, 'PT', true) > 0) {
         $sync_url = add_query_arg(
-            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1', '_wpnonce' => $nonce],
+            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1', '_wpnonce' => $wp_rest_nonce, 'rs_nonce' => $rs_nonce],
             get_site_url() . '/wp-json/translate/proxy'
         );
         echo '<a href="#" data-href="' . esc_url($sync_url) . '" onclick="rs_link_translate(event, this)" title="Copiar campos do EN para a PT" style="margin-left:4px;color:#b32d2e;">↻ sync PT</a>';
