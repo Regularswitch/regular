@@ -616,9 +616,17 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $canonical_id = function_exists('rs_project_resolve_canonical_id')
         ? rs_project_resolve_canonical_id((int) $post->ID)
         : (int) $post->ID;
-    $i18n = function_exists('rs_project_i18n_get')
-        ? rs_project_i18n_get($canonical_id)
-        : (function_exists('rs_project_i18n_default') ? rs_project_i18n_default() : ['shared' => [], 'locales' => ['en' => [], 'pt' => []]]));
+
+    if (function_exists('rs_project_i18n_get')) {
+        $i18n = rs_project_i18n_get($canonical_id);
+    } elseif (function_exists('rs_project_i18n_default')) {
+        $i18n = rs_project_i18n_default();
+    } else {
+        $i18n = [
+            'shared'  => [],
+            'locales' => ['en' => [], 'pt' => []],
+        ];
+    }
 
     $shared = $i18n['shared'];
     $en = $i18n['locales']['en'];
