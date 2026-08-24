@@ -60,14 +60,15 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
     echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
 
     // Só o idioma oposto: clicar em EN no EN (ou PT no PT) criava posts duplicados.
-    $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}";
+    $nonce = wp_create_nonce('rs_translate_proxy_' . $post_ID);
+    $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}&_wpnonce={$nonce}";
     $label = $badge === 'EN' ? 'Abrir/criar PT' : 'Abrir EN';
     echo '<a href="#" data-href="' . esc_url($url) . '" onclick="rs_link_translate(event, this)" title="' . esc_attr($label) . '">' . esc_html($opposite) . '</a> ';
 
     // Reimporta acordeão/galeria do EN na PT (não sobrescreve ao só abrir PT).
     if (get_post_type($post_ID) === 'project' && $badge === 'EN' && (int) get_post_meta($post_ID, 'PT', true) > 0) {
         $sync_url = add_query_arg(
-            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1'],
+            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1', '_wpnonce' => $nonce],
             get_site_url() . '/wp-json/translate/proxy'
         );
         echo '<a href="#" data-href="' . esc_url($sync_url) . '" onclick="rs_link_translate(event, this)" title="Copiar campos do EN para a PT" style="margin-left:4px;color:#b32d2e;">↻ sync PT</a>';
@@ -84,6 +85,25 @@ function rs_link_translate_script(): void {
     <script>
         function rs_link_translate(event, el) {
             event.preventDefault();
+
+            // Trava contra duplo clique / duplo fetch: sem isso dois cliques rápidos
+            // podiam disparar duas criações de post antes da primeira terminar.
+            if (el.dataset.rsBusy === '1') {
+                return;
+            }
+            el.dataset.rsBusy = '1';
+            const originalText = el.textContent;
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.5';
+            el.textContent = '...';
+
+            const restore = () => {
+                el.dataset.rsBusy = '0';
+                el.style.pointerEvents = '';
+                el.style.opacity = '';
+                el.textContent = originalText;
+            };
+
             const url = el.getAttribute('data-href');
             fetch(url)
                 .then(async (res) => {
@@ -91,11 +111,15 @@ function rs_link_translate_script(): void {
                     if (!res.ok || !data.go) {
                         const msg = (data && data.message) ? data.message : 'Falha ao abrir tradução.';
                         window.alert(msg);
+                        restore();
                         return;
                     }
                     window.location.href = data.go;
                 })
-                .catch(() => window.alert('Falha ao abrir tradução.'));
+                .catch(() => {
+                    window.alert('Falha ao abrir tradução.');
+                    restore();
+                });
         }
     </script>
     <?php

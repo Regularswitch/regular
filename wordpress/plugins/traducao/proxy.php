@@ -161,10 +161,38 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
     }
 }
 
+/**
+ * Permission callback da rota translate/proxy.
+ * Sem isso a rota fica pública: qualquer GET (bot, scanner, refresh) podia criar posts.
+ */
+function rs_translate_proxy_permission(WP_REST_Request $request) {
+    if (!is_user_logged_in()) {
+        return new WP_Error('rest_forbidden', 'Faça login para traduzir.', ['status' => 401]);
+    }
+
+    $source_id = (int) $request->get_param('id');
+    if ($source_id > 0 && !current_user_can('edit_post', $source_id)) {
+        return new WP_Error('rest_forbidden', 'Sem permissão para editar este post.', ['status' => 403]);
+    }
+
+    if (!current_user_can('edit_posts')) {
+        return new WP_Error('rest_forbidden', 'Sem permissão.', ['status' => 403]);
+    }
+
+    return true;
+}
+
 function translate_proxy($request) {
     $parans = $request->get_params();
     $source_id = (int) $parans['id'];
     $lang = strtoupper((string) $parans['lang']);
+
+    // Nonce: evita replay/CSRF em uma rota GET com efeito colateral (cria posts).
+    $nonce = (string) ($parans['_wpnonce'] ?? '');
+    if (!wp_verify_nonce($nonce, 'rs_translate_proxy_' . $source_id)) {
+        return new WP_Error('bad_nonce', 'Link de tradução expirado, recarregue a página.', ['status' => 403]);
+    }
+
     $the_post = get_post($source_id);
 
     if (!$the_post) {
@@ -295,8 +323,9 @@ function translate_proxy($request) {
 add_action('rest_api_init', function () {
     register_rest_route('translate', 'proxy', [
         [
-            'method'   => 'GET',
-            'callback' => 'translate_proxy',
+            'method'              => 'GET',
+            'callback'            => 'translate_proxy',
+            'permission_callback' => 'rs_translate_proxy_permission',
         ],
     ]);
 });
