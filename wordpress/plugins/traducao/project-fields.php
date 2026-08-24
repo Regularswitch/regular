@@ -618,7 +618,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
         : (int) $post->ID;
     $i18n = function_exists('rs_project_i18n_get')
         ? rs_project_i18n_get($canonical_id)
-        : (function_exists('rs_project_i18n_default') ? rs_project_i18n_default() : ['shared' => [], 'locales' => ['en' => [], 'pt' => []]]);
+        : (function_exists('rs_project_i18n_default') ? rs_project_i18n_default() : ['shared' => [], 'locales' => ['en' => [], 'pt' => []]]));
 
     $shared = $i18n['shared'];
     $en = $i18n['locales']['en'];
