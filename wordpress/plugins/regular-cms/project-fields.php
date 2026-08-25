@@ -1118,13 +1118,25 @@ function rs_project_render_admin_footer_script(): void {
 
         function readAccordionBody(textarea) {
             const editorId = textarea.attr('id');
+            const fallback = textarea.val() || '';
             if (editorId && typeof tinymce !== 'undefined') {
                 const editor = tinymce.get(editorId);
-                if (editor && !editor.isHidden()) {
-                    return editor.getContent();
+                if (editor) {
+                    try {
+                        editor.save();
+                    } catch (err) {
+                        /* ignore */
+                    }
+                    if (!editor.isHidden()) {
+                        const content = editor.getContent() || '';
+                        // Aba oculta / editor “vazio” falso — preferir textarea após save.
+                        if (content.trim()) {
+                            return content;
+                        }
+                    }
                 }
             }
-            return textarea.val() || '';
+            return fallback;
         }
 
         function persistProjectFormFields() {

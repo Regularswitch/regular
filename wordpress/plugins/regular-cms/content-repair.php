@@ -75,7 +75,7 @@ function rs_repair_dedupe_post_meta(int $post_id, string $key): void {
 }
 
 /**
- * Restaura hero/galeria a partir de thumbnail + attachments filhos.
+ * Restaura hero/galeria a partir de thumbnail + attachments filhos + meta legada.
  */
 function rs_repair_project_media_from_attachments(int $post_id): bool {
     if ($post_id <= 0 || !function_exists('rs_project_i18n_get') || !function_exists('rs_project_i18n_save')) {
@@ -85,7 +85,32 @@ function rs_repair_project_media_from_attachments(int $post_id): bool {
     $data = rs_project_i18n_get($post_id);
     $hero = (int) ($data['shared']['hero_id'] ?? 0);
     $gallery = trim((string) ($data['shared']['gallery_ids'] ?? ''));
+
+    // Tenta meta legada antes de attachments.
+    if ($hero <= 0 && defined('RS_PROJECT_HERO_KEY')) {
+        $hero = (int) get_post_meta($post_id, RS_PROJECT_HERO_KEY, true);
+    }
+    if ($hero <= 0) {
+        $hero = (int) get_post_meta($post_id, 'etc_upload_image', true);
+    }
+    if ($gallery === '' && defined('RS_PROJECT_GALLERY_KEY')) {
+        $gallery = trim((string) get_post_meta($post_id, RS_PROJECT_GALLERY_KEY, true));
+    }
+
     if ($hero > 0 || $gallery !== '') {
+        $changed = false;
+        if ((int) ($data['shared']['hero_id'] ?? 0) <= 0 && $hero > 0) {
+            $data['shared']['hero_id'] = $hero;
+            $changed = true;
+        }
+        if (trim((string) ($data['shared']['gallery_ids'] ?? '')) === '' && $gallery !== '') {
+            $data['shared']['gallery_ids'] = $gallery;
+            $changed = true;
+        }
+        if ($changed) {
+            rs_project_i18n_save($post_id, $data);
+            return true;
+        }
         return false;
     }
 
@@ -104,7 +129,7 @@ function rs_repair_project_media_from_attachments(int $post_id): bool {
     foreach ($children as $att_id) {
         $att_id = (int) $att_id;
         $mime = (string) get_post_mime_type($att_id);
-        if ($mime !== '' && str_starts_with($mime, 'image/')) {
+        if ($mime !== '' && (str_starts_with($mime, 'image/') || str_starts_with($mime, 'video/'))) {
             $image_ids[] = $att_id;
         }
     }
@@ -117,7 +142,6 @@ function rs_repair_project_media_from_attachments(int $post_id): bool {
         return false;
     }
 
-    // Hero = thumbnail; galeria = imagens filhas (sem repetir o hero no início se possível).
     $gallery_ids = array_values(array_filter($image_ids, static function (int $id) use ($thumb): bool {
         return $id !== $thumb;
     }));
@@ -127,9 +151,6 @@ function rs_repair_project_media_from_attachments(int $post_id): bool {
 
     $data['shared']['hero_id'] = $thumb;
     $data['shared']['gallery_ids'] = implode(',', $gallery_ids);
-    if (empty($data['shared']['logo_id']) && $thumb > 0) {
-        // logo opcional: não força
-    }
 
     rs_project_i18n_save($post_id, $data);
     return true;
@@ -261,3 +282,37 @@ function rs_content_repair_v154_once(): void {
     update_option('rs_content_repair_v154', 1, false);
 }
 add_action('init', 'rs_content_repair_v154_once', 40);
+
+/**
+ * Re-roda restauração de mídia de projetos (save admin podia zerar hero/galeria).
+ */
+function rs_content_repair_v156_once(): void {
+    if (get_option('rs_content_repair_v156')) {
+        return;
+    }
+    if (!post_type_exists('project')) {
+        update_option('rs_content_repair_v156', 1, false);
+        return;
+    }
+
+    $ids = get_posts([
+        'post_type'      => 'project',
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
+        'posts_per_page' => 300,
+        'fields'         => 'ids',
+    ]);
+
+    foreach ($ids as $id) {
+        $id = (int) $id;
+        if (function_exists('rs_project_resolve_canonical_id') && rs_project_resolve_canonical_id($id) !== $id) {
+            continue;
+        }
+        if (function_exists('rs_repair_dedupe_post_meta')) {
+            rs_repair_dedupe_post_meta($id, 'rs_project_i18n');
+        }
+        rs_repair_project_media_from_attachments($id);
+    }
+
+    update_option('rs_content_repair_v156', 1, false);
+}
+add_action('init', 'rs_content_repair_v156_once', 41);

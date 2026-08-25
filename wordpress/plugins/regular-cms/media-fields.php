@@ -41,7 +41,11 @@ function rs_render_media_field(
             value="<?php echo esc_attr((string) $attachment_id); ?>"
             data-rs-cap-image="1"
             data-rs-library="<?php echo esc_attr($library); ?>"
+            data-rs-cleared="0"
         />
+        <?php if ($include_name) : ?>
+            <input type="hidden" name="<?php echo esc_attr($name); ?>_cleared" id="<?php echo esc_attr($field_id); ?>_cleared" value="0" />
+        <?php endif; ?>
         <button
             type="button"
             class="button rs-media-pick"
@@ -124,6 +128,11 @@ jQuery(function ($) {
             if (el) {
                 el.value = String(attachment.id);
                 el.setAttribute('value', String(attachment.id));
+                el.dataset.rsCleared = '0';
+            }
+            const cleared = document.getElementById(String(target) + '_cleared');
+            if (cleared) {
+                cleared.value = '0';
             }
             setPreview(target, attachment);
         });
@@ -138,6 +147,11 @@ jQuery(function ($) {
         if (el) {
             el.value = '';
             el.setAttribute('value', '');
+            el.dataset.rsCleared = '1';
+        }
+        const cleared = document.getElementById(String(target) + '_cleared');
+        if (cleared) {
+            cleared.value = '1';
         }
         setPreview(target, null);
     });

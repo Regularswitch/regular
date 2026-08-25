@@ -187,6 +187,7 @@ function rs_project_i18n_get(int $post_id): array {
 
 /**
  * Se a meta ainda for JSON (possivelmente corrompido e recuperado), regrava como array.
+ * Nunca sobrescreve mídia compartilhada vazia se o legado ainda tiver hero/galeria.
  */
 function rs_project_i18n_maybe_migrate_storage(int $post_id): void {
     $raw = get_post_meta($post_id, RS_PROJECT_I18N_KEY, true);
@@ -199,7 +200,24 @@ function rs_project_i18n_maybe_migrate_storage(int $post_id): void {
         return;
     }
 
-    rs_project_i18n_save($post_id, $decoded);
+    $data = rs_project_i18n_normalize($decoded);
+    $legacy_hero = function_exists('rs_project_get_hero_id') ? rs_project_get_hero_id($post_id) : 0;
+    $legacy_gallery = function_exists('rs_project_get_gallery_ids')
+        ? implode(',', rs_project_get_gallery_ids($post_id))
+        : '';
+    $legacy_logo = (int) get_post_meta($post_id, defined('RS_PROJECT_LOGO_KEY') ? RS_PROJECT_LOGO_KEY : 'rs_project_logo_id', true);
+
+    if ((int) ($data['shared']['hero_id'] ?? 0) <= 0 && $legacy_hero > 0) {
+        $data['shared']['hero_id'] = $legacy_hero;
+    }
+    if (trim((string) ($data['shared']['gallery_ids'] ?? '')) === '' && $legacy_gallery !== '') {
+        $data['shared']['gallery_ids'] = $legacy_gallery;
+    }
+    if ((int) ($data['shared']['logo_id'] ?? 0) <= 0 && $legacy_logo > 0) {
+        $data['shared']['logo_id'] = $legacy_logo;
+    }
+
+    rs_project_i18n_save($post_id, $data);
 }
 
 /**
@@ -250,9 +268,12 @@ function rs_project_i18n_from_legacy_post(int $post_id, int $pt_id = 0): array {
 function rs_project_i18n_save(int $post_id, array $data): void {
     $normalized = rs_project_i18n_normalize($data);
 
-    // Grava como array: o WP serializa sem passar por stripslashes que corrompe JSON
-    // (aspas do HTML do TinyMCE quebravam json_decode na leitura).
-    update_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized);
+    // Array nativo + dedupe (evita linhas duplicadas de rs_project_i18n).
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_PROJECT_I18N_KEY, $normalized);
+    } else {
+        update_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized);
+    }
     rs_project_i18n_sync_legacy_meta($post_id, $normalized);
 }
 
@@ -579,20 +600,58 @@ function rs_project_i18n_parse_from_request(int $post_id): array {
     $data = rs_project_i18n_get($post_id);
     $post = get_post($post_id);
 
-    $hero_id = isset($_POST['rs_project_hero_id']) ? (int) $_POST['rs_project_hero_id'] : (int) ($data['shared']['hero_id'] ?? 0);
-    $logo_id = isset($_POST['rs_project_logo_id']) ? (int) $_POST['rs_project_logo_id'] : (int) ($data['shared']['logo_id'] ?? 0);
+    $prev_hero = (int) ($data['shared']['hero_id'] ?? 0);
+    $prev_logo = (int) ($data['shared']['logo_id'] ?? 0);
+    $prev_gallery = trim((string) ($data['shared']['gallery_ids'] ?? ''));
+    $prev_featured_gallery = trim((string) ($data['shared']['gallery_featured_ids'] ?? ''));
+    $prev_en_accordion = is_array($data['locales']['en']['accordion'] ?? null) ? $data['locales']['en']['accordion'] : [];
+    $prev_pt_accordion = is_array($data['locales']['pt']['accordion'] ?? null) ? $data['locales']['pt']['accordion'] : [];
+    $prev_en_youtube = is_array($data['locales']['en']['youtube'] ?? null) ? $data['locales']['en']['youtube'] : [];
+    $prev_pt_youtube = is_array($data['locales']['pt']['youtube'] ?? null) ? $data['locales']['pt']['youtube'] : [];
+
+    // Hero/logo: POST=0 sem flag de clear NÃO apaga mídia existente (bug recorrente ao salvar).
+    if (array_key_exists('rs_project_hero_id', $_POST)) {
+        $posted_hero = (int) $_POST['rs_project_hero_id'];
+        $hero_cleared = !empty($_POST['rs_project_hero_id_cleared']);
+        if ($posted_hero > 0) {
+            $data['shared']['hero_id'] = $posted_hero;
+        } elseif ($hero_cleared) {
+            $data['shared']['hero_id'] = 0;
+        } else {
+            $data['shared']['hero_id'] = $prev_hero;
+        }
+    }
+
+    if (array_key_exists('rs_project_logo_id', $_POST)) {
+        $posted_logo = (int) $_POST['rs_project_logo_id'];
+        $logo_cleared = !empty($_POST['rs_project_logo_id_cleared']);
+        if ($posted_logo > 0) {
+            $data['shared']['logo_id'] = $posted_logo;
+        } elseif ($logo_cleared) {
+            $data['shared']['logo_id'] = 0;
+        } else {
+            $data['shared']['logo_id'] = $prev_logo;
+        }
+    }
 
     $gallery_ids = rs_project_i18n_posted_json_array('rs_project_gallery_json');
     $featured_ids = rs_project_i18n_posted_json_array('rs_project_gallery_featured_json');
 
-    $data['shared']['hero_id'] = $hero_id;
-    $data['shared']['logo_id'] = $logo_id;
     if ($gallery_ids !== null) {
-        $data['shared']['gallery_ids'] = implode(',', array_values(array_filter(array_map('intval', $gallery_ids))));
+        $next_gallery = implode(',', array_values(array_filter(array_map('intval', $gallery_ids))));
+        // [] acidental não apaga galeria existente.
+        if ($next_gallery !== '' || $prev_gallery === '' || !empty($_POST['rs_project_gallery_cleared'])) {
+            $data['shared']['gallery_ids'] = $next_gallery;
+        }
     }
     if ($featured_ids !== null) {
-        $data['shared']['gallery_featured_ids'] = implode(',', array_values(array_filter(array_map('intval', $featured_ids))));
+        $next_featured = implode(',', array_values(array_filter(array_map('intval', $featured_ids))));
+        if ($next_featured !== '' || $prev_featured_gallery === '' || !empty($_POST['rs_project_gallery_cleared'])) {
+            $data['shared']['gallery_featured_ids'] = $next_featured;
+        }
     }
+
+    // Checkboxes do form de projeto (sempre no metabox quando o nonce está presente).
     $data['shared']['featured_home'] = !empty($_POST['rs_project_featured_home']);
     $data['shared']['show_vignette'] = !empty($_POST['rs_project_show_vignette']);
 
@@ -604,12 +663,19 @@ function rs_project_i18n_parse_from_request(int $post_id): array {
 
     $en_accordion = rs_project_i18n_posted_json_array('rs_project_accordion_en_json');
     if ($en_accordion !== null) {
-        $data['locales']['en']['accordion'] = rs_project_normalize_accordion_sections($en_accordion);
+        $data['locales']['en']['accordion'] = rs_project_i18n_merge_accordion_preserve(
+            rs_project_normalize_accordion_sections($en_accordion),
+            $prev_en_accordion,
+            !empty($_POST['rs_project_accordion_en_cleared'])
+        );
     }
 
     $en_youtube = rs_project_i18n_posted_json_array('rs_project_youtube_en_json');
     if ($en_youtube !== null) {
-        $data['locales']['en']['youtube'] = rs_project_normalize_youtube_videos($en_youtube);
+        $normalized_yt = rs_project_normalize_youtube_videos($en_youtube);
+        if ($normalized_yt !== [] || $prev_en_youtube === [] || !empty($_POST['rs_project_youtube_en_cleared'])) {
+            $data['locales']['en']['youtube'] = $normalized_yt;
+        }
     }
 
     if (array_key_exists('rs_project_pt_title', $_POST)) {
@@ -622,15 +688,53 @@ function rs_project_i18n_parse_from_request(int $post_id): array {
 
     $pt_accordion = rs_project_i18n_posted_json_array('rs_project_accordion_pt_json');
     if ($pt_accordion !== null) {
-        $data['locales']['pt']['accordion'] = rs_project_normalize_accordion_sections($pt_accordion);
+        $data['locales']['pt']['accordion'] = rs_project_i18n_merge_accordion_preserve(
+            rs_project_normalize_accordion_sections($pt_accordion),
+            $prev_pt_accordion,
+            !empty($_POST['rs_project_accordion_pt_cleared'])
+        );
     }
 
     $pt_youtube = rs_project_i18n_posted_json_array('rs_project_youtube_pt_json');
     if ($pt_youtube !== null) {
-        $data['locales']['pt']['youtube'] = rs_project_normalize_youtube_videos($pt_youtube);
+        $normalized_yt = rs_project_normalize_youtube_videos($pt_youtube);
+        if ($normalized_yt !== [] || $prev_pt_youtube === [] || !empty($_POST['rs_project_youtube_pt_cleared'])) {
+            $data['locales']['pt']['youtube'] = $normalized_yt;
+        }
     }
 
     return rs_project_i18n_normalize($data);
+}
+
+/**
+ * Evita apagar acordeão/bodies quando TinyMCE em aba oculta devolve HTML vazio.
+ *
+ * @param list<array{title?: string, body?: string}> $incoming
+ * @param list<array{title?: string, body?: string}> $previous
+ * @return list<array{title?: string, body?: string}>
+ */
+function rs_project_i18n_merge_accordion_preserve(array $incoming, array $previous, bool $cleared): array {
+    if ($cleared) {
+        return $incoming;
+    }
+    if ($incoming === [] && $previous !== []) {
+        return $previous;
+    }
+
+    foreach ($incoming as $i => $section) {
+        $new_body = trim((string) ($section['body'] ?? ''));
+        $old_body = trim((string) ($previous[$i]['body'] ?? ''));
+        if ($new_body === '' && $old_body !== '') {
+            $incoming[$i]['body'] = $previous[$i]['body'];
+        }
+        $new_title = trim((string) ($section['title'] ?? ''));
+        $old_title = trim((string) ($previous[$i]['title'] ?? ''));
+        if ($new_title === '' && $old_title !== '') {
+            $incoming[$i]['title'] = $previous[$i]['title'];
+        }
+    }
+
+    return $incoming;
 }
 
 add_filter('redirect_post_location', function (string $location, int $post_id): string {
