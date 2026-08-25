@@ -137,15 +137,11 @@ function rs_legal_meta_to_payload(int $post_id): array {
     $locale = get_post_field('post_name', $post_id) === 'pt' ? 'pt' : 'en';
     $defaults = rs_legal_default_categories($locale);
 
-    $raw_cats = get_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, true);
-    $cats = [];
-    if (is_string($raw_cats) && $raw_cats !== '') {
-        $decoded = json_decode($raw_cats, true);
-        if (is_array($decoded)) {
-            $cats = $decoded;
-        }
-    } elseif (is_array($raw_cats)) {
-        $cats = $raw_cats;
+    $cats = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_LEGAL_CATEGORIES_KEY)
+        : null;
+    if (!is_array($cats)) {
+        $cats = [];
     }
 
     $privacy_title = trim((string) get_post_meta($post_id, RS_LEGAL_PRIVACY_TITLE_KEY, true));
@@ -215,7 +211,11 @@ function rs_legal_seed_post(int $post_id, string $locale): void {
         );
     }
     if (trim((string) get_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, true)) === '') {
-        update_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, wp_json_encode($defaults, JSON_UNESCAPED_UNICODE));
+        if (function_exists('rs_meta_update_array')) {
+            rs_meta_update_array($post_id, RS_LEGAL_CATEGORIES_KEY, $defaults);
+        } else {
+            update_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, wp_slash(wp_json_encode($defaults, JSON_UNESCAPED_UNICODE) ?: '[]'));
+        }
     }
 }
 
@@ -293,7 +293,7 @@ function rs_legal_render_meta_box(WP_Post $post): void {
     rs_legal_seed_post((int) $post->ID, $locale);
     $payload = rs_legal_meta_to_payload((int) $post->ID);
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (<code>en</code> / <code>pt</code>). Textos com editor rich text. O popup de cookies no site usa as categorias abaixo. <em>(Plugin Tradução v1.2.15)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (<code>en</code> / <code>pt</code>). Textos com editor rich text. O popup de cookies no site usa as categorias abaixo. ' . rs_plugin_version_markup() . '</p>';
 
     echo '<fieldset style="margin:16px 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
     echo '<legend style="font-weight:600;padding:0 6px;"><strong>Política de privacidade</strong></legend>';
@@ -405,7 +405,11 @@ add_action('save_post_legal', function (int $post_id) {
         ];
     }
     $cats = rs_legal_normalize_categories($normalized_input, $locale);
-    update_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, wp_json_encode($cats, JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_LEGAL_CATEGORIES_KEY, $cats);
+    } else {
+        update_post_meta($post_id, RS_LEGAL_CATEGORIES_KEY, wp_slash(wp_json_encode($cats, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 });
 
 function rs_copy_legal_fields(int $from_id, int $to_id): void {

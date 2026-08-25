@@ -16,17 +16,12 @@ const RS_CAPABILITIES_LEGACY_SECTION_COUNT = 8;
  * @return array<int, array{title: string, text: string, image_id: int}>
  */
 function rs_capabilities_get_sections(int $post_id): array {
-    $raw = get_post_meta($post_id, RS_CAPABILITIES_SECTIONS_KEY, true);
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_CAPABILITIES_SECTIONS_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded)) {
-            return rs_capabilities_normalize_sections($decoded);
-        }
-    }
-
-    if (is_array($raw)) {
-        return rs_capabilities_normalize_sections($raw);
+    if (is_array($decoded)) {
+        return rs_capabilities_normalize_sections($decoded);
     }
 
     return rs_capabilities_migrate_legacy_sections($post_id);
@@ -180,7 +175,7 @@ add_action('init', function () {
 
     register_post_meta('capabilities', RS_CAPABILITIES_SECTIONS_KEY, [
         'single'        => true,
-        'type'          => 'string',
+        'type'          => 'array',
         'show_in_rest'  => false,
         'auth_callback' => function () {
             return current_user_can('edit_posts');
@@ -287,8 +282,15 @@ function rs_capabilities_render_section_row(int $index, array $section, bool $is
 function rs_capabilities_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_capabilities_save', 'rs_capabilities_nonce');
 
-    $headline = (string) get_post_meta($post->ID, RS_CAPABILITIES_HEADLINE_KEY, true);
-    $sections = rs_capabilities_get_sections($post->ID);
+    $post_id = (int) $post->ID;
+    $headline = (string) get_post_meta($post_id, RS_CAPABILITIES_HEADLINE_KEY, true);
+    $sections = rs_capabilities_get_sections($post_id);
+
+    // JSON legado (ou corrompido) → array serializado.
+    $raw = get_post_meta($post_id, RS_CAPABILITIES_SECTIONS_KEY, true);
+    if (is_string($raw) && $raw !== '' && function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_CAPABILITIES_SECTIONS_KEY, $sections);
+    }
 
     if (!$sections) {
         $sections = [['title' => '', 'text' => '', 'image_id' => 0]];
@@ -414,7 +416,11 @@ add_action('save_post_capabilities', function (int $post_id) {
     update_post_meta($post_id, RS_CAPABILITIES_HEADLINE_KEY, $headline);
 
     $sections = rs_capabilities_parse_sections_from_request();
-    update_post_meta($post_id, RS_CAPABILITIES_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_CAPABILITIES_SECTIONS_KEY, $sections);
+    } else {
+        update_post_meta($post_id, RS_CAPABILITIES_SECTIONS_KEY, wp_slash(wp_json_encode($sections, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 }, 10);
 
 function rs_copy_capabilities_fields(int $from_id, int $to_id): void {
@@ -588,10 +594,18 @@ function rs_capabilities_render_admin_footer_script(): void {
             nextIndex += 1;
         });
 
-        $('#post').on('submit', collectSectionsJson);
-        $('#publish, #save-post').on('click', function () {
-            window.setTimeout(collectSectionsJson, 0);
+        // Coleta antes do envio (form + botões WP; evita JSON vazio se TinyMCE ainda não sincronizou).
+        $('#post').on('submit', function () {
+            collectSectionsJson();
         });
+        $(document).on('click', '#publish, #save-post', function () {
+            collectSectionsJson();
+        });
+        if (typeof tinymce !== 'undefined') {
+            $(document).on('tinymce-editor-init', function () {
+                // noop — garante listeners após init
+            });
+        }
     });
     </script>
     <?php

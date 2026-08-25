@@ -194,7 +194,7 @@ function rs_footer_render_meta_box(WP_Post $post): void {
         $meta['rs_footer_legal_brand'] = '© ' . gmdate('Y') . ' Regularswitch';
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Os rótulos Privacidade/Cookies abrem os popups. O conteúdo editável fica em <strong>Privacidade &amp; Cookies</strong>. Ícones sociais: cole o URL; campo vazio esconde a rede. <em>(Plugin Tradução v1.2.25)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Copyright é só texto. Os rótulos Privacidade/Cookies abrem os popups. O conteúdo editável fica em <strong>Privacidade &amp; Cookies</strong>. Ícones sociais: cole o URL; campo vazio esconde a rede. ' . rs_plugin_version_markup() . '</p>';
 
     $groups = [
         'Marca' => ['rs_footer_brand_mark'],

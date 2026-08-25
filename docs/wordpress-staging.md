@@ -71,7 +71,7 @@ No repositório Next.js:
 
 1. Envie `wordpress/dist/wp-plugins.zip` para a Hostinger (FTP ou Gerenciador de arquivos)
 2. Extraia em `wp-content/plugins/`
-3. No admin do **staging**: **Plugins** → ative **Tradução** e **Api Rest Etc Extension**
+3. No admin do **staging**: **Plugins** → ative **Regular CMS** (`regular-cms/`); remova pastas legadas `traducao/` e `api-etc/` se existirem
 4. Teste:
    ```bash
    curl -s "https://staging-wp.regularswitch.com/wp-json/wp/v2/footer?per_page=1"
@@ -161,10 +161,40 @@ Restaure backup da Hostinger ou reimporte export de produção feito antes da mu
 O WordPress ainda aponta `siteurl`/`home` para produção. Em **Configurações → Gerais**, ajuste as duas URLs para `https://staging-wp.regularswitch.com` (ou use WP-CLI / banco). Enquanto redirecionar, o admin e os plugins são os de **produção**.
 
 **Caixas de metadados não aparecem em Projects**  
-1. Confirme que o plugin **Tradução** está ativo e atualizado (`project-fields.php` no ZIP).  
+1. Confirme que o plugin **Regular CMS** está ativo e atualizado (`project-fields.php` no ZIP).  
 2. A caixa **Conteúdo do Projeto (site)** fica abaixo do título (editor clássico nos Projects).  
 3. No Gutenberg antigo: role até o fim → expanda **Caixas de metadados** (ou **Preferências → Painéis** e ative o painel).  
-4. Reenvie `wordpress/dist/wp-plugins.zip` e substitua a pasta `traducao/` inteira no servidor.
+4. Reenvie `wordpress/dist/wp-plugins.zip` e substitua a pasta `regular-cms/` inteira no servidor (remova `traducao/` legada).
 
-> As caixas do tema antigo (**Project Settings**, **Page Settings**) são removidas pelo plugin Tradução (v1.1.8+) — use só **Conteúdo do Projeto (site)**.
+**Admin quebrado: `Call to undefined function _lang()`**  
+Acontece quando o ZIP novo (`regular-cms/`) foi enviado, mas o banco ainda ativa `traducao/traducao.php` (pasta removida). O tema legado depende de funções do Regular CMS.
+
+1. Confirme via FTP que existe `wp-content/plugins/regular-cms/regular-cms.php`
+2. Remova pastas legadas `wp-content/plugins/traducao/` e `api-etc/` se ainda existirem
+3. Corrija `active_plugins` (escolha uma opção):
+
+**Opção A — script temporário (recomendado se o admin não abre)**
+
+```bash
+./scripts/fix-wp-active-plugins.sh > /tmp/fix-active-plugins.php
+```
+
+- Envie `/tmp/fix-active-plugins.php` para a **raiz** do WordPress de staging (mesma pasta que `wp-config.php`)
+- Abra no browser (a URL mostra a `key` ao gerar o script):
+
+  `https://staging-wp.regularswitch.com/fix-active-plugins.php?key=rs-fix-…`
+
+- Deve responder `OK — active_plugins atualizado` com `regular-cms/regular-cms.php`
+- **Apague** `fix-active-plugins.php` do servidor imediatamente
+- Recarregue `/wp-admin`
+
+**Opção B — phpMyAdmin (Hostinger)**
+
+Na tabela `wp_options`, linha `active_plugins`: remova `traducao/traducao.php` e `api-etc/api-etc.php` do valor serializado e inclua `regular-cms/regular-cms.php`. Cuidado: o formato PHP serializado quebra se editar manualmente — prefira a Opção A.
+
+**Opção C — admin ainda abre**
+
+**Plugins** → ative **Regular CMS** → desative entradas quebradas de Tradução / api-etc.
+
+> As caixas do tema antigo (**Project Settings**, **Page Settings**) são removidas pelo Regular CMS (v1.1.8+) — use só **Conteúdo do Projeto (site)**.
 

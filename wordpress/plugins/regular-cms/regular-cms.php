@@ -1,40 +1,44 @@
 <?php
 /**
- * Plugin Name: Tradução
- * Description: Facilitar A tradução
- * Version: 1.2.35
- * Author: Undefined
- * Author URI: undefined.com
+ * Plugin Name: Regular CMS
+ * Plugin URI:  https://regularswitch.com
+ * Description: CPTs, meta boxes, i18n EN/PT e REST (api-etc/v2/all-posts) do site Regular Switch.
+ * Version:     1.4.8
+ * Requires at least: 6.0
+ * Requires PHP: 8.0
+ * Author:      Regular
+ * Author URI:  https://regularswitch.com
+ * License:     GPL v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: regular-cms
+ * Domain Path: /languages
  */
 
-include __DIR__ . "/custon_post.php";
-include __DIR__ . "/intro-fields.php";
-include __DIR__ . "/rich-text-fields.php";
-include __DIR__ . "/media-fields.php";
-include __DIR__ . "/footer-fields.php";
-include __DIR__ . "/capabilities-fields.php";
-include __DIR__ . "/page-heroes-fields.php";
-include __DIR__ . "/section-hero-fields.php";
-include __DIR__ . "/about-fields.php";
-include __DIR__ . "/education-fields.php";
-include __DIR__ . "/contact-fields.php";
-include __DIR__ . "/legal-fields.php";
-include __DIR__ . "/projects-page-fields.php";
-include __DIR__ . "/site-ui-fields.php";
-include __DIR__ . "/blob-visual-fields.php";
-include __DIR__ . "/header-menus.php";
-include __DIR__ . "/project-fields.php";
-include __DIR__ . "/project-i18n.php";
-include __DIR__ . "/hide-themerain-meta.php";
-include __DIR__ . "/filter-project-translations.php";
-include __DIR__ . "/metabox-ui.php";
-include __DIR__ . "/sync-media-en-to-pt.php";
-include __DIR__ . "/slug-language.php";
-include __DIR__ . "/rest-translate.php";
-include __DIR__ . "/proxy.php";
-include __DIR__ . "/mult-language.php";
-include __DIR__ . "/redirect-front-to-login.php";
-include __DIR__ . "/admin-bar-frontend.php";
+require_once __DIR__ . '/plugin-meta.php';
+require_once __DIR__ . '/load.php';
+
+add_action('admin_notices', function (): void {
+    if (!function_exists('is_plugin_active')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    $legacy = [];
+
+    if (is_plugin_active('traducao/traducao.php')) {
+        $legacy[] = '<code>traducao</code>';
+    }
+    if (is_plugin_active('api-etc/api-etc.php')) {
+        $legacy[] = '<code>api-etc</code>';
+    }
+
+    if (!$legacy) {
+        return;
+    }
+
+    echo '<div class="notice notice-warning"><p><strong>Regular CMS:</strong> desative e remova os plugins legados '
+        . implode(' e ', $legacy)
+        . ' — tudo foi integrado em <code>regular-cms</code>.</p></div>';
+});
 
 function rs_add_language_column(array $cols): array {
     $cols['language'] = 'Language';
@@ -56,16 +60,6 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
         return;
     }
 
-    if (get_post_type($post_ID) === 'project' && get_option('rs_project_i18n_migrated_v1')) {
-        $edit_pt = add_query_arg(
-            ['rs_project_tab' => 'pt'],
-            admin_url('post.php?post=' . $post_ID . '&action=edit')
-        );
-        echo '<span style="color:#646970;margin-right:6px;">EN · PT</span>';
-        echo '<a href="' . esc_url($edit_pt) . '" title="Abrir aba Português">Editar PT</a>';
-        return;
-    }
-
     $badge = rs_project_locale_badge($post_ID);
     $opposite = $badge === 'PT' ? 'EN' : 'PT';
     echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
@@ -78,15 +72,6 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
     $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}&_wpnonce={$wp_rest_nonce}&rs_nonce={$rs_nonce}";
     $label = $badge === 'EN' ? 'Abrir/criar PT' : 'Abrir EN';
     echo '<a href="#" data-href="' . esc_url($url) . '" onclick="rs_link_translate(event, this)" title="' . esc_attr($label) . '">' . esc_html($opposite) . '</a> ';
-
-    // Reimporta acordeão/galeria do EN na PT (não sobrescreve ao só abrir PT).
-    if (get_post_type($post_ID) === 'project' && $badge === 'EN' && (int) get_post_meta($post_ID, 'PT', true) > 0) {
-        $sync_url = add_query_arg(
-            ['id' => $post_ID, 'lang' => 'PT', 'sync' => '1', '_wpnonce' => $wp_rest_nonce, 'rs_nonce' => $rs_nonce],
-            get_site_url() . '/wp-json/translate/proxy'
-        );
-        echo '<a href="#" data-href="' . esc_url($sync_url) . '" onclick="rs_link_translate(event, this)" title="Copiar campos do EN para a PT" style="margin-left:4px;color:#b32d2e;">↻ sync PT</a>';
-    }
 }
 
 function rs_link_translate_script(): void {
@@ -139,7 +124,7 @@ function rs_link_translate_script(): void {
     <?php
 }
 
-foreach (['post', 'footer', 'intro', 'brand', 'project', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'] as $post_type) {
+foreach (['post', 'footer', 'intro', 'brand', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'] as $post_type) {
     add_filter("manage_{$post_type}_posts_columns", 'rs_add_language_column');
     add_action("manage_{$post_type}_posts_custom_column", 'rs_render_language_column', 10, 2);
 }

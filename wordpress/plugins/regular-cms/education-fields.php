@@ -19,17 +19,12 @@ const RS_EDUCATION_HERO_VIDEO_URL_LEGACY = 'rs_education_hero_video_url';
  * @return array<int, array{title: string, body: string}>
  */
 function rs_education_get_sections(int $post_id): array {
-    $raw = get_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, true);
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_EDUCATION_SECTIONS_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded)) {
-            return rs_education_normalize_sections($decoded);
-        }
-    }
-
-    if (is_array($raw)) {
-        return rs_education_normalize_sections($raw);
+    if (is_array($decoded)) {
+        return rs_education_normalize_sections($decoded);
     }
 
     return [];
@@ -180,16 +175,12 @@ function rs_education_gallery_to_payload($raw): ?array {
  * @return array<int, array<string, mixed>>
  */
 function rs_education_get_institutions_raw(int $post_id): array {
-    $raw = get_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, true);
-    $decoded = [];
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $parsed = json_decode($raw, true);
-        if (is_array($parsed)) {
-            $decoded = $parsed;
-        }
-    } elseif (is_array($raw)) {
-        $decoded = $raw;
+    if (!is_array($decoded)) {
+        $decoded = [];
     }
 
     $normalized = [];
@@ -671,7 +662,7 @@ function rs_education_render_meta_box(WP_Post $post): void {
         ]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. <em>(Plugin Tradução v1.2.33)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. ' . rs_plugin_version_markup() . '</p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -824,7 +815,11 @@ add_action('save_post_education', function (int $post_id) {
     }
 
     $sections = rs_education_parse_sections_from_request();
-    update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_EDUCATION_SECTIONS_KEY, $sections);
+    } else {
+        update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_slash(wp_json_encode($sections, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 
     $institutions = rs_education_parse_institutions_from_request();
     $to_store = [];
@@ -875,7 +870,11 @@ add_action('save_post_education', function (int $post_id) {
         $to_store[] = $entry;
     }
 
-    update_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_json_encode($to_store, JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY, $to_store);
+    } else {
+        update_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_slash(wp_json_encode($to_store, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 }, 10);
 
 function rs_copy_education_fields(int $from_id, int $to_id): void {

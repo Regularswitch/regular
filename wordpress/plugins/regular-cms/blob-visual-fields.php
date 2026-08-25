@@ -220,7 +220,7 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     echo 'Paleta única para a home em <strong>inglês e português</strong>. ';
     echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
     echo 'Principal e secundária são escolhidas a partir dela. ';
-    echo '<em>(Plugin Tradução v1.2.24)</em>';
+    echo rs_plugin_version_markup();
     echo '</p>';
 
     echo '<div class="rs-blob-field" data-rs-blob-palette>';

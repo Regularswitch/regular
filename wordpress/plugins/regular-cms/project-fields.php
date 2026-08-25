@@ -103,20 +103,23 @@ function rs_project_normalize_accordion_sections(array $sections): array {
 function rs_project_get_accordion_sections(int $post_id): array {
     $raw = get_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, true);
 
-    if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded)) {
-            $sections = rs_project_normalize_accordion_sections($decoded);
-            if ($sections) {
-                return $sections;
-            }
-        }
-    }
-
     if (is_array($raw)) {
         $sections = rs_project_normalize_accordion_sections($raw);
         if ($sections) {
             return $sections;
+        }
+    }
+
+    if (is_string($raw) && $raw !== '') {
+        foreach (array_unique([$raw, wp_unslash($raw), stripslashes($raw)]) as $candidate) {
+            $decoded = json_decode($candidate, true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+            $sections = rs_project_normalize_accordion_sections($decoded);
+            if ($sections) {
+                return $sections;
+            }
         }
     }
 
@@ -159,8 +162,8 @@ function rs_project_get_logo_id(int $post_id): int {
 /**
  * @return array<int, int>
  */
-function rs_project_get_gallery_ids(int $post_id): array {
-    $raw = (string) get_post_meta($post_id, RS_PROJECT_GALLERY_KEY, true);
+function rs_project_parse_csv_ids(string $raw): array {
+    $raw = trim($raw);
     if ($raw === '') {
         return [];
     }
@@ -169,17 +172,19 @@ function rs_project_get_gallery_ids(int $post_id): array {
 }
 
 /**
+ * @return array<int, int>
+ */
+function rs_project_get_gallery_ids(int $post_id): array {
+    return rs_project_parse_csv_ids((string) get_post_meta($post_id, RS_PROJECT_GALLERY_KEY, true));
+}
+
+/**
  * IDs da galeria marcados como destaque (duas colunas no desktop).
  *
  * @return array<int, int>
  */
 function rs_project_get_gallery_featured_ids(int $post_id): array {
-    $raw = (string) get_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, true);
-    if ($raw === '') {
-        return [];
-    }
-
-    $featured = array_values(array_filter(array_map('intval', explode(',', $raw))));
+    $featured = rs_project_parse_csv_ids((string) get_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, true));
     $in_gallery = array_flip(rs_project_get_gallery_ids($post_id));
 
     return array_values(array_filter($featured, static function (int $id) use ($in_gallery): bool {
@@ -325,30 +330,6 @@ function rs_project_meta_to_payload(int $post_id): array {
             ? true
             : (bool) get_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, true),
     ];
-}
-
-function rs_copy_project_fields(int $from_id, int $to_id, bool $force_accordion = false): void {
-    if (function_exists('rs_sync_project_media')) {
-        rs_sync_project_media($from_id, $to_id);
-    }
-
-    $existing = rs_project_get_accordion_sections($to_id);
-    if ($force_accordion || !$existing) {
-        $dest_locale = rs_project_guess_locale($to_id);
-        if ((int) get_post_meta($from_id, 'EN', true) === 0) {
-            $dest_locale = 'pt';
-        }
-        $sections = rs_project_accordion_for_locale(
-            rs_project_get_accordion_sections($from_id),
-            $dest_locale
-        );
-        update_post_meta($to_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
-
-        foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
-            $key = "rs_project_acc_{$index}_body";
-            update_post_meta($to_id, $key, $sections[$index - 1]['body'] ?? get_post_meta($from_id, $key, true));
-        }
-    }
 }
 
 add_action('init', function () {
@@ -561,15 +542,27 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
     $url = $attachment_id > 0 ? (string) wp_get_attachment_url($attachment_id) : '';
     $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
     $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+    $meta = $attachment_id > 0 ? wp_get_attachment_metadata($attachment_id) : [];
+    $media_width = (int) ($meta['width'] ?? 0);
+    $media_height = (int) ($meta['height'] ?? 0);
     $thumb = '';
     if ($attachment_id > 0 && !$is_video) {
         $thumb = (string) (wp_get_attachment_image_url($attachment_id, 'medium') ?: $url);
     }
+
+    $row_classes = 'rs-project-gallery-row';
+    if ($featured) {
+        $row_classes .= ' rs-project-gallery-row--wide';
+    }
     ?>
-    <div class="rs-project-gallery-row" data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"<?php echo $display; ?>>
+    <div
+        class="<?php echo esc_attr($row_classes); ?>"
+        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        <?php if ($media_width > 0) : ?>data-media-width="<?php echo esc_attr((string) $media_width); ?>"<?php endif; ?>
+        <?php if ($media_height > 0) : ?>data-media-height="<?php echo esc_attr((string) $media_height); ?>"<?php endif; ?>
+        <?php echo $display; ?>
+    >
         <div class="rs-project-gallery-tile<?php echo $featured ? ' is-featured' : ''; ?>">
-            <span class="rs-project-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
-            <button type="button" class="rs-project-remove-gallery" title="Remover" aria-label="Remover mídia">&times;</button>
             <input
                 type="hidden"
                 name="<?php echo esc_attr($name); ?>"
@@ -584,27 +577,33 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
                 name="<?php echo esc_attr($featured_name); ?>"
                 value="<?php echo $featured ? '1' : '0'; ?>"
             />
-            <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
-                <?php if ($url && $is_video) : ?>
-                    <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
-                    <span class="rs-project-gallery-badge" title="Vídeo">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg>
-                        vídeo
-                    </span>
-                <?php elseif ($thumb || $url) : ?>
-                    <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
-                    <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
-                        <span class="rs-project-gallery-badge">gif</span>
+            <div class="rs-project-gallery-media">
+                <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
+                    <?php if ($url && $is_video) : ?>
+                        <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
+                        <span class="rs-project-gallery-badge" title="Vídeo">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg>
+                            vídeo
+                        </span>
+                    <?php elseif ($thumb || $url) : ?>
+                        <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
+                        <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
+                            <span class="rs-project-gallery-badge">gif</span>
+                        <?php endif; ?>
                     <?php endif; ?>
-                <?php endif; ?>
+                </div>
             </div>
-            <button
-                type="button"
-                class="rs-project-gallery-featured"
-                title="Destaque: ocupa duas colunas no desktop"
-                aria-label="Destaque (duas colunas no desktop)"
-                aria-pressed="<?php echo $featured ? 'true' : 'false'; ?>"
-            >★</button>
+            <div class="rs-project-gallery-actions" aria-hidden="false">
+                <span class="rs-project-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+                <button type="button" class="rs-project-remove-gallery" title="Remover" aria-label="Remover mídia">&times;</button>
+                <button
+                    type="button"
+                    class="rs-project-gallery-featured"
+                    title="Destaque: ocupa duas colunas no desktop"
+                    aria-label="Destaque (duas colunas no desktop)"
+                    aria-pressed="<?php echo $featured ? 'true' : 'false'; ?>"
+                >★</button>
+            </div>
         </div>
     </div>
     <?php
@@ -616,6 +615,11 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $canonical_id = function_exists('rs_project_resolve_canonical_id')
         ? rs_project_resolve_canonical_id((int) $post->ID)
         : (int) $post->ID;
+
+    // JSON legado (ou corrompido por stripslashes) → array serializado.
+    if (function_exists('rs_project_i18n_maybe_migrate_storage')) {
+        rs_project_i18n_maybe_migrate_storage($canonical_id);
+    }
 
     if (function_exists('rs_project_i18n_get')) {
         $i18n = rs_project_i18n_get($canonical_id);
@@ -634,11 +638,11 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     $hero_id = (int) ($shared['hero_id'] ?? 0) ?: rs_project_get_hero_id($canonical_id);
     $logo_id = (int) ($shared['logo_id'] ?? 0);
-    $gallery_ids = array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_ids'] ?? '')))));
+    $gallery_ids = rs_project_parse_csv_ids((string) ($shared['gallery_ids'] ?? ''));
     if (!$gallery_ids) {
         $gallery_ids = rs_project_get_gallery_ids($canonical_id);
     }
-    $gallery_featured_ids = array_flip(array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_featured_ids'] ?? '')))));
+    $gallery_featured_ids = array_flip(rs_project_parse_csv_ids((string) ($shared['gallery_featured_ids'] ?? '')));
     $featured = !empty($shared['featured_home']);
     $show_vignette = !array_key_exists('show_vignette', $shared) || !empty($shared['show_vignette']);
 
@@ -657,9 +661,23 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $slug = (string) $post->post_name;
     $media_count = ($hero_id > 0 ? 1 : 0) + ($logo_id > 0 ? 1 : 0) + count($en_youtube) + count($gallery_ids);
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post por projeto. Edite <strong>English</strong> e <strong>Português</strong> nas abas abaixo; mídia (hero, logo, galeria) é compartilhada. URL: <code>/project/{slug}</code> — o front usa o idioma do visitante. <em>(Plugin Tradução v1.2.35)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um único post por projeto. Edite <strong>English</strong> e <strong>Português</strong> nas abas abaixo; mídia (hero, logo, galeria) é compartilhada. URL: <code>/project/{slug}</code> — o front usa o idioma do visitante. ' . rs_plugin_version_markup() . '</p>';
 
     echo '<div class="rs-metabox-tabs rs-project-tabs" data-rs-tabs>';
+    echo '<input type="hidden" name="rs_project_active_tab" id="rs_project_active_tab" value="general" />';
+    // Campos PT sempre no POST (abas hidden às vezes falham em alguns browsers/hosts).
+    echo '<input type="hidden" name="rs_project_pt_title" id="rs_project_pt_title_submit" value="' . esc_attr($title_pt) . '" />';
+    echo '<textarea name="rs_project_pt_excerpt" id="rs_project_pt_excerpt_submit" hidden>' . esc_textarea($excerpt_pt) . '</textarea>';
+    echo '<input type="hidden" id="rs-project-accordion-en-json" name="rs_project_accordion_en_json" value="' . esc_attr(wp_json_encode($en_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '" />';
+    echo '<input type="hidden" id="rs-project-accordion-pt-json" name="rs_project_accordion_pt_json" value="' . esc_attr(wp_json_encode($pt_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '" />';
+    echo '<input type="hidden" id="rs-project-youtube-en-json" name="rs_project_youtube_en_json" value="' . esc_attr(wp_json_encode(array_values(array_map(static function (array $v): string {
+        return (string) ($v['url'] ?? '');
+    }, $en_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '" />';
+    echo '<input type="hidden" id="rs-project-youtube-pt-json" name="rs_project_youtube_pt_json" value="' . esc_attr(wp_json_encode(array_values(array_map(static function (array $v): string {
+        return (string) ($v['url'] ?? '');
+    }, $pt_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '" />';
+    echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="' . esc_attr(wp_json_encode($gallery_ids) ?: '[]') . '" />';
+    echo '<input type="hidden" id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" value="' . esc_attr(wp_json_encode(array_keys($gallery_featured_ids)) ?: '[]') . '" />';
     echo '<div class="rs-metabox-tablist rs-project-tablist" role="tablist">';
     echo '<button type="button" class="rs-metabox-tab rs-project-tab is-active" role="tab" aria-selected="true" data-tab="general">Geral</button>';
     echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="en">English (' . count($en_accordion) . ')</button>';
@@ -670,7 +688,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel is-active" data-tab="general" role="tabpanel">';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Slug</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">URL do projeto: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code></p>';
+    echo '<p class="description" style="margin-top:0;">URL do projeto: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code> — preenchido automaticamente a partir do <strong>Título</strong> (EN); edite aqui se precisar de um slug diferente.</p>';
     echo '<label class="screen-reader-text" for="post_name">Slug</label>';
     echo '<input type="text" name="post_name" id="post_name" value="' . esc_attr($slug) . '" class="regular-text" style="width:100%;max-width:420px;" autocomplete="off" spellcheck="false" />';
     echo '</fieldset>';
@@ -697,7 +715,6 @@ function rs_project_render_meta_box(WP_Post $post): void {
     rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'en');
     echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="en">+ Adicionar seção</button></p>';
-    echo '<input type="hidden" id="rs-project-accordion-en-json" name="rs_project_accordion_en_json" value="" />';
     echo '</fieldset>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>YouTube (EN)</strong></legend>';
@@ -710,18 +727,17 @@ function rs_project_render_meta_box(WP_Post $post): void {
     rs_project_render_youtube_row(0, '', true, 'en');
     echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="en">+ Adicionar vídeo</button></p>';
-    echo '<input type="hidden" id="rs-project-youtube-en-json" name="rs_project_youtube_en_json" value="" />';
     echo '</fieldset>';
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="pt" role="tabpanel" hidden>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Título (PT)</strong></legend>';
-    echo '<input type="text" class="large-text" name="rs_project_pt_title" value="' . esc_attr($title_pt) . '" style="width:100%;" placeholder="Título em português (opcional — usa EN se vazio no front)" />';
+    echo '<input type="text" class="large-text" id="rs_project_pt_title_ui" value="' . esc_attr($title_pt) . '" style="width:100%;" placeholder="Título em português (opcional — usa EN se vazio no front)" autocomplete="off" />';
     echo '</fieldset>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Resumo (PT)</strong></legend>';
-    echo '<textarea rows="4" name="rs_project_pt_excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt_pt) . '</textarea>';
+    echo '<textarea rows="4" id="rs_project_pt_excerpt_ui" class="large-text" style="width:100%;">' . esc_textarea($excerpt_pt) . '</textarea>';
     echo '</fieldset>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Acordeão (PT)</strong></legend>';
@@ -734,7 +750,6 @@ function rs_project_render_meta_box(WP_Post $post): void {
     rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'pt');
     echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="pt">+ Adicionar seção</button></p>';
-    echo '<input type="hidden" id="rs-project-accordion-pt-json" name="rs_project_accordion_pt_json" value="" />';
     echo '</fieldset>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>YouTube (PT)</strong></legend>';
@@ -748,7 +763,6 @@ function rs_project_render_meta_box(WP_Post $post): void {
     rs_project_render_youtube_row(0, '', true, 'pt');
     echo '</div>';
     echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="pt">+ Adicionar vídeo</button></p>';
-    echo '<input type="hidden" id="rs-project-youtube-pt-json" name="rs_project_youtube_pt_json" value="" />';
     echo '</fieldset>';
     echo '</div>';
 
@@ -763,7 +777,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<fieldset class="rs-project-fieldset">';
     echo '<legend><strong>Galeria</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> as miniaturas para definir a ordem no site. Clique na <strong>estrela</strong> para destaque (ocupa duas colunas no desktop).</p>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> para definir a ordem. Pré-visualização no <strong>mesmo layout do site</strong> (2 colunas; estrela = largura total). Proporção real da mídia, sem crop.</p>';
     echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list" class="rs-project-gallery-grid">';
     foreach ($gallery_ids as $index => $attachment_id) {
@@ -777,141 +791,10 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídias</button>';
     echo '<span style="align-self:center;color:#646970;font-size:12px;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
     echo '</p>';
-    echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="" />';
-    echo '<input type="hidden" id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" value="" />';
     echo '</fieldset>';
     echo '</div>';
 
     echo '</div>';
-}
-
-/**
- * @return array<int, array{title: string, body: string}>
- */
-function rs_project_parse_accordion_from_request(): array {
-    if (!empty($_POST['rs_project_accordion_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_accordion_json']), true);
-        if (is_array($decoded)) {
-            return rs_project_normalize_accordion_sections($decoded);
-        }
-    }
-
-    if (!isset($_POST['rs_project_accordion']) || !is_array($_POST['rs_project_accordion'])) {
-        return [];
-    }
-
-    $sections = [];
-    foreach (wp_unslash($_POST['rs_project_accordion']) as $key => $section) {
-        if ($key === '__INDEX__' || !is_array($section)) {
-            continue;
-        }
-
-        $title = trim(wp_strip_all_tags((string) ($section['title'] ?? '')));
-        $body = wp_kses_post((string) ($section['body'] ?? ''));
-
-        if ($title === '' && $body === '') {
-            continue;
-        }
-
-        $sections[] = [
-            'title' => $title !== '' ? $title : 'Seção',
-            'body'  => $body,
-        ];
-    }
-
-    return $sections;
-}
-
-/**
- * @return array<int, int>
- */
-function rs_project_parse_gallery_from_request(): array {
-    if (!empty($_POST['rs_project_gallery_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_gallery_json']), true);
-        if (is_array($decoded)) {
-            return array_values(array_filter(array_map('intval', $decoded)));
-        }
-    }
-
-    if (!isset($_POST['rs_project_gallery']) || !is_array($_POST['rs_project_gallery'])) {
-        return [];
-    }
-
-    $ids = [];
-    foreach (wp_unslash($_POST['rs_project_gallery']) as $key => $row) {
-        if ($key === '__INDEX__' || !is_array($row)) {
-            continue;
-        }
-
-        $attachment_id = (int) ($row['image_id'] ?? 0);
-        if ($attachment_id > 0) {
-            $ids[] = $attachment_id;
-        }
-    }
-
-    return $ids;
-}
-
-/**
- * @param array<int, int> $gallery_ids
- * @return array<int, int>
- */
-function rs_project_parse_gallery_featured_from_request(array $gallery_ids): array {
-    $featured = [];
-
-    if (!empty($_POST['rs_project_gallery_featured_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_gallery_featured_json']), true);
-        if (is_array($decoded)) {
-            $featured = array_map('intval', $decoded);
-        }
-    } elseif (isset($_POST['rs_project_gallery']) && is_array($_POST['rs_project_gallery'])) {
-        foreach (wp_unslash($_POST['rs_project_gallery']) as $key => $row) {
-            if ($key === '__INDEX__' || !is_array($row)) {
-                continue;
-            }
-
-            if (!empty($row['featured'])) {
-                $featured[] = (int) ($row['image_id'] ?? 0);
-            }
-        }
-    }
-
-    $allowed = array_flip($gallery_ids);
-
-    return array_values(array_unique(array_filter($featured, static function (int $id) use ($allowed): bool {
-        return $id > 0 && isset($allowed[$id]);
-    })));
-}
-
-/**
- * @return array<int, string>
- */
-function rs_project_parse_youtube_from_request(): array {
-    $items = [];
-
-    if (!empty($_POST['rs_project_youtube_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_youtube_json']), true);
-        if (is_array($decoded)) {
-            $items = $decoded;
-        }
-    } elseif (isset($_POST['rs_project_youtube']) && is_array($_POST['rs_project_youtube'])) {
-        foreach (wp_unslash($_POST['rs_project_youtube']) as $key => $row) {
-            if ($key === '__INDEX__') {
-                continue;
-            }
-            if (is_array($row)) {
-                $items[] = (string) ($row['url'] ?? '');
-            } elseif (is_string($row)) {
-                $items[] = $row;
-            }
-        }
-    }
-
-    $videos = rs_project_normalize_youtube_videos($items);
-
-    return array_values(array_map(static function (array $video): string {
-        return $video['url'];
-    }, $videos));
 }
 
 add_action('save_post_project', function (int $post_id) {
@@ -935,78 +818,11 @@ add_action('save_post_project', function (int $post_id) {
         return;
     }
 
-    if (function_exists('rs_project_i18n_parse_from_request') && function_exists('rs_project_i18n_save')) {
-        rs_project_i18n_save($post_id, rs_project_i18n_parse_from_request($post_id));
+    if (!function_exists('rs_project_i18n_parse_from_request') || !function_exists('rs_project_i18n_save')) {
         return;
     }
 
-    $hero_id = isset($_POST['rs_project_hero_id']) ? (int) $_POST['rs_project_hero_id'] : 0;
-    if ($hero_id > 0) {
-        update_post_meta($post_id, RS_PROJECT_HERO_KEY, $hero_id);
-        update_post_meta($post_id, 'etc_upload_image', $hero_id);
-    } else {
-        delete_post_meta($post_id, RS_PROJECT_HERO_KEY);
-        delete_post_meta($post_id, 'etc_upload_image');
-    }
-
-    $logo_id = isset($_POST['rs_project_logo_id']) ? (int) $_POST['rs_project_logo_id'] : 0;
-    if ($logo_id > 0) {
-        update_post_meta($post_id, RS_PROJECT_LOGO_KEY, $logo_id);
-        set_post_thumbnail($post_id, $logo_id);
-    } else {
-        delete_post_meta($post_id, RS_PROJECT_LOGO_KEY);
-    }
-
-    $featured = !empty($_POST['rs_project_featured_home']) ? 1 : 0;
-    update_post_meta($post_id, RS_PROJECT_FEATURED_KEY, $featured);
-
-    // Checkbox: ausente no POST = false.
-    $show_vignette = !empty($_POST['rs_project_show_vignette']) ? 1 : 0;
-    update_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, $show_vignette);
-
-    $accordion = rs_project_parse_accordion_from_request();
-    $has_accordion = !empty($_POST['rs_project_accordion_json'])
-        || (isset($_POST['rs_project_accordion']) && is_array($_POST['rs_project_accordion']));
-
-    if ($has_accordion) {
-        $locale = rs_project_guess_locale($post_id);
-
-        if ($locale === 'pt') {
-            $en_id = (int) get_post_meta($post_id, 'EN', true) ?: (int) get_post_meta($post_id, 'en', true);
-            $existing = rs_project_get_accordion_sections($post_id);
-            $en_sections = $en_id > 0 ? rs_project_get_accordion_sections($en_id) : [];
-
-            foreach ($accordion as $index => $section) {
-                $submitted = trim((string) ($section['title'] ?? ''));
-                $en_title = trim((string) ($en_sections[$index]['title'] ?? ''));
-                $existing_title = trim((string) ($existing[$index]['title'] ?? ''));
-
-                if (
-                    $submitted !== ''
-                    && $en_title !== ''
-                    && strcasecmp($submitted, $en_title) === 0
-                    && $existing_title !== ''
-                    && strcasecmp($existing_title, $en_title) !== 0
-                ) {
-                    $accordion[$index]['title'] = $existing_title;
-                }
-            }
-        }
-
-        $accordion = rs_project_accordion_for_locale($accordion, $locale);
-
-        update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($accordion, JSON_UNESCAPED_UNICODE));
-
-        foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
-            $legacy_body = $accordion[$index - 1]['body'] ?? '';
-            update_post_meta($post_id, "rs_project_acc_{$index}_body", $legacy_body);
-        }
-    }
-
-    $gallery_ids = rs_project_parse_gallery_from_request();
-    update_post_meta($post_id, RS_PROJECT_GALLERY_KEY, implode(',', $gallery_ids));
-    update_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, implode(',', rs_project_parse_gallery_featured_from_request($gallery_ids)));
-    update_post_meta($post_id, RS_PROJECT_YOUTUBE_KEY, wp_json_encode(rs_project_parse_youtube_from_request(), JSON_UNESCAPED_SLASHES));
+    rs_project_i18n_save($post_id, rs_project_i18n_parse_from_request($post_id));
 }, 10);
 
 rs_enqueue_admin_media_picker(['project']);
@@ -1021,7 +837,7 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
     }
     wp_enqueue_script('jquery-ui-sortable');
     $base = plugin_dir_url(__FILE__);
-    $ver = '1.2.35';
+    $ver = rs_plugin_version();
     wp_enqueue_style('rs-project-admin', $base . 'assets/project-admin.css', ['rs-metabox-ui', 'rs-admin-chrome'], $ver);
     wp_enqueue_script('rs-project-admin', $base . 'assets/project-admin.js', ['jquery', 'jquery-ui-sortable', 'rs-metabox-ui', 'rs-admin-chrome'], $ver, true);
 });
@@ -1033,36 +849,81 @@ function rs_project_render_admin_footer_script(): void {
     }
     ?>
     <style>
-        .rs-project-gallery-grid {
+        /* Galeria — inline garante carregamento mesmo com cache/CDN desatualizado no CSS externo */
+        #rs-project-gallery-list.rs-project-gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .rs-project-gallery-row {
+        #rs-project-gallery-list .rs-project-gallery-row {
+            min-width: 0;
+            width: 100%;
             margin: 0;
+            box-sizing: border-box;
         }
-        .rs-project-gallery-tile {
+        #rs-project-gallery-list .rs-project-gallery-row--wide {
+            grid-column: 1 / -1;
+        }
+        #rs-project-gallery-list .rs-project-gallery-tile {
             position: relative;
-            aspect-ratio: 1;
+            width: 100%;
             border: 1px solid #dcdcde;
-            border-radius: 6px;
+            border-radius: 5px;
             background: #f6f7f7;
             overflow: hidden;
             cursor: grab;
+            box-sizing: border-box;
         }
-        .rs-project-gallery-tile:active {
+        #rs-project-gallery-list .rs-project-gallery-tile:active {
             cursor: grabbing;
         }
-        .rs-project-gallery-tile.is-featured {
+        #rs-project-gallery-list .rs-project-gallery-tile.is-featured {
             border-color: #2271b1;
             box-shadow: 0 0 0 1px #2271b1;
         }
-        .rs-project-gallery-handle {
+        #rs-project-gallery-list .rs-project-gallery-media {
+            position: relative;
+            width: 100%;
+        }
+        #rs-project-gallery-list .rs-project-gallery-preview {
+            display: block;
+            width: 100%;
+            margin: 0 !important;
+            line-height: 0;
+        }
+        #rs-project-gallery-list .rs-project-gallery-preview img,
+        #rs-project-gallery-list .rs-project-gallery-preview video {
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 0 !important;
+            vertical-align: top;
+        }
+        #rs-project-gallery-list .rs-project-gallery-preview video {
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            background: #1d2327;
+        }
+        #rs-project-gallery-list .rs-project-gallery-actions {
             position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+        #rs-project-gallery-list .rs-project-gallery-handle,
+        #rs-project-gallery-list .rs-project-remove-gallery,
+        #rs-project-gallery-list .rs-project-gallery-featured {
+            position: absolute;
+            pointer-events: auto;
+            margin: 0;
+        }
+        #rs-project-gallery-list .rs-project-gallery-handle {
             top: 6px;
             left: 6px;
-            z-index: 2;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1078,11 +939,9 @@ function rs_project_render_admin_footer_script(): void {
             opacity: 0;
             transition: opacity 0.15s ease;
         }
-        .rs-project-remove-gallery {
-            position: absolute;
+        #rs-project-gallery-list .rs-project-remove-gallery {
             top: 4px;
             right: 4px;
-            z-index: 2;
             width: 24px;
             height: 24px;
             padding: 0;
@@ -1096,14 +955,12 @@ function rs_project_render_admin_footer_script(): void {
             opacity: 0;
             transition: opacity 0.15s ease, background 0.15s ease;
         }
-        .rs-project-remove-gallery:hover {
+        #rs-project-gallery-list .rs-project-remove-gallery:hover {
             background: #b32d2e;
         }
-        .rs-project-gallery-featured {
-            position: absolute;
+        #rs-project-gallery-list .rs-project-gallery-featured {
             bottom: 4px;
             right: 4px;
-            z-index: 2;
             width: 24px;
             height: 24px;
             padding: 0;
@@ -1117,33 +974,18 @@ function rs_project_render_admin_footer_script(): void {
             opacity: 0;
             transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
         }
-        .rs-project-gallery-featured:hover,
-        .rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
+        #rs-project-gallery-list .rs-project-gallery-featured:hover,
+        #rs-project-gallery-list .rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
             background: #2271b1;
             color: #fff;
         }
-        .rs-project-gallery-tile.is-featured .rs-project-gallery-featured,
-        .rs-project-gallery-tile:hover .rs-project-gallery-handle,
-        .rs-project-gallery-tile:hover .rs-project-remove-gallery,
-        .rs-project-gallery-tile:hover .rs-project-gallery-featured {
+        #rs-project-gallery-list .rs-project-gallery-tile.is-featured .rs-project-gallery-featured,
+        #rs-project-gallery-list .rs-project-gallery-tile:hover .rs-project-gallery-handle,
+        #rs-project-gallery-list .rs-project-gallery-tile:hover .rs-project-remove-gallery,
+        #rs-project-gallery-list .rs-project-gallery-tile:hover .rs-project-gallery-featured {
             opacity: 1;
         }
-        .rs-project-gallery-preview {
-            display: block;
-            width: 100%;
-            height: 100%;
-            margin: 0 !important;
-        }
-        .rs-project-gallery-preview img,
-        .rs-project-gallery-preview video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            max-width: none !important;
-            object-fit: cover;
-            border-radius: 0 !important;
-        }
-        .rs-project-gallery-badge {
+        #rs-project-gallery-list .rs-project-gallery-badge {
             position: absolute;
             bottom: 6px;
             left: 6px;
@@ -1159,24 +1001,33 @@ function rs_project_render_admin_footer_script(): void {
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            pointer-events: none;
         }
-        .rs-project-gallery-badge svg {
-            display: block;
-            flex: 0 0 auto;
-        }
-        .rs-project-gallery-placeholder {
-            aspect-ratio: 1;
+        #rs-project-gallery-list .rs-project-gallery-placeholder {
+            min-height: 72px;
             border: 2px dashed #2271b1;
-            border-radius: 6px;
+            border-radius: 5px;
             background: #f0f6fc;
+            box-sizing: border-box;
         }
-        .rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
+        #rs-project-gallery-list .rs-project-gallery-placeholder.rs-project-gallery-row--wide {
+            grid-column: 1 / -1;
+        }
+        #rs-project-gallery-list .rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
         }
+        @media (max-width: 480px) {
+            #rs-project-gallery-list.rs-project-gallery-grid {
+                grid-template-columns: 1fr;
+            }
+            #rs-project-gallery-list .rs-project-gallery-row--wide {
+                grid-column: auto;
+            }
+        }
         @media (hover: none), (pointer: coarse) {
-            .rs-project-gallery-handle,
-            .rs-project-remove-gallery,
-            .rs-project-gallery-featured {
+            #rs-project-gallery-list .rs-project-gallery-handle,
+            #rs-project-gallery-list .rs-project-remove-gallery,
+            #rs-project-gallery-list .rs-project-gallery-featured {
                 opacity: 1;
             }
         }
@@ -1275,6 +1126,64 @@ function rs_project_render_admin_footer_script(): void {
             }
             return textarea.val() || '';
         }
+
+        function persistProjectFormFields() {
+            // Garante que campos das abas entram no POST.
+            $('[data-rs-tabs] .rs-metabox-tabpanel').prop('hidden', false);
+
+            syncAllEditors();
+            collectAllAccordionJson();
+            collectGalleryJson();
+            collectAllYoutubeJson();
+
+            $('#rs_project_pt_title_submit').val($('#rs_project_pt_title_ui').val() || '');
+            $('#rs_project_pt_excerpt_submit').val($('#rs_project_pt_excerpt_ui').val() || '');
+
+            const activeTab = $('.rs-project-tablist .rs-metabox-tab.is-active').data('tab');
+            if (activeTab) {
+                $('#rs_project_active_tab').val(activeTab);
+            }
+        }
+
+        $(document).on('input change', '#rs_project_pt_title_ui, #rs_project_pt_excerpt_ui', function () {
+            $('#rs_project_pt_title_submit').val($('#rs_project_pt_title_ui').val() || '');
+            $('#rs_project_pt_excerpt_submit').val($('#rs_project_pt_excerpt_ui').val() || '');
+        });
+
+        function openAccordionRow($row, locale) {
+            accordionList(locale).find('.rs-project-accordion-row').not($row).each(function () {
+                $(this).removeClass('is-open').find('.rs-project-accordion-toggle').attr('aria-expanded', 'false');
+            });
+            $row.addClass('is-open').find('.rs-project-accordion-toggle').attr('aria-expanded', 'true');
+            window.setTimeout(function () {
+                $row.find('textarea[id^="rs_project_accordion_body_"]').each(function () {
+                    const id = $(this).attr('id');
+                    if (id && typeof tinymce !== 'undefined') {
+                        const editor = tinymce.get(id);
+                        if (editor) {
+                            editor.fire('ResizeEditor');
+                        }
+                    }
+                });
+            }, 50);
+        }
+
+        $(document).on('click', '.rs-project-accordion-toggle', function (event) {
+            event.preventDefault();
+            const $row = $(this).closest('.rs-project-accordion-row');
+            const locale = $row.closest('[data-rs-locale]').data('rs-locale') || 'en';
+            if ($row.hasClass('is-open')) {
+                $row.removeClass('is-open');
+                $(this).attr('aria-expanded', 'false');
+                return;
+            }
+            openAccordionRow($row, locale);
+        });
+
+        $(document).on('input', '.rs-project-accordion-title', function () {
+            const title = ($(this).val() || '').trim() || 'Seção do acordeão';
+            $(this).closest('.rs-project-accordion-row').find('.rs-project-accordion-head-title').text(title);
+        });
 
         function collectAccordionJson(locale) {
             syncAllEditors();
@@ -1393,6 +1302,23 @@ function rs_project_render_admin_footer_script(): void {
             nextGalleryIndex = $('#rs-project-gallery-list .rs-project-gallery-row').length;
         }
 
+        function syncGalleryRowWide(row) {
+            const isWide = row.find('.rs-project-gallery-featured-flag').val() === '1';
+            row.toggleClass('rs-project-gallery-row--wide', isWide);
+        }
+
+        function setGalleryRowMediaSize(row, attachment) {
+            row.removeAttr('data-media-width data-media-height');
+            const width = parseInt(attachment && attachment.width, 10) || 0;
+            const height = parseInt(attachment && attachment.height, 10) || 0;
+            if (width > 0) {
+                row.attr('data-media-width', String(width));
+            }
+            if (height > 0) {
+                row.attr('data-media-height', String(height));
+            }
+        }
+
         function galleryPreviewHtml(attachment) {
             if (!attachment || !attachment.url) return '';
             const mime = attachment.mime || '';
@@ -1412,8 +1338,10 @@ function rs_project_render_admin_footer_script(): void {
             template.find('input[data-rs-cap-image]').val(String(attachment.id));
             template.find('.rs-project-gallery-featured-flag').val('0');
             template.find('.rs-project-gallery-tile').removeClass('is-featured');
-            template.find('.rs-project-gallery-featured').attr('aria-expanded', 'false');
-            template.find('.rs-media-preview').html(galleryPreviewHtml(attachment));
+            template.find('.rs-project-gallery-featured').attr('aria-pressed', 'false');
+            template.removeClass('rs-project-gallery-row--wide');
+            setGalleryRowMediaSize(template, attachment);
+            template.find('.rs-project-gallery-preview').html(galleryPreviewHtml(attachment));
             assignGalleryNames(template, index);
             $('#rs-project-gallery-list').append(template);
             nextGalleryIndex += 1;
@@ -1427,6 +1355,12 @@ function rs_project_render_admin_footer_script(): void {
                 placeholder: 'rs-project-gallery-placeholder',
                 tolerance: 'pointer',
                 opacity: 0.9,
+                start: function (_event, ui) {
+                    ui.placeholder.toggleClass(
+                        'rs-project-gallery-row--wide',
+                        ui.item.hasClass('rs-project-gallery-row--wide')
+                    );
+                },
                 update: reindexGallery,
             });
 
@@ -1462,9 +1396,7 @@ function rs_project_render_admin_footer_script(): void {
             assignAccordionNames(template, index, locale);
             accordionList(locale).append(template);
             initEditor('rs_project_accordion_body_' + locale + '_' + index);
-            template.addClass('is-open');
-            accordionList(locale).find('.rs-project-accordion-row').not(template).removeClass('is-open').find('.rs-project-accordion-toggle').attr('aria-expanded', 'false');
-            template.find('.rs-project-accordion-toggle').attr('aria-expanded', 'true');
+            openAccordionRow(template, locale);
             template.find('.rs-project-accordion-head-title').text('Seção do acordeão');
             nextAccordionIndex[locale] += 1;
             collectAccordionJson(locale);
@@ -1514,11 +1446,13 @@ function rs_project_render_admin_footer_script(): void {
             event.stopPropagation();
             const button = $(this);
             const tile = button.closest('.rs-project-gallery-tile');
+            const row = button.closest('.rs-project-gallery-row');
             const flag = tile.find('.rs-project-gallery-featured-flag');
             const next = flag.val() === '1' ? '0' : '1';
             flag.val(next);
             tile.toggleClass('is-featured', next === '1');
             button.attr('aria-pressed', next === '1' ? 'true' : 'false');
+            syncGalleryRowWide(row);
         });
 
         $(document).on('click', '.rs-project-add-youtube', function (event) {
@@ -1586,22 +1520,22 @@ function rs_project_render_admin_footer_script(): void {
         });
 
         const tabParam = new URLSearchParams(window.location.search).get('rs_project_tab');
-        if (tabParam === 'pt') {
-            $('.rs-metabox-tab[data-tab="pt"]').trigger('click');
+        if (tabParam === 'pt' || tabParam === 'en' || tabParam === 'media' || tabParam === 'general') {
+            $('.rs-metabox-tab[data-tab="' + tabParam + '"]').trigger('click');
+        } else {
+            $('#rs_project_active_tab').val($('.rs-project-tablist .rs-metabox-tab.is-active').data('tab') || 'general');
         }
 
-        $('#post').on('submit', function () {
-            collectAllAccordionJson();
-            collectGalleryJson();
-            collectAllYoutubeJson();
+        $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, tab) {
+            $('#rs_project_active_tab').val(tab || 'general');
         });
 
-        $('#publish, #save-post').on('click', function () {
-            window.setTimeout(function () {
-                collectAllAccordionJson();
-                collectGalleryJson();
-                collectAllYoutubeJson();
-            }, 0);
+        $(document).on('mousedown', '#publish, #save-post', function () {
+            persistProjectFormFields();
+        });
+
+        $('#post').on('submit', function () {
+            persistProjectFormFields();
         });
 
         syncGalleryEmptyState();

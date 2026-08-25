@@ -18,17 +18,12 @@ const RS_ABOUT_SECTIONS_KEY = 'rs_about_sections';
  * @return array<int, array{title: string, text: string, image_id: int}>
  */
 function rs_about_get_sections(int $post_id): array {
-    $raw = get_post_meta($post_id, RS_ABOUT_SECTIONS_KEY, true);
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_ABOUT_SECTIONS_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded)) {
-            return rs_about_normalize_sections($decoded);
-        }
-    }
-
-    if (is_array($raw)) {
-        return rs_about_normalize_sections($raw);
+    if (is_array($decoded)) {
+        return rs_about_normalize_sections($decoded);
     }
 
     return [];
@@ -402,7 +397,11 @@ add_action('save_post_about', function (int $post_id) {
     update_post_meta($post_id, RS_ABOUT_BODY_KEY, $body);
 
     $sections = rs_about_parse_sections_from_request();
-    update_post_meta($post_id, RS_ABOUT_SECTIONS_KEY, wp_json_encode($sections, JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_ABOUT_SECTIONS_KEY, $sections);
+    } else {
+        update_post_meta($post_id, RS_ABOUT_SECTIONS_KEY, wp_slash(wp_json_encode($sections, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 }, 10);
 
 function rs_copy_about_fields(int $from_id, int $to_id): void {

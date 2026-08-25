@@ -3,7 +3,7 @@
  * Opção D: ao salvar o post EN, sincroniza só a mídia para o PT ligado.
  * Textos (headline, acordeões, blocos) do PT não são alterados.
  *
- * Cobre: about, education, contact, capabilities, project.
+ * Cobre: about, education, contact, capabilities.
  */
 
 if (defined('RS_SYNC_MEDIA_EN_TO_PT_LOADED')) {
@@ -17,7 +17,7 @@ define('RS_SYNC_MEDIA_EN_TO_PT_LOADED', true);
  * @return array<int, string>
  */
 function rs_sync_media_post_types(): array {
-    return ['about', 'education', 'contact', 'project', 'capabilities'];
+    return ['about', 'education', 'contact', 'capabilities'];
 }
 
 /**
@@ -76,7 +76,6 @@ function rs_sync_media_is_en_source(int $post_id): bool {
 
 /**
  * Resolve o post PT gêmeo: meta PT, ou (só em páginas de seção) slug `pt`.
- * Projetos nunca usam slug/locale — cada um tem o próprio gêmeo via meta Language.
  */
 function rs_sync_media_pt_twin_id(int $en_id): int {
     $en = get_post($en_id);
@@ -97,29 +96,6 @@ function rs_sync_media_pt_twin_id(int $en_id): int {
         } else {
             delete_post_meta($en_id, 'PT');
         }
-    }
-
-    // Projetos: só meta explícita (já checada acima). Nunca adivinhar por slug "pt".
-    if ($en->post_type === 'project') {
-        $reverse = get_posts([
-            'post_type'      => 'project',
-            'post_status'    => ['publish', 'draft', 'pending', 'private'],
-            'posts_per_page' => 1,
-            'fields'         => 'ids',
-            'meta_query'     => [
-                [
-                    'key'     => 'EN',
-                    'value'   => $en_id,
-                    'compare' => '=',
-                ],
-            ],
-        ]);
-        if (!empty($reverse[0])) {
-            $found = (int) $reverse[0];
-            rs_sync_media_link_pair($en_id, $found);
-            return $found;
-        }
-        return 0;
     }
 
     // Páginas de seção: about/en + about/pt (um único par por CPT).
@@ -266,7 +242,11 @@ function rs_sync_about_media(int $from_id, int $to_id): void {
         rs_about_get_sections($to_id)
     );
 
-    update_post_meta($to_id, RS_ABOUT_SECTIONS_KEY, wp_json_encode(array_values($merged), JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_ABOUT_SECTIONS_KEY, array_values($merged));
+    } else {
+        update_post_meta($to_id, RS_ABOUT_SECTIONS_KEY, array_values($merged));
+    }
 }
 
 function rs_sync_capabilities_media(int $from_id, int $to_id): void {
@@ -279,7 +259,11 @@ function rs_sync_capabilities_media(int $from_id, int $to_id): void {
         rs_capabilities_get_sections($to_id)
     );
 
-    update_post_meta($to_id, RS_CAPABILITIES_SECTIONS_KEY, wp_json_encode(array_values($merged), JSON_UNESCAPED_UNICODE));
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_CAPABILITIES_SECTIONS_KEY, array_values($merged));
+    } else {
+        update_post_meta($to_id, RS_CAPABILITIES_SECTIONS_KEY, array_values($merged));
+    }
 }
 
 function rs_sync_contact_media(int $from_id, int $to_id): void {
@@ -288,24 +272,40 @@ function rs_sync_contact_media(int $from_id, int $to_id): void {
     }
 
     if (defined('RS_CONTACT_INFO_KEY')) {
-        $en_info = get_post_meta($from_id, RS_CONTACT_INFO_KEY, true);
-        if ($en_info !== '' && $en_info !== false) {
+        $en = [];
+        $pt = [];
+
+        if (function_exists('rs_meta_get_array')) {
+            $en_decoded = rs_meta_get_array($from_id, RS_CONTACT_INFO_KEY);
+            $pt_decoded = rs_meta_get_array($to_id, RS_CONTACT_INFO_KEY);
+            if (is_array($en_decoded)) {
+                $en = $en_decoded;
+            }
+            if (is_array($pt_decoded)) {
+                $pt = $pt_decoded;
+            }
+        } else {
+            $en_info = get_post_meta($from_id, RS_CONTACT_INFO_KEY, true);
             $pt_info_raw = get_post_meta($to_id, RS_CONTACT_INFO_KEY, true);
-            $en = [];
-            $pt = [];
-            if (is_string($en_info)) {
+            if (is_array($en_info)) {
+                $en = $en_info;
+            } elseif (is_string($en_info) && $en_info !== '') {
                 $decoded = json_decode($en_info, true);
                 if (is_array($decoded)) {
                     $en = $decoded;
                 }
             }
-            if (is_string($pt_info_raw)) {
+            if (is_array($pt_info_raw)) {
+                $pt = $pt_info_raw;
+            } elseif (is_string($pt_info_raw) && $pt_info_raw !== '') {
                 $decoded = json_decode($pt_info_raw, true);
                 if (is_array($decoded)) {
                     $pt = $decoded;
                 }
             }
+        }
 
+        if ($en !== []) {
             // Copia telefones/e-mails do EN; mantém títulos/textos do PT quando existirem.
             foreach (['contact_phone', 'contact_phone_tel', 'contact_email', 'address_street', 'jobs_email', 'internship_email'] as $key) {
                 if (!empty($en[$key])) {
@@ -322,9 +322,19 @@ function rs_sync_contact_media(int $from_id, int $to_id): void {
             $normalized = function_exists('rs_contact_normalize_info')
                 ? rs_contact_normalize_info($pt, 'pt')
                 : $pt;
-            update_post_meta($to_id, RS_CONTACT_INFO_KEY, wp_json_encode($normalized, JSON_UNESCAPED_UNICODE));
-            if (function_exists('rs_contact_info_to_blocks')) {
-                update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode(rs_contact_info_to_blocks($normalized), JSON_UNESCAPED_UNICODE));
+            $blocks = function_exists('rs_contact_info_to_blocks')
+                ? rs_contact_info_to_blocks($normalized)
+                : [];
+            if (function_exists('rs_meta_update_array')) {
+                rs_meta_update_array($to_id, RS_CONTACT_INFO_KEY, $normalized);
+                if ($blocks !== []) {
+                    rs_meta_update_array($to_id, RS_CONTACT_BLOCKS_KEY, $blocks);
+                }
+            } else {
+                update_post_meta($to_id, RS_CONTACT_INFO_KEY, wp_slash(wp_json_encode($normalized, JSON_UNESCAPED_UNICODE) ?: '{}'));
+                if ($blocks !== []) {
+                    update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, wp_slash(wp_json_encode($blocks, JSON_UNESCAPED_UNICODE) ?: '[]'));
+                }
             }
         }
     }
@@ -384,67 +394,16 @@ function rs_sync_education_media(int $from_id, int $to_id): void {
         }
     }
 
-    update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_json_encode(array_values($out), JSON_UNESCAPED_UNICODE));
-}
-
-function rs_sync_project_terms(int $from_id, int $to_id): void {
-    if ($from_id <= 0 || $to_id <= 0 || $from_id === $to_id) {
-        return;
-    }
-
-    $taxonomies = get_object_taxonomies(get_post_type($from_id) ?: 'project', 'names');
-    if (!is_array($taxonomies) || !$taxonomies) {
-        return;
-    }
-
-    foreach ($taxonomies as $taxonomy) {
-        if ($taxonomy === 'post_format') {
-            continue;
-        }
-
-        $term_ids = wp_get_object_terms($from_id, $taxonomy, ['fields' => 'ids']);
-        if (is_wp_error($term_ids)) {
-            continue;
-        }
-
-        wp_set_object_terms($to_id, array_map('intval', $term_ids), $taxonomy, false);
-    }
-}
-
-function rs_sync_project_media(int $from_id, int $to_id): void {
-    $hero_id = function_exists('rs_project_get_hero_id') ? rs_project_get_hero_id($from_id) : (int) get_post_meta($from_id, RS_PROJECT_HERO_KEY, true);
-    if ($hero_id > 0) {
-        update_post_meta($to_id, RS_PROJECT_HERO_KEY, $hero_id);
-        update_post_meta($to_id, 'etc_upload_image', $hero_id);
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_EDUCATION_INSTITUTIONS_KEY, array_values($out));
     } else {
-        delete_post_meta($to_id, RS_PROJECT_HERO_KEY);
-        delete_post_meta($to_id, 'etc_upload_image');
+        update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_slash(wp_json_encode(array_values($out), JSON_UNESCAPED_UNICODE) ?: '[]'));
     }
-
-    $logo_id = (int) get_post_meta($from_id, RS_PROJECT_LOGO_KEY, true);
-    if ($logo_id > 0) {
-        update_post_meta($to_id, RS_PROJECT_LOGO_KEY, $logo_id);
-        set_post_thumbnail($to_id, $logo_id);
-    } else {
-        delete_post_meta($to_id, RS_PROJECT_LOGO_KEY);
-    }
-
-    update_post_meta($to_id, RS_PROJECT_GALLERY_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_GALLERY_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_GALLERY_FEATURED_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_YOUTUBE_KEY, get_post_meta($from_id, RS_PROJECT_YOUTUBE_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_FEATURED_KEY, get_post_meta($from_id, RS_PROJECT_FEATURED_KEY, true));
-    update_post_meta($to_id, RS_PROJECT_VIGNETTE_KEY, get_post_meta($from_id, RS_PROJECT_VIGNETTE_KEY, true));
-
-    rs_sync_project_terms($from_id, $to_id);
 }
 
 function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
     static $running = false;
     if ($running) {
-        return;
-    }
-
-    if ($post_type === 'project' && get_option('rs_project_i18n_migrated_v1')) {
         return;
     }
 
@@ -469,9 +428,6 @@ function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
         case 'contact':
             rs_sync_contact_media($en_id, $pt_id);
             break;
-        case 'project':
-            rs_sync_project_media($en_id, $pt_id);
-            break;
         case 'capabilities':
             rs_sync_capabilities_media($en_id, $pt_id);
             break;
@@ -481,7 +437,7 @@ function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
 }
 
 /**
- * Liga pares en/pt e sincroniza mídia uma vez (Education, Contact, Capabilities, About + projects já ligados).
+ * Liga pares en/pt e sincroniza mídia uma vez (About, Education, Contact, Capabilities).
  */
 function rs_sync_media_bootstrap_all(): int {
     $count = 0;
@@ -507,28 +463,6 @@ function rs_sync_media_bootstrap_all(): int {
         }
     }
 
-    // Projetos: só os que já têm Language → PT
-    $project_ids = get_posts([
-        'post_type'      => 'project',
-        'post_status'    => ['publish', 'draft', 'pending', 'private'],
-        'posts_per_page' => 200,
-        'fields'         => 'ids',
-        'meta_key'       => 'PT',
-        'meta_compare'   => 'EXISTS',
-    ]);
-
-    foreach ($project_ids as $post_id) {
-        $post_id = (int) $post_id;
-        if (!rs_sync_media_is_en_source($post_id)) {
-            continue;
-        }
-        if ((int) get_post_meta($post_id, 'PT', true) <= 0) {
-            continue;
-        }
-        rs_sync_media_en_to_pt($post_id, 'project');
-        $count++;
-    }
-
     return $count;
 }
 
@@ -547,33 +481,6 @@ foreach (rs_sync_media_post_types() as $post_type) {
         rs_sync_media_en_to_pt($post_id, $post_type);
     }, 99);
 }
-
-add_action('save_post_project', function (int $post_id) {
-    if (get_option('rs_project_i18n_migrated_v1')) {
-        return;
-    }
-
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-        return;
-    }
-    if (wp_is_post_revision($post_id)) {
-        return;
-    }
-    if (!current_user_can('edit_post', $post_id)) {
-        return;
-    }
-
-    $en_id = (int) get_post_meta($post_id, 'EN', true);
-    if ($en_id > 0) {
-        rs_sync_project_terms($en_id, $post_id);
-        return;
-    }
-
-    $pt_id = (int) get_post_meta($post_id, 'PT', true);
-    if ($pt_id > 0) {
-        rs_sync_project_terms($post_id, $pt_id);
-    }
-}, 20);
 
 add_action('admin_init', function () {
     if (get_option('rs_sync_media_bootstrap_v123')) {
@@ -602,7 +509,7 @@ add_action('admin_notices', function () {
 
     echo '<div class="notice notice-success is-dismissible"><p>'
         . esc_html(sprintf(
-            'Sync de mídia EN → PT: %d post(s) atualizado(s) (About, Education, Contact, Capabilities e projetos ligados).',
+            'Sync de mídia EN → PT: %d post(s) atualizado(s) (About, Education, Contact, Capabilities).',
             (int) $count
         ))
         . '</p></div>';

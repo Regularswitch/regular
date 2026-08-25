@@ -82,19 +82,11 @@ function rs_contact_normalize_info(array $raw, string $locale = 'en'): array {
  */
 function rs_contact_get_info(int $post_id): array {
     $locale = get_post_field('post_name', $post_id) === 'pt' ? 'pt' : 'en';
-    $raw = get_post_meta($post_id, RS_CONTACT_INFO_KEY, true);
-    $decoded = [];
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_CONTACT_INFO_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $parsed = json_decode($raw, true);
-        if (is_array($parsed)) {
-            $decoded = $parsed;
-        }
-    } elseif (is_array($raw)) {
-        $decoded = $raw;
-    }
-
-    if ($decoded) {
+    if (is_array($decoded) && $decoded !== []) {
         return rs_contact_normalize_info($decoded, $locale);
     }
 
@@ -195,17 +187,12 @@ function rs_contact_get_blocks(int $post_id): array {
         return $from_info;
     }
 
-    $raw = get_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, true);
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_CONTACT_BLOCKS_KEY)
+        : null;
 
-    if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded)) {
-            return rs_contact_normalize_blocks($decoded);
-        }
-    }
-
-    if (is_array($raw)) {
-        return rs_contact_normalize_blocks($raw);
+    if (is_array($decoded)) {
+        return rs_contact_normalize_blocks($decoded);
     }
 
     return [];
@@ -316,8 +303,14 @@ function rs_contact_seed_post(int $post_id, string $locale): void {
     $info_raw = get_post_meta($post_id, RS_CONTACT_INFO_KEY, true);
     if ($info_raw === '' || $info_raw === false || $info_raw === null) {
         $info = rs_contact_default_info($locale);
-        update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_json_encode($info, JSON_UNESCAPED_UNICODE));
-        update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode(rs_contact_info_to_blocks($info), JSON_UNESCAPED_UNICODE));
+        $blocks = rs_contact_info_to_blocks($info);
+        if (function_exists('rs_meta_update_array')) {
+            rs_meta_update_array($post_id, RS_CONTACT_INFO_KEY, $info);
+            rs_meta_update_array($post_id, RS_CONTACT_BLOCKS_KEY, $blocks);
+        } else {
+            update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_slash(wp_json_encode($info, JSON_UNESCAPED_UNICODE) ?: '{}'));
+            update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_slash(wp_json_encode($blocks, JSON_UNESCAPED_UNICODE) ?: '[]'));
+        }
     }
 }
 
@@ -478,7 +471,7 @@ function rs_contact_render_meta_box(WP_Post $post): void {
     $headline = (string) get_post_meta($post->ID, RS_CONTACT_HEADLINE_KEY, true);
     $info = rs_contact_get_info((int) $post->ID);
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Edite telefone, e-mails e textos abaixo — o site monta a grade Contato / Endereço / Vagas / Estágio. <em>(Plugin Tradução v1.2.13)</em></p>';
+    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Edite telefone, e-mails e textos abaixo — o site monta a grade Contato / Endereço / Vagas / Estágio. ' . rs_plugin_version_markup() . '</p>';
     if (function_exists('rs_sync_media_notice_html')) {
         echo rs_sync_media_notice_html((int) $post->ID);
     }
@@ -585,10 +578,15 @@ add_action('save_post_contact', function (int $post_id) {
     }
 
     $info = rs_contact_parse_info_from_request($locale);
-    update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_json_encode($info, JSON_UNESCAPED_UNICODE));
-
     $blocks = rs_contact_info_to_blocks(rs_contact_normalize_info($info, $locale));
-    update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_json_encode($blocks, JSON_UNESCAPED_UNICODE));
+
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_CONTACT_INFO_KEY, $info);
+        rs_meta_update_array($post_id, RS_CONTACT_BLOCKS_KEY, $blocks);
+    } else {
+        update_post_meta($post_id, RS_CONTACT_INFO_KEY, wp_slash(wp_json_encode($info, JSON_UNESCAPED_UNICODE) ?: '{}'));
+        update_post_meta($post_id, RS_CONTACT_BLOCKS_KEY, wp_slash(wp_json_encode($blocks, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
 });
 
 function rs_copy_contact_fields(int $from_id, int $to_id): void {

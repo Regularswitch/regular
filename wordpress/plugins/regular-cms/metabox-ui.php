@@ -9,7 +9,7 @@ if (defined('RS_METABOX_UI_LOADED')) {
 define('RS_METABOX_UI_LOADED', true);
 
 /**
- * CPTs com meta boxes customizados do plugin Tradução.
+ * CPTs com meta boxes customizados do Regular CMS.
  *
  * @return array<int, string>
  */
@@ -18,7 +18,7 @@ function rs_metabox_ui_post_types(): array {
 }
 
 function rs_metabox_ui_asset_version(): string {
-    return '1.2.35';
+    return rs_plugin_version();
 }
 
 add_action('admin_enqueue_scripts', function (string $hook): void {

@@ -6,9 +6,10 @@ Cópia dos plugins customizados usados pelo headless Next.js.
 
 ```
 wordpress/plugins/
-├── traducao/     # CPTs, tradução EN/PT, campos footer, capacidades, interface e projeto
-└── api-etc/      # REST api-etc/v2/all-posts (metas de projeto)
+└── regular-cms/     # Regular CMS — CPTs, meta boxes, i18n EN/PT e REST api-etc/v2/all-posts
 ```
+
+Um único plugin no admin: **Regular CMS** (`regular-cms/regular-cms.php`).
 
 ## Convenção de slugs (EN/PT)
 
@@ -21,7 +22,7 @@ Posts editáveis seguem o permalink **`{tipo}/{idioma}/`**:
 | CPT capabilities | `/capabilities/en/` | `en` |
 | Página contact | `/contact/en/` | `en` (filha de `contact`) |
 
-O plugin **Tradução** (`slug-language.php`) define o slug automaticamente ao salvar, com base no título (`EN`/`PT`) ou no vínculo de tradução. No admin aparece um box lateral com o permalink final.
+O **Regular CMS** (`slug-language.php`) define o slug automaticamente ao salvar, com base no título (`EN`/`PT`) ou no vínculo de tradução. No admin aparece um box lateral com o permalink final.
 
 Campos com destaque em negrito (Intro, Capacidades, projetos) usam **editor rich text** (`rich-text-fields.php`) — botão **B** em vez de digitar `<strong>`.
 
@@ -40,6 +41,8 @@ Projetos individuais (`project`) mantêm slug próprio por projeto — não usam
 ```
 
 Gera `wordpress/dist/wp-plugins.zip` — extraia em `wp-content/plugins/` no servidor.
+
+> **Migração:** remova `traducao/` e `api-etc/` do servidor; use só `regular-cms/`.
 
 ## Ambientes
 

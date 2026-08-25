@@ -2,7 +2,7 @@
 
 Guia para editar o conteúdo do site no WordPress. O WP é só o **CMS**; o site público é o Next.js, que lê tudo pela API.
 
-**Plugin:** Tradução **v1.1.5** (e Api Rest Etc Extension)  
+**Plugin:** Regular CMS **v1.4.0**  
 **Para quem:** quem edita textos, imagens, projetos e menus no painel.
 
 ---
@@ -29,7 +29,7 @@ Antes havia fluxos legados (item **Tradutor**, JSON no editor, campos soltos). A
 4. Imagem/vídeo de topo ficam no post de cada página (Sobre, Educação, Contato).
 5. Projetos têm caixa **Conteúdo do Projeto (site)** (hero, logo, acordeão, galeria). O editor principal do WP está **desligado** nos projetos.
 
-Se o admin não bater com este guia, o plugin **Tradução** no servidor provavelmente está desatualizado — faça deploy do ZIP (`./scripts/wp-package-plugins.sh`). Detalhes: [wordpress-staging.md](./wordpress-staging.md).
+Se o admin não bater com este guia, o plugin **Regular CMS** no servidor provavelmente está desatualizado — faça deploy do ZIP (`./scripts/wp-package-plugins.sh`). Detalhes: [wordpress-staging.md](./wordpress-staging.md).
 
 ---
 
@@ -346,7 +346,7 @@ Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atri
 3. Core → plugins → tema
 4. Teste a API e algumas páginas do site
 
-> Atualizar o WordPress **não** envia o plugin **Tradução** do repositório. Mudanças no código exigem deploy do ZIP (`./scripts/wp-package-plugins.sh`).
+> Atualizar o WordPress **não** envia o plugin **Regular CMS** do repositório. Mudanças no código exigem deploy do ZIP (`./scripts/wp-package-plugins.sh`).
 
 ---
 
@@ -396,7 +396,7 @@ Cada marca: **título** + **imagem destacada** (logo). Ajuste a ordem pelos atri
 
 **Admin diferente deste tutorial**
 
-- Confira se o plugin Tradução é **v1.1.5** (Plugins no WP, ou texto de ajuda na caixa do projeto)
+- Confira se o Regular CMS é **v1.4.0** (Plugins no WP, ou texto de ajuda na caixa do projeto)
 
 ---
 

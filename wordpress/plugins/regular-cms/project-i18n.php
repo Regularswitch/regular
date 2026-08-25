@@ -80,8 +80,87 @@ function rs_project_i18n_normalize(array $raw): array {
 
 function rs_project_i18n_is_migrated(int $post_id): bool {
     $raw = get_post_meta($post_id, RS_PROJECT_I18N_KEY, true);
+    if (is_array($raw) && $raw !== []) {
+        return true;
+    }
 
     return is_string($raw) && $raw !== '';
+}
+
+/**
+ * Decodifica meta antiga em JSON (com recuperação de stripslashes).
+ *
+ * @return array<string, mixed>|null
+ */
+function rs_project_i18n_decode_json_string(string $raw): ?array {
+    $candidates = array_unique([$raw, wp_unslash($raw), stripslashes($raw)]);
+
+    foreach ($candidates as $candidate) {
+        if (!is_string($candidate) || $candidate === '') {
+            continue;
+        }
+        $decoded = json_decode($candidate, true);
+        if (is_array($decoded) && isset($decoded['locales']) && is_array($decoded['locales'])) {
+            return $decoded;
+        }
+    }
+
+    // Meta corrompida por update_post_meta → wp_unslash no JSON (\" → ", \n → n).
+    $repaired = rs_project_i18n_repair_stripslashed_json($raw);
+    if (is_array($repaired)) {
+        return $repaired;
+    }
+
+    return null;
+}
+
+/**
+ * Tenta recuperar JSON gravado sem wp_slash (aspas de atributos HTML quebram o decode).
+ *
+ * @return array<string, mixed>|null
+ */
+function rs_project_i18n_repair_stripslashed_json(string $raw): ?array {
+    if ($raw === '' || ($raw[0] !== '{' && $raw[0] !== '[')) {
+        return null;
+    }
+
+    $fixed = $raw;
+
+    // Aspas de atributos HTML comuns no corpo do TinyMCE/ProseMirror.
+    $attr_fixes = [
+        '/\bdata-pm-slice="([^"]*)"/' => 'data-pm-slice=\"$1\"',
+        '/\sclass="([^"]*)"/'         => ' class=\"$1\"',
+        '/\sid="([^"]*)"/'            => ' id=\"$1\"',
+        '/\shref="([^"]*)"/'          => ' href=\"$1\"',
+        '/\ssrc="([^"]*)"/'           => ' src=\"$1\"',
+        '/\starget="([^"]*)"/'        => ' target=\"$1\"',
+        '/\srel="([^"]*)"/'           => ' rel=\"$1\"',
+        '/\sstyle="([^"]*)"/'         => ' style=\"$1\"',
+        '/\stitle="([^"]*)"/'         => ' title=\"$1\"',
+        '/\salt="([^"]*)"/'           => ' alt=\"$1\"',
+        '/\swidth="([^"]*)"/'         => ' width=\"$1\"',
+        '/\sheight="([^"]*)"/'        => ' height=\"$1\"',
+    ];
+    foreach ($attr_fixes as $pattern => $replacement) {
+        $next = preg_replace($pattern, $replacement, $fixed);
+        if (is_string($next)) {
+            $fixed = $next;
+        }
+    }
+
+    // \n viraram literal "n" entre tags.
+    $fixed = str_replace(
+        ['</p>n<p>', '</p>n</', '>n<p>', '</h1>n', '</h2>n', '</h3>n', '</li>n', '</ul>n', '</ol>n'],
+        ['</p>\n<p>', '</p>\n</', '>\n<p>', '</h1>\n', '</h2>\n', '</h3>\n', '</li>\n', '</ul>\n', '</ol>\n'],
+        $fixed
+    );
+
+    $decoded = json_decode($fixed, true);
+    if (is_array($decoded) && isset($decoded['locales']) && is_array($decoded['locales'])) {
+        return $decoded;
+    }
+
+    return null;
 }
 
 /**
@@ -89,14 +168,38 @@ function rs_project_i18n_is_migrated(int $post_id): bool {
  */
 function rs_project_i18n_get(int $post_id): array {
     $raw = get_post_meta($post_id, RS_PROJECT_I18N_KEY, true);
+
+    // Formato novo: array serializado pelo WordPress (evita corrupção de JSON).
+    if (is_array($raw)) {
+        return rs_project_i18n_normalize($raw);
+    }
+
+    // Formato legado: string JSON.
     if (is_string($raw) && $raw !== '') {
-        $decoded = json_decode($raw, true);
+        $decoded = rs_project_i18n_decode_json_string($raw);
         if (is_array($decoded)) {
             return rs_project_i18n_normalize($decoded);
         }
     }
 
     return rs_project_i18n_from_legacy_post($post_id);
+}
+
+/**
+ * Se a meta ainda for JSON (possivelmente corrompido e recuperado), regrava como array.
+ */
+function rs_project_i18n_maybe_migrate_storage(int $post_id): void {
+    $raw = get_post_meta($post_id, RS_PROJECT_I18N_KEY, true);
+    if (!is_string($raw) || $raw === '') {
+        return;
+    }
+
+    $decoded = rs_project_i18n_decode_json_string($raw);
+    if (!is_array($decoded)) {
+        return;
+    }
+
+    rs_project_i18n_save($post_id, $decoded);
 }
 
 /**
@@ -146,7 +249,10 @@ function rs_project_i18n_from_legacy_post(int $post_id, int $pt_id = 0): array {
  */
 function rs_project_i18n_save(int $post_id, array $data): void {
     $normalized = rs_project_i18n_normalize($data);
-    update_post_meta($post_id, RS_PROJECT_I18N_KEY, wp_json_encode($normalized, JSON_UNESCAPED_UNICODE));
+
+    // Grava como array: o WP serializa sem passar por stripslashes que corrompe JSON
+    // (aspas do HTML do TinyMCE quebravam json_decode na leitura).
+    update_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized);
     rs_project_i18n_sync_legacy_meta($post_id, $normalized);
 }
 
@@ -182,8 +288,9 @@ function rs_project_i18n_sync_legacy_meta(int $post_id, array $data): void {
     update_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, !empty($shared['show_vignette']) ? 1 : 0);
 
     $accordion = is_array($en['accordion'] ?? null) ? $en['accordion'] : [];
-    update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_json_encode($accordion, JSON_UNESCAPED_UNICODE));
-    update_post_meta($post_id, RS_PROJECT_YOUTUBE_KEY, wp_json_encode($en['youtube'] ?? [], JSON_UNESCAPED_SLASHES));
+    // wp_slash: update_post_meta faz wp_unslash e corromperia o JSON do accordion.
+    update_post_meta($post_id, RS_PROJECT_ACCORDION_KEY, wp_slash(wp_json_encode($accordion, JSON_UNESCAPED_UNICODE) ?: '[]'));
+    update_post_meta($post_id, RS_PROJECT_YOUTUBE_KEY, wp_slash(wp_json_encode($en['youtube'] ?? [], JSON_UNESCAPED_SLASHES) ?: '[]'));
 
     foreach (array_keys(RS_PROJECT_LEGACY_ACCORDION_LABELS) as $index) {
         $legacy_body = $accordion[$index - 1]['body'] ?? '';
@@ -256,8 +363,8 @@ function rs_project_meta_to_payload_for_locale(int $post_id, string $locale = 'e
         }
     }
 
-    $gallery_ids = array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_ids'] ?? '')))));
-    $featured_ids = array_flip(array_values(array_filter(array_map('intval', explode(',', (string) ($shared['gallery_featured_ids'] ?? '')))));
+    $gallery_ids = rs_project_parse_csv_ids((string) ($shared['gallery_ids'] ?? ''));
+    $featured_ids = array_flip(rs_project_parse_csv_ids((string) ($shared['gallery_featured_ids'] ?? '')));
     $gallery = [];
     foreach ($gallery_ids as $attachment_id) {
         $info = rs_project_attachment_info($attachment_id);
@@ -419,15 +526,34 @@ add_action('init', function () {
 }, 21);
 
 /**
+ * Lê JSON de array do POST. String vazia = JS não coletou → não altera.
+ *
+ * @return array<int|string, mixed>|null
+ */
+function rs_project_i18n_posted_json_array(string $field_name): ?array {
+    if (!array_key_exists($field_name, $_POST)) {
+        return null;
+    }
+
+    $raw = trim((string) wp_unslash($_POST[$field_name]));
+    if ($raw === '') {
+        return null;
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return null;
+    }
+
+    return $decoded;
+}
+
+/**
  * @return array<int, array{title: string, body: string}>
  */
 function rs_project_i18n_parse_accordion_json_field(string $field_name): array {
-    if (empty($_POST[$field_name])) {
-        return [];
-    }
-
-    $decoded = json_decode(wp_unslash((string) $_POST[$field_name]), true);
-    if (!is_array($decoded)) {
+    $decoded = rs_project_i18n_posted_json_array($field_name);
+    if ($decoded === null) {
         return [];
     }
 
@@ -438,12 +564,8 @@ function rs_project_i18n_parse_accordion_json_field(string $field_name): array {
  * @return array<int, array{id: string, url: string}>
  */
 function rs_project_i18n_parse_youtube_json_field(string $field_name): array {
-    if (empty($_POST[$field_name])) {
-        return [];
-    }
-
-    $decoded = json_decode(wp_unslash((string) $_POST[$field_name]), true);
-    if (!is_array($decoded)) {
+    $decoded = rs_project_i18n_posted_json_array($field_name);
+    if ($decoded === null) {
         return [];
     }
 
@@ -457,64 +579,76 @@ function rs_project_i18n_parse_from_request(int $post_id): array {
     $data = rs_project_i18n_get($post_id);
     $post = get_post($post_id);
 
-    $hero_id = isset($_POST['rs_project_hero_id']) ? (int) $_POST['rs_project_hero_id'] : 0;
-    $logo_id = isset($_POST['rs_project_logo_id']) ? (int) $_POST['rs_project_logo_id'] : 0;
+    $hero_id = isset($_POST['rs_project_hero_id']) ? (int) $_POST['rs_project_hero_id'] : (int) ($data['shared']['hero_id'] ?? 0);
+    $logo_id = isset($_POST['rs_project_logo_id']) ? (int) $_POST['rs_project_logo_id'] : (int) ($data['shared']['logo_id'] ?? 0);
 
-    $gallery_ids = [];
-    if (!empty($_POST['rs_project_gallery_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_gallery_json']), true);
-        if (is_array($decoded)) {
-            $gallery_ids = array_values(array_filter(array_map('intval', $decoded)));
-        }
+    $gallery_ids = rs_project_i18n_posted_json_array('rs_project_gallery_json');
+    $featured_ids = rs_project_i18n_posted_json_array('rs_project_gallery_featured_json');
+
+    $data['shared']['hero_id'] = $hero_id;
+    $data['shared']['logo_id'] = $logo_id;
+    if ($gallery_ids !== null) {
+        $data['shared']['gallery_ids'] = implode(',', array_values(array_filter(array_map('intval', $gallery_ids))));
     }
-
-    $featured_ids = [];
-    if (!empty($_POST['rs_project_gallery_featured_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_project_gallery_featured_json']), true);
-        if (is_array($decoded)) {
-            $featured_ids = array_values(array_filter(array_map('intval', $decoded)));
-        }
+    if ($featured_ids !== null) {
+        $data['shared']['gallery_featured_ids'] = implode(',', array_values(array_filter(array_map('intval', $featured_ids))));
     }
-
-    $data['shared'] = [
-        'hero_id'              => $hero_id,
-        'logo_id'              => $logo_id,
-        'gallery_ids'          => implode(',', $gallery_ids),
-        'gallery_featured_ids' => implode(',', $featured_ids),
-        'featured_home'        => !empty($_POST['rs_project_featured_home']),
-        'show_vignette'        => !empty($_POST['rs_project_show_vignette']),
-    ];
+    $data['shared']['featured_home'] = !empty($_POST['rs_project_featured_home']);
+    $data['shared']['show_vignette'] = !empty($_POST['rs_project_show_vignette']);
 
     $data['locales']['en']['title'] = $post ? (string) $post->post_title : '';
-    $data['locales']['en']['excerpt'] = isset($_POST['excerpt'])
-        ? wp_kses_post(wp_unslash((string) $_POST['excerpt']))
-        : ($post ? (string) $post->post_excerpt : '');
-    $parsed_en_accordion = rs_project_i18n_parse_accordion_json_field('rs_project_accordion_en_json');
-    if ($parsed_en_accordion !== [] || !empty($_POST['rs_project_accordion_en_json'])) {
-        $data['locales']['en']['accordion'] = $parsed_en_accordion;
-    }
-    $parsed_en_youtube = rs_project_i18n_parse_youtube_json_field('rs_project_youtube_en_json');
-    if ($parsed_en_youtube !== [] || !empty($_POST['rs_project_youtube_en_json'])) {
-        $data['locales']['en']['youtube'] = $parsed_en_youtube;
+
+    if (array_key_exists('excerpt', $_POST)) {
+        $data['locales']['en']['excerpt'] = wp_kses_post(wp_unslash((string) $_POST['excerpt']));
     }
 
-    $data['locales']['pt']['title'] = isset($_POST['rs_project_pt_title'])
-        ? sanitize_text_field(wp_unslash((string) $_POST['rs_project_pt_title']))
-        : (string) ($data['locales']['pt']['title'] ?? '');
-    $data['locales']['pt']['excerpt'] = isset($_POST['rs_project_pt_excerpt'])
-        ? wp_kses_post(wp_unslash((string) $_POST['rs_project_pt_excerpt']))
-        : (string) ($data['locales']['pt']['excerpt'] ?? '');
-    $parsed_pt_accordion = rs_project_i18n_parse_accordion_json_field('rs_project_accordion_pt_json');
-    if ($parsed_pt_accordion !== [] || !empty($_POST['rs_project_accordion_pt_json'])) {
-        $data['locales']['pt']['accordion'] = $parsed_pt_accordion;
+    $en_accordion = rs_project_i18n_posted_json_array('rs_project_accordion_en_json');
+    if ($en_accordion !== null) {
+        $data['locales']['en']['accordion'] = rs_project_normalize_accordion_sections($en_accordion);
     }
-    $parsed_pt_youtube = rs_project_i18n_parse_youtube_json_field('rs_project_youtube_pt_json');
-    if ($parsed_pt_youtube !== [] || !empty($_POST['rs_project_youtube_pt_json'])) {
-        $data['locales']['pt']['youtube'] = $parsed_pt_youtube;
+
+    $en_youtube = rs_project_i18n_posted_json_array('rs_project_youtube_en_json');
+    if ($en_youtube !== null) {
+        $data['locales']['en']['youtube'] = rs_project_normalize_youtube_videos($en_youtube);
+    }
+
+    if (array_key_exists('rs_project_pt_title', $_POST)) {
+        $data['locales']['pt']['title'] = sanitize_text_field(wp_unslash((string) $_POST['rs_project_pt_title']));
+    }
+
+    if (array_key_exists('rs_project_pt_excerpt', $_POST)) {
+        $data['locales']['pt']['excerpt'] = wp_kses_post(wp_unslash((string) $_POST['rs_project_pt_excerpt']));
+    }
+
+    $pt_accordion = rs_project_i18n_posted_json_array('rs_project_accordion_pt_json');
+    if ($pt_accordion !== null) {
+        $data['locales']['pt']['accordion'] = rs_project_normalize_accordion_sections($pt_accordion);
+    }
+
+    $pt_youtube = rs_project_i18n_posted_json_array('rs_project_youtube_pt_json');
+    if ($pt_youtube !== null) {
+        $data['locales']['pt']['youtube'] = rs_project_normalize_youtube_videos($pt_youtube);
     }
 
     return rs_project_i18n_normalize($data);
 }
+
+add_filter('redirect_post_location', function (string $location, int $post_id): string {
+    if (get_post_type($post_id) !== 'project') {
+        return $location;
+    }
+
+    if (empty($_POST['rs_project_nonce']) || !wp_verify_nonce($_POST['rs_project_nonce'], 'rs_project_save')) {
+        return $location;
+    }
+
+    $tab = sanitize_key((string) ($_POST['rs_project_active_tab'] ?? ''));
+    if (!in_array($tab, ['general', 'en', 'pt', 'media'], true)) {
+        return $location;
+    }
+
+    return add_query_arg('rs_project_tab', $tab, $location);
+}, 10, 2);
 
 add_action('load-post.php', function (): void {
     if (!isset($_GET['post'], $_GET['action']) || $_GET['action'] !== 'edit') {

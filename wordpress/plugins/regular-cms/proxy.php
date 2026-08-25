@@ -28,19 +28,17 @@ function rs_translate_post_lang(int $post_id): string {
 
 /**
  * Gêmeo já ligado nos dois sentidos (EN↔PT).
- * Projetos: nunca reaproveita órfão (meta de volta vazia) — isso roubava o PT de outro case.
  */
 function rs_translate_find_existing(int $source_id, string $lang, string $target_type): int {
     $lang = strtoupper($lang);
     $opposite = rs_translate_opposite_lang($lang);
-    $require_back = $target_type === 'project';
 
     $direct_id = (int) get_post_meta($source_id, $lang, true);
     if ($direct_id > 0) {
         $linked = get_post($direct_id);
         if ($linked && $linked->post_type === $target_type && $linked->post_status !== 'trash') {
             $back = (int) get_post_meta($direct_id, $opposite, true);
-            if ($back === $source_id || (!$require_back && $back === 0)) {
+            if ($back === $source_id || $back === 0) {
                 if ($back === 0) {
                     update_post_meta($direct_id, $opposite, $source_id);
                 }
@@ -155,10 +153,6 @@ function rs_copy_translation_fields(int $from_id, int $to_id, string $post_type)
         }
         return;
     }
-
-    if ($post_type === 'project' && function_exists('rs_copy_project_fields')) {
-        rs_copy_project_fields($from_id, $to_id);
-    }
 }
 
 /**
@@ -208,9 +202,27 @@ function translate_proxy($request) {
         return new WP_Error('bad_lang', 'Idioma inválido', ['status' => 400]);
     }
 
+    // Projetos bilíngues usam post único (rs_project_i18n) — não cria gêmeos.
+    if ($the_post->post_type === 'project') {
+        $canonical = function_exists('rs_project_resolve_canonical_id')
+            ? rs_project_resolve_canonical_id($source_id)
+            : $source_id;
+        $go = get_site_url() . "/wp-admin/post.php?post={$canonical}&action=edit";
+        if ($lang === 'PT') {
+            $go = add_query_arg('rs_project_tab', 'pt', $go);
+        }
+
+        return rest_ensure_response([
+            'go'                => $go,
+            'action'            => 'project_i18n',
+            'post_translate_id' => $canonical,
+            'lang'              => $lang,
+            'post_type'         => 'project',
+        ]);
+    }
+
     $current_lang = rs_translate_post_lang($source_id);
     $target_type = rs_translate_target_post_type($the_post);
-    $is_project = $the_post->post_type === 'project';
     $edit_url = static function (int $id): string {
         return get_site_url() . "/wp-admin/post.php?post={$id}&action=edit";
     };
@@ -228,7 +240,7 @@ function translate_proxy($request) {
 
     $post_translate_id = rs_translate_find_existing($source_id, $lang, $target_type);
 
-    if ($post_translate_id === 0 && !$is_project && function_exists('rs_get_locale_cpt_post_id')) {
+    if ($post_translate_id === 0 && function_exists('rs_get_locale_cpt_post_id')) {
         $existing_locale_id = rs_get_locale_cpt_post_id($target_type, strtolower($lang));
         if ($existing_locale_id > 0 && $existing_locale_id !== $source_id) {
             if (rs_translate_link_pair($source_id, $lang, $existing_locale_id)) {
@@ -252,19 +264,15 @@ function translate_proxy($request) {
 
     if ($post_translate_id === 0) {
         $locale_slug = strtolower($lang);
-        // Projetos: não copiar post_content legado e não usar slug "pt"/"en".
-        $post_name = $is_project
-            ? sanitize_title(wp_strip_all_tags($the_post->post_title) . '-' . $locale_slug)
-            : $locale_slug;
 
         $new_post_id = wp_insert_post([
             'post_title'   => wp_strip_all_tags($the_post->post_title),
-            'post_content' => $is_project ? '' : $the_post->post_content,
+            'post_content' => $the_post->post_content,
             'post_excerpt' => $the_post->post_excerpt ?? '',
             'post_status'  => 'publish',
             'post_author'  => (int) $the_post->post_author ?: 1,
             'post_type'    => $target_type,
-            'post_name'    => $post_name,
+            'post_name'    => $locale_slug,
         ]);
 
         if (is_wp_error($new_post_id)) {
@@ -286,7 +294,7 @@ function translate_proxy($request) {
             rs_copy_translation_fields($source_id, $new_post_id, $target_type);
         }
 
-        if (!$is_project && function_exists('rs_apply_locale_slug')) {
+        if (function_exists('rs_apply_locale_slug')) {
             rs_apply_locale_slug($new_post_id);
         }
 
@@ -296,23 +304,6 @@ function translate_proxy($request) {
     } else {
         // Já existe: só garante o vínculo se estiver incompleto (não reescreve título/mídia).
         rs_translate_link_pair($source_id, $lang, $post_translate_id);
-
-        // Re-sincroniza campos do projeto a partir do EN quando ?sync=1.
-        if (
-            $the_post->post_type === 'project'
-            && !empty($parans['sync'])
-            && $current_lang === 'EN'
-            && $lang === 'PT'
-            && function_exists('rs_copy_project_fields')
-        ) {
-            rs_copy_project_fields($source_id, $post_translate_id, true);
-            wp_update_post([
-                'ID'           => $post_translate_id,
-                'post_content' => '',
-                'post_excerpt' => $the_post->post_excerpt ?? '',
-                'post_title'   => wp_strip_all_tags($the_post->post_title),
-            ]);
-        }
 
         $parans['go'] = $edit_url($post_translate_id);
         $parans['action'] = 'edit';
