@@ -53,7 +53,8 @@ function rs_rest_apply_translation(WP_REST_Response $response, WP_Post $post, WP
     return $response;
 }
 
-foreach (['intro', 'brand', 'post', 'page', 'footer', 'capabilities'] as $post_type) {
+// brand não usa tradução (logo + título compartilhados).
+foreach (['intro', 'post', 'page', 'footer', 'capabilities'] as $post_type) {
     add_filter("rest_prepare_{$post_type}", 'rs_rest_apply_translation', 10, 3);
 }
 

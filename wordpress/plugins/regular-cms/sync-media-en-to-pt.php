@@ -17,7 +17,15 @@ define('RS_SYNC_MEDIA_EN_TO_PT_LOADED', true);
  * @return array<int, string>
  */
 function rs_sync_media_post_types(): array {
-    return ['about', 'education', 'contact', 'capabilities'];
+    // Após migração i18n (post único), mídia fica no mesmo post — sem sync EN→PT.
+    $types = ['about', 'education', 'contact', 'capabilities'];
+    if (!function_exists('rs_section_i18n_is_migrated_type')) {
+        return $types;
+    }
+
+    return array_values(array_filter($types, static function (string $type): bool {
+        return !rs_section_i18n_is_migrated_type($type);
+    }));
 }
 
 /**
@@ -26,7 +34,7 @@ function rs_sync_media_post_types(): array {
  * @return array<int, string>
  */
 function rs_sync_media_section_post_types(): array {
-    return ['about', 'education', 'contact', 'capabilities'];
+    return rs_sync_media_post_types();
 }
 
 function rs_sync_media_link_pair(int $en_id, int $pt_id): void {
@@ -146,51 +154,12 @@ function rs_sync_media_pt_twin_id(int $en_id): int {
     return 0;
 }
 
+/**
+ * Aviso de sync EN→PT desativado (seções em post único / marcas sem i18n).
+ */
 function rs_sync_media_notice_html(int $post_id): string {
-    $post = get_post($post_id);
-    $slug = $post ? (string) $post->post_name : '';
-    $is_pt = (int) get_post_meta($post_id, 'EN', true) > 0
-        || $slug === 'pt'
-        || (function_exists('rs_detect_post_locale') && rs_detect_post_locale($post_id) === 'pt');
-    $pt_twin = !$is_pt ? rs_sync_media_pt_twin_id($post_id) : 0;
-    $has_link = (int) get_post_meta($post_id, 'PT', true) > 0 || $pt_twin > 0;
-
-    if ($is_pt) {
-        $en_id = (int) get_post_meta($post_id, 'EN', true);
-        if ($en_id <= 0 && $post && ($slug === 'pt' || (function_exists('rs_detect_post_locale') && rs_detect_post_locale($post_id) === 'pt'))) {
-            $ens = get_posts([
-                'post_type'      => $post->post_type,
-                'post_status'    => ['publish', 'draft', 'pending', 'private'],
-                'name'           => 'en',
-                'posts_per_page' => 1,
-                'fields'         => 'ids',
-            ]);
-            $en_id = !empty($ens[0]) ? (int) $ens[0] : 0;
-        }
-        $edit = $en_id > 0 ? get_edit_post_link($en_id, 'raw') : '';
-        $link = $edit
-            ? ' <a href="' . esc_url($edit) . '">Abrir o EN</a>.'
-            : '';
-
-        return '<div class="notice notice-info inline" style="margin:0 0 14px;padding:8px 12px;">'
-            . '<strong>Mídia sincronizada do EN.</strong> '
-            . 'Imagens/vídeos deste post são atualizados automaticamente ao salvar a versão em inglês.'
-            . $link
-            . '</div>';
-    }
-
-    if ($has_link) {
-        return '<div class="notice notice-success inline" style="margin:0 0 14px;padding:8px 12px;">'
-            . '<strong>Sync de mídia ativo.</strong> '
-            . 'Ao salvar este EN, hero/galerias/logos são copiados para o PT. Textos do PT não mudam.'
-            . '</div>';
-    }
-
-    return '<div class="notice notice-warning inline" style="margin:0 0 14px;padding:8px 12px;">'
-        . '<strong>Sync inativo.</strong> '
-        . 'Este EN ainda não está ligado a um PT. Na lista, use a coluna <strong>Language → PT</strong> '
-        . '(cria/abre o par). Depois salve o EN de novo para copiar a mídia.'
-        . '</div>';
+    unset($post_id);
+    return '';
 }
 
 /**

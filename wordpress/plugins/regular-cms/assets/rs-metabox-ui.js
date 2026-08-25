@@ -80,7 +80,12 @@
 		}
 		$root.data('rsAccordionInit', true);
 
+		// Lista explícita (educação/capabilities) ou o próprio root (footer/contact/legal).
 		var $list = $root.find(options.listSelector).first();
+		if (!$list.length) {
+			$list = $root;
+			options.sortable = false;
+		}
 
 		function openItem($item) {
 			if (!$item || !$item.length) {
@@ -103,6 +108,17 @@
 				options.onExpand($item, parseEditorIds($item));
 			} else {
 				resizeEditors(parseEditorIds($item));
+				// TinyMCE dentro de painéis que estavam com height 0 precisa de refresh.
+				window.setTimeout(function () {
+					resizeEditors(
+						$item
+							.find('textarea.wp-editor-area')
+							.map(function () {
+								return this.id;
+							})
+							.get()
+					);
+				}, 50);
 			}
 		}
 
@@ -168,6 +184,14 @@
 	jQuery(function () {
 		$('[data-rs-tabs]').each(function () {
 			initTabs(this);
+		});
+		// Footer/contact/legal/site-ui: acordeão estático (sem data-rs-accordion-list).
+		// Educação/capabilities têm lista e chamam initAccordion com handlers próprios.
+		$('[data-rs-accordion]').each(function () {
+			if ($(this).find('[data-rs-accordion-list]').length) {
+				return;
+			}
+			initAccordion(this, { sortable: false });
 		});
 	});
 })(jQuery, window);

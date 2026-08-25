@@ -18,6 +18,7 @@ require_once $rs_plugin_dir . '/intro-fields.php';
 require_once $rs_plugin_dir . '/rich-text-fields.php';
 require_once $rs_plugin_dir . '/media-fields.php';
 require_once $rs_plugin_dir . '/meta-storage.php';
+require_once $rs_plugin_dir . '/section-i18n.php';
 require_once $rs_plugin_dir . '/footer-fields.php';
 require_once $rs_plugin_dir . '/capabilities-fields.php';
 require_once $rs_plugin_dir . '/page-heroes-fields.php';
@@ -37,6 +38,8 @@ require_once $rs_plugin_dir . '/project-i18n.php';
 
 // Admin, i18n e REST
 require_once $rs_plugin_dir . '/hide-themerain-meta.php';
+require_once $rs_plugin_dir . '/admin-dashboard.php';
+require_once $rs_plugin_dir . '/content-repair.php';
 require_once $rs_plugin_dir . '/metabox-ui.php';
 require_once $rs_plugin_dir . '/sync-media-en-to-pt.php';
 require_once $rs_plugin_dir . '/slug-language.php';

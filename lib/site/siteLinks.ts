@@ -1,6 +1,7 @@
 /**
  * Links de Contato / Newsletter / Jobs.
  * NEXT_PUBLIC_* para uso no client (footer / cookie banner).
+ * Redes sociais vêm do WP (Footer → Social compartilhado) — sem defaults fixos.
  */
 export function getContactEmail(): string {
 	return (
@@ -35,8 +36,3 @@ export function getNewsletterHref(): string {
 
 	return `${getContactMailto()}?subject=Newsletter`;
 }
-
-export const SOCIAL_LINKS = {
-	instagram: 'https://www.instagram.com/regular.switch',
-	linkedin: 'https://www.linkedin.com/company/regularswitch',
-} as const;

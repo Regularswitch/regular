@@ -3,7 +3,7 @@
  * Plugin Name: Regular CMS
  * Plugin URI:  https://regularswitch.com
  * Description: CPTs, meta boxes, i18n EN/PT e REST (api-etc/v2/all-posts) do site Regular Switch.
- * Version:     1.4.8
+ * Version:     1.5.10
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Regular
@@ -60,13 +60,21 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
         return;
     }
 
+    $post_type = get_post_type($post_ID);
+    if (
+        $post_type === 'project'
+        || (function_exists('rs_section_i18n_is_migrated_type') && rs_section_i18n_is_migrated_type((string) $post_type))
+    ) {
+        echo '<strong>EN</strong> · <strong>PT</strong>';
+        echo '<span style="display:block;color:#646970;font-size:11px;margin-top:2px;">post único</span>';
+        return;
+    }
+
+    // Fallback raro (CPTs ainda com gêmeos). Marcas não usam esta coluna.
     $badge = rs_project_locale_badge($post_ID);
     $opposite = $badge === 'PT' ? 'EN' : 'PT';
     echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
 
-    // Só o idioma oposto: clicar em EN no EN (ou PT no PT) criava posts duplicados.
-    // "_wpnonce" (action wp_rest) é exigido pelo core da REST API pra reconhecer o
-    // login via cookie; "rs_nonce" é nosso, específico pra este post/ação.
     $wp_rest_nonce = wp_create_nonce('wp_rest');
     $rs_nonce = wp_create_nonce('rs_translate_proxy_' . $post_ID);
     $url = get_site_url() . "/wp-json/translate/proxy?id={$post_ID}&lang={$opposite}&_wpnonce={$wp_rest_nonce}&rs_nonce={$rs_nonce}";
@@ -124,10 +132,42 @@ function rs_link_translate_script(): void {
     <?php
 }
 
-foreach (['post', 'footer', 'intro', 'brand', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'] as $post_type) {
+foreach (['post', 'footer', 'intro', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'] as $post_type) {
     add_filter("manage_{$post_type}_posts_columns", 'rs_add_language_column');
     add_action("manage_{$post_type}_posts_custom_column", 'rs_render_language_column', 10, 2);
 }
+
+/**
+ * Marcas: um post por logo (sem gêmeos EN/PT). Move PT para lixeira e limpa links.
+ */
+function rs_brand_disable_twins_once(): void {
+    if (get_option('rs_brand_no_twins_v1')) {
+        return;
+    }
+
+    $brands = get_posts([
+        'post_type'      => 'brand',
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+    ]);
+
+    foreach ($brands as $brand_id) {
+        $brand_id = (int) $brand_id;
+        $en_id = (int) get_post_meta($brand_id, 'EN', true);
+        if ($en_id > 0) {
+            // Gêmeo PT → lixeira (logo/título ficam no EN canônico).
+            wp_trash_post($brand_id);
+            continue;
+        }
+
+        delete_post_meta($brand_id, 'PT');
+        delete_post_meta($brand_id, 'EN');
+    }
+
+    update_option('rs_brand_no_twins_v1', 1, false);
+}
+add_action('init', 'rs_brand_disable_twins_once', 20);
 
 add_action('admin_footer', 'rs_link_translate_script');
 

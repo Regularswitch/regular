@@ -1,22 +1,53 @@
-import { GetApi } from '../../components/ApiWp';
-import { getBaseUrl } from '../config/getBaseUrl';
-import { isLegalPageSlug } from '../site/pageSlugs';
+import { GetLegalByLocale } from '../../components/ApiWp';
+import { isLegalPageSlug, type LegalPageSlug } from '../site/pageSlugs';
+import type { LegalContent } from '../content/legal/defaults';
 
 export { isLegalPageSlug };
 
-export async function fetchLegalPage(slug: string, locale: 'en' | 'pt') {
-	const query: Record<string, string | number> = { _embed: '' };
-	if (locale === 'pt') query.translate = 'PT';
+export type LegalPageDocument = {
+	title: string;
+	content: string;
+};
 
-	if (locale === 'en') {
-		const pages = await GetApi('/pages', { slug, ...query });
-		return pages[0] ?? null;
+function cookiesPolicyHtml(legal: LegalContent): string {
+	const intro = legal.cookiesIntro?.trim()
+		? `<div class="legal-cookies-intro">${legal.cookiesIntro}</div>`
+		: '';
+	const categories = (legal.categories ?? [])
+		.map(
+			(cat) =>
+				`<section class="legal-cookie-category"><h2>${cat.title}</h2>${cat.description || ''}</section>`,
+		)
+		.join('');
+	return `${intro}${categories}`;
+}
+
+export async function fetchLegalPage(
+	slug: string,
+	locale: 'en' | 'pt',
+): Promise<LegalPageDocument | null> {
+	if (!isLegalPageSlug(slug)) return null;
+
+	const legal = await GetLegalByLocale(locale);
+	const key = slug as LegalPageSlug;
+
+	if (key === 'privacy-policy') {
+		const content = legal.privacyBody?.trim();
+		if (!content) return null;
+		return {
+			title: legal.privacyTitle,
+			content,
+		};
 	}
 
-	const base = getBaseUrl();
-	const pages = await fetch(`${base}/api/${slug}`, {
-		headers: { Cookie: 'language=PT' },
-	}).then((r) => r.json() as Promise<Array<{ title?: string; content?: string }>>);
+	if (key === 'cookies-policy') {
+		const content = cookiesPolicyHtml(legal).trim();
+		if (!content) return null;
+		return {
+			title: legal.cookiesModalTitle,
+			content,
+		};
+	}
 
-	return pages[0] ?? null;
+	return null;
 }

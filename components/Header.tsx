@@ -7,10 +7,12 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import LogoMark from './LogoMark';
 import { useSiteUi } from './SiteUi/SiteUiProvider';
+import { useFooterSocialLinks } from './Footer/FooterSocialProvider';
 import translate, { getCookie, setCookie } from './Translate';
 import ThemeToggle from './ThemeToggle';
 import { withLocalePrefix } from '../lib/site/resolveSiteUi';
 import { isNavLinkActive } from '../lib/site/isNavLinkActive';
+import { getContactMailto } from '../lib/site/siteLinks';
 
 type HeaderProps = {
 	isLight?: boolean;
@@ -156,6 +158,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const prefix = language === 'PT' ? 'PT' : '';
 	const locale = language === 'PT' ? 'pt' : 'en';
 	const siteUi = useSiteUi();
+	const socialLinks = useFooterSocialLinks();
 
 	const textColor = isLight ? 'text-white' : 'text-[color:var(--fg)]';
 
@@ -525,18 +528,20 @@ export default function Header({ isLight = false }: HeaderProps) {
 						className="w-full max-w-[700px] rounded-[5px] bg-black text-white/70 flex items-center p-6"
 					>
 						<ul className="list-none flex flex-wrap gap-4 text-sm">
+							{socialLinks.map((item) => (
+								<li key={`${item.network}-${item.href}`}>
+									<a
+										href={item.href}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="hover:text-white"
+									>
+										{item.label?.trim() || item.network}
+									</a>
+								</li>
+							))}
 							<li>
-								<a href="https://www.instagram.com/regular.switch" target="_blank" rel="noopener noreferrer" className="hover:text-white">
-									Instagram
-								</a>
-							</li>
-							<li>
-								<a href="https://www.linkedin.com/company/regularswitch" target="_blank" rel="noopener noreferrer" className="hover:text-white">
-									LinkedIn
-								</a>
-							</li>
-							<li>
-								<a href="mailto:contact@regularswitch.com" className="hover:text-white">
+								<a href={getContactMailto()} className="hover:text-white">
 									Email
 								</a>
 							</li>

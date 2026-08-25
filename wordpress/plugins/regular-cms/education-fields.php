@@ -8,6 +8,7 @@ if (defined('RS_EDUCATION_FIELDS_LOADED')) {
 }
 define('RS_EDUCATION_FIELDS_LOADED', true);
 
+const RS_EDUCATION_I18N_KEY = 'rs_education_i18n';
 const RS_EDUCATION_HERO_IMAGE_KEY = 'rs_education_hero_image_id';
 const RS_EDUCATION_HEADLINE_KEY = 'rs_education_headline';
 const RS_EDUCATION_SECTIONS_KEY = 'rs_education_sections';
@@ -18,7 +19,7 @@ const RS_EDUCATION_HERO_VIDEO_URL_LEGACY = 'rs_education_hero_video_url';
 /**
  * @return array<int, array{title: string, body: string}>
  */
-function rs_education_get_sections(int $post_id): array {
+function rs_education_get_legacy_sections(int $post_id): array {
     $decoded = function_exists('rs_meta_get_array')
         ? rs_meta_get_array($post_id, RS_EDUCATION_SECTIONS_KEY)
         : null;
@@ -174,15 +175,7 @@ function rs_education_gallery_to_payload($raw): ?array {
  *
  * @return array<int, array<string, mixed>>
  */
-function rs_education_get_institutions_raw(int $post_id): array {
-    $decoded = function_exists('rs_meta_get_array')
-        ? rs_meta_get_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY)
-        : null;
-
-    if (!is_array($decoded)) {
-        $decoded = [];
-    }
-
+function rs_education_normalize_institutions(array $decoded): array {
     $normalized = [];
     foreach ($decoded as $item) {
         if (!is_array($item)) {
@@ -244,6 +237,114 @@ function rs_education_get_institutions_raw(int $post_id): array {
     return $normalized;
 }
 
+function rs_education_get_legacy_institutions_raw(int $post_id): array {
+    $decoded = function_exists('rs_meta_get_array')
+        ? rs_meta_get_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY)
+        : get_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, true);
+
+    return rs_education_normalize_institutions(is_array($decoded) ? $decoded : []);
+}
+
+function rs_education_default_locale(): array {
+    return ['headline' => '', 'sections' => [], 'institutions' => []];
+}
+
+function rs_education_i18n_default(): array {
+    return [
+        'v' => 1,
+        'shared' => ['hero_image_id' => 0, 'hero_video_id' => 0],
+        'locales' => [
+            'en' => rs_education_default_locale(),
+            'pt' => rs_education_default_locale(),
+        ],
+    ];
+}
+
+function rs_education_i18n_normalize(array $raw): array {
+    $data = rs_education_i18n_default();
+    $shared = is_array($raw['shared'] ?? null) ? $raw['shared'] : [];
+    $data['shared'] = [
+        'hero_image_id' => (int) ($shared['hero_image_id'] ?? 0),
+        'hero_video_id' => (int) ($shared['hero_video_id'] ?? 0),
+    ];
+
+    foreach (['en', 'pt'] as $locale) {
+        $loc = is_array($raw['locales'][$locale] ?? null) ? $raw['locales'][$locale] : [];
+        $data['locales'][$locale] = [
+            'headline' => trim((string) ($loc['headline'] ?? '')),
+            'sections' => rs_education_normalize_sections(
+                is_array($loc['sections'] ?? null) ? $loc['sections'] : []
+            ),
+            'institutions' => rs_education_normalize_institutions(
+                is_array($loc['institutions'] ?? null) ? $loc['institutions'] : []
+            ),
+        ];
+    }
+
+    return $data;
+}
+
+function rs_education_locale_from_legacy_post(int $post_id): array {
+    if ($post_id <= 0) {
+        return rs_education_default_locale();
+    }
+
+    return [
+        'headline' => trim((string) get_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, true)),
+        'sections' => rs_education_get_legacy_sections($post_id),
+        'institutions' => rs_education_get_legacy_institutions_raw($post_id),
+    ];
+}
+
+function rs_education_i18n_get(int $post_id): array {
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id($post_id)
+        : $post_id;
+    $raw = function_exists('rs_section_i18n_get_raw')
+        ? rs_section_i18n_get_raw($post_id, RS_EDUCATION_I18N_KEY)
+        : get_post_meta($post_id, RS_EDUCATION_I18N_KEY, true);
+    if (is_array($raw)) {
+        return rs_education_i18n_normalize($raw);
+    }
+
+    $data = rs_education_i18n_default();
+    $data['shared'] = [
+        'hero_image_id' => (int) get_post_meta($post_id, RS_EDUCATION_HERO_IMAGE_KEY, true),
+        'hero_video_id' => (int) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, true),
+    ];
+    $data['locales']['en'] = rs_education_locale_from_legacy_post($post_id);
+    $pt_id = (int) get_post_meta($post_id, 'PT', true);
+    if ($pt_id > 0) {
+        $data['locales']['pt'] = rs_education_locale_from_legacy_post($pt_id);
+    }
+
+    return rs_education_i18n_normalize($data);
+}
+
+function rs_education_get_sections(int $post_id, string $locale = 'en'): array {
+    $locale = function_exists('rs_section_i18n_normalize_locale')
+        ? rs_section_i18n_normalize_locale($locale)
+        : (strtolower($locale) === 'pt' ? 'pt' : 'en');
+    $data = rs_education_i18n_get($post_id);
+    return rs_education_normalize_sections(
+        is_array($data['locales'][$locale]['sections'] ?? null)
+            ? $data['locales'][$locale]['sections']
+            : []
+    );
+}
+
+function rs_education_get_institutions_raw(int $post_id, string $locale = 'en'): array {
+    $locale = function_exists('rs_section_i18n_normalize_locale')
+        ? rs_section_i18n_normalize_locale($locale)
+        : (strtolower($locale) === 'pt' ? 'pt' : 'en');
+    $data = rs_education_i18n_get($post_id);
+    return rs_education_normalize_institutions(
+        is_array($data['locales'][$locale]['institutions'] ?? null)
+            ? $data['locales'][$locale]['institutions']
+            : []
+    );
+}
+
 /**
  * @return array<int, array<string, mixed>>
  */
@@ -295,59 +396,129 @@ function rs_education_institutions_to_payload(array $institutions): array {
     return $payload;
 }
 
-function rs_education_meta_to_payload(int $post_id): array {
-    $hero = function_exists('rs_section_hero_media')
-        ? rs_section_hero_media($post_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY, 'education')
-        : ['image' => '', 'video' => ''];
-
-    if ($hero['video'] === '') {
-        $hero['video'] = trim((string) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_URL_LEGACY, true));
+function rs_education_meta_to_payload(int $post_id, string $locale = 'en'): array {
+    $locale = function_exists('rs_section_i18n_normalize_locale')
+        ? rs_section_i18n_normalize_locale($locale)
+        : (strtolower($locale) === 'pt' ? 'pt' : 'en');
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id($post_id)
+        : $post_id;
+    $data = rs_education_i18n_get($post_id);
+    $loc = $data['locales'][$locale] ?? rs_education_default_locale();
+    // Sem fallback EN→PT no headline: front usa defaults PT quando vazio.
+    if ($locale === 'pt') {
+        $en = $data['locales']['en'] ?? rs_education_default_locale();
+        if (empty($loc['sections'])) {
+            $loc['sections'] = $en['sections'] ?? [];
+        }
+        if (empty($loc['institutions'])) {
+            $loc['institutions'] = $en['institutions'] ?? [];
+        }
+    }
+    $image_id = (int) ($data['shared']['hero_image_id'] ?? 0);
+    $video_id = (int) ($data['shared']['hero_video_id'] ?? 0);
+    if ($image_id <= 0) {
+        $image_id = (int) get_post_meta($post_id, RS_EDUCATION_HERO_IMAGE_KEY, true);
+    }
+    if ($video_id <= 0) {
+        $video_id = (int) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, true);
+    }
+    if ($image_id <= 0 && function_exists('rs_page_heroes_get_image_id')) {
+        $image_id = (int) rs_page_heroes_get_image_id('education');
+    }
+    if ($video_id <= 0 && function_exists('rs_page_heroes_get_video_id')) {
+        $video_id = (int) rs_page_heroes_get_video_id('education');
+    }
+    $video_url = $video_id > 0 ? (string) wp_get_attachment_url($video_id) : '';
+    if ($video_url === '') {
+        $video_url = trim((string) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_URL_LEGACY, true));
     }
 
     return [
-        'heroImage'         => $hero['image'],
-        'heroVideo'         => $hero['video'],
-        'headline'          => trim((string) get_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, true)),
-        'accordionSections' => rs_education_sections_to_payload(rs_education_get_sections($post_id)),
-        'institutions'      => rs_education_institutions_to_payload(rs_education_get_institutions_raw($post_id)),
+        'heroImage' => $image_id > 0 ? (string) wp_get_attachment_url($image_id) : '',
+        'heroVideo' => $video_url,
+        'headline' => trim((string) ($loc['headline'] ?? '')),
+        'accordionSections' => rs_education_sections_to_payload(
+            rs_education_normalize_sections(is_array($loc['sections'] ?? null) ? $loc['sections'] : [])
+        ),
+        'institutions' => rs_education_institutions_to_payload(
+            rs_education_normalize_institutions(is_array($loc['institutions'] ?? null) ? $loc['institutions'] : [])
+        ),
     ];
 }
 
-function rs_education_get_post_id_by_locale(string $locale): int {
-    $posts = get_posts([
-        'post_type'      => 'education',
-        'post_status'    => 'publish',
-        'name'           => $locale,
-        'posts_per_page' => 1,
-        'fields'         => 'ids',
-    ]);
-
-    return !empty($posts[0]) ? (int) $posts[0] : 0;
+function rs_education_get_post_id_by_locale(string $locale = 'en'): int {
+    return function_exists('rs_section_i18n_canonical_id')
+        ? rs_section_i18n_canonical_id('education')
+        : 0;
 }
 
-function rs_education_ensure_locale_posts(): void {
-    if (get_option('rs_education_posts_ensured_v1')) {
+function rs_education_sync_legacy_meta(int $post_id, array $data): void {
+    $en = is_array($data['locales']['en'] ?? null) ? $data['locales']['en'] : rs_education_default_locale();
+    $image_id = (int) ($data['shared']['hero_image_id'] ?? 0);
+    $video_id = (int) ($data['shared']['hero_video_id'] ?? 0);
+    delete_post_meta($post_id, RS_EDUCATION_HERO_IMAGE_KEY);
+    delete_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY);
+    update_post_meta($post_id, RS_EDUCATION_HERO_IMAGE_KEY, $image_id);
+    update_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, $video_id);
+    update_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, (string) ($en['headline'] ?? ''));
+    $sections = rs_education_normalize_sections(is_array($en['sections'] ?? null) ? $en['sections'] : []);
+    $institutions = rs_education_normalize_institutions(is_array($en['institutions'] ?? null) ? $en['institutions'] : []);
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_EDUCATION_SECTIONS_KEY, $sections);
+        rs_meta_update_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY, $institutions);
+    } else {
+        update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, $sections);
+        update_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, $institutions);
+    }
+
+    // Mantém page-heroes alinhado (fallback legado).
+    if (function_exists('rs_page_heroes_get_post_id')) {
+        $heroes_id = (int) rs_page_heroes_get_post_id();
+        if ($heroes_id > 0) {
+            update_post_meta($heroes_id, RS_PAGE_HERO_EDUCATION_IMAGE_KEY, (string) max(0, $image_id));
+            update_post_meta($heroes_id, RS_PAGE_HERO_EDUCATION_VIDEO_KEY, (string) max(0, $video_id));
+        }
+    }
+}
+
+function rs_education_migrate_to_i18n_once(): void {
+    if (!function_exists('rs_section_i18n_migrate_twins')) {
         return;
     }
 
-    foreach (['en', 'pt'] as $locale) {
-        if (rs_education_get_post_id_by_locale($locale) > 0) {
-            continue;
-        }
-
-        wp_insert_post([
-            'post_title'  => $locale === 'pt' ? 'Educação (PT)' : 'Education (EN)',
-            'post_status' => 'publish',
-            'post_type'   => 'education',
-            'post_name'   => $locale,
-            'post_author' => 1,
-        ], true);
+    $already_migrated = (bool) get_option('rs_education_i18n_migrated_v1');
+    $post_id = rs_section_i18n_migrate_twins(
+        'education',
+        RS_EDUCATION_I18N_KEY,
+        'rs_education_i18n_migrated_v1',
+        'Education',
+        static function (int $post_id, string $locale): array {
+            return rs_education_locale_from_legacy_post($post_id);
+        },
+        'rs_education_i18n_normalize'
+    );
+    if (!$already_migrated && $post_id > 0) {
+        $data = rs_education_i18n_get($post_id);
+        $data['shared'] = [
+            'hero_image_id' => (int) get_post_meta($post_id, RS_EDUCATION_HERO_IMAGE_KEY, true),
+            'hero_video_id' => (int) get_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, true),
+        ];
+        $data = rs_education_i18n_normalize($data);
+        rs_section_i18n_save($post_id, RS_EDUCATION_I18N_KEY, $data);
+        rs_education_sync_legacy_meta($post_id, $data);
     }
-
-    update_option('rs_education_posts_ensured_v1', 1);
 }
 
 add_action('init', function () {
+    register_post_meta('education', RS_EDUCATION_I18N_KEY, [
+        'single' => true,
+        'type' => 'array',
+        'show_in_rest' => false,
+        'auth_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+    ]);
     foreach ([
         RS_EDUCATION_HERO_IMAGE_KEY,
         RS_EDUCATION_HERO_VIDEO_KEY,
@@ -367,12 +538,18 @@ add_action('init', function () {
     }
 }, 20);
 
-add_action('init', 'rs_education_ensure_locale_posts', 25);
+add_action('init', 'rs_education_migrate_to_i18n_once', 30);
 
 add_action('rest_api_init', function () {
     register_rest_field('education', 'education_data', [
-        'get_callback' => function (array $post) {
-            return rs_education_meta_to_payload((int) $post['id']);
+        'get_callback' => function (array $post, $attr, $request) {
+            $locale = function_exists('rs_section_i18n_locale_from_request')
+                ? rs_section_i18n_locale_from_request($request)
+                : 'en';
+            $post_id = function_exists('rs_section_i18n_resolve_id')
+                ? rs_section_i18n_resolve_id((int) $post['id'])
+                : (int) $post['id'];
+            return rs_education_meta_to_payload($post_id, $locale);
         },
         'schema' => [
             'description' => 'Dados estruturados da página Educação',
@@ -386,7 +563,7 @@ add_action('add_meta_boxes_education', function () {
     add_meta_box(
         'rs_education_fields',
         'Conteúdo da página Educação',
-        'rs_education_render_meta_box',
+        'rs_education_render_i18n_meta_box',
         'education',
         'normal',
         'high'
@@ -395,11 +572,13 @@ add_action('add_meta_boxes_education', function () {
     remove_meta_box('postcustom', 'education', 'normal');
 }, 10);
 
-function rs_education_render_section_row(int $index, array $section, bool $is_template = false): void {
+function rs_education_render_section_row(int $index, array $section, bool $is_template = false, string $locale = 'en'): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
     $title = $section['title'] ?? '';
     $body = $section['body'] ?? '';
-    $name_prefix = $is_template ? 'rs_education_sections[__INDEX__]' : 'rs_education_sections[' . $index . ']';
-    $editor_id = $is_template ? 'rs_education_section_text___INDEX__' : 'rs_education_section_text_' . $index;
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $name_prefix = 'rs_education_i18n[' . $locale . '][sections][' . $row_index . ']';
+    $editor_id = 'rs_education_section_text_' . $locale . '_' . $row_index;
     $display = $is_template ? ' style="display:none;"' : '';
     $is_open = !$is_template && (int) $index === 0;
     $head_title = $title !== '' ? $title : 'Seção';
@@ -408,7 +587,8 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
     ?>
     <fieldset
         class="<?php echo esc_attr($row_class); ?>"
-        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        data-locale="<?php echo esc_attr($locale); ?>"
         <?php echo $editor_ids !== '' ? ' data-rs-editor-ids="' . $editor_ids . '"' : ''; ?>
         <?php echo $display; ?>
     >
@@ -539,12 +719,14 @@ function rs_education_render_gallery_fields(string $name_prefix, string $label, 
     <?php
 }
 
-function rs_education_render_institution_row(int $index, array $institution, bool $is_template = false): void {
+function rs_education_render_institution_row(int $index, array $institution, bool $is_template = false, string $locale = 'en'): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
     $name = (string) ($institution['name'] ?? '');
     $logo_id = (int) ($institution['logo_id'] ?? 0);
     $description = (string) ($institution['description'] ?? '');
-    $name_prefix = $is_template ? 'rs_education_institutions[__INDEX__]' : 'rs_education_institutions[' . $index . ']';
-    $logo_field_id = $is_template ? 'rs_education_inst_logo___INDEX__' : 'rs_education_inst_logo_' . $index;
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $name_prefix = 'rs_education_i18n[' . $locale . '][institutions][' . $row_index . ']';
+    $logo_field_id = 'rs_education_inst_logo_' . $locale . '_' . $row_index;
 
     $mid_raw = is_array($institution['midGallery'] ?? null) ? $institution['midGallery'] : null;
     $top_raw = is_array($institution['topGallery'] ?? null) ? $institution['topGallery'] : null;
@@ -572,7 +754,8 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     ?>
     <fieldset
         class="<?php echo esc_attr($row_class); ?>"
-        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        data-locale="<?php echo esc_attr($locale); ?>"
         style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
     >
         <div class="rs-metabox-accordion-head">
@@ -641,6 +824,86 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     <?php
 }
 
+function rs_education_render_locale_fields(string $locale, array $loc): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $sections = rs_education_normalize_sections(is_array($loc['sections'] ?? null) ? $loc['sections'] : []);
+    $institutions = rs_education_normalize_institutions(is_array($loc['institutions'] ?? null) ? $loc['institutions'] : []);
+    if (!$sections) {
+        $sections = [['title' => '', 'body' => '']];
+    }
+    if (!$institutions) {
+        $institutions = [[
+            'name' => '',
+            'logo_id' => 0,
+            'description' => '',
+            'midGallery' => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
+            'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
+        ]];
+    }
+
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Headline</strong></legend>';
+    rs_render_rich_text_field(
+        'rs_education_headline_' . $locale,
+        'rs_education_i18n[' . $locale . '][headline]',
+        (string) ($loc['headline'] ?? ''),
+        'inline'
+    );
+    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p></fieldset>';
+
+    echo '<div id="rs-education-sections-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Seções do acordeão</strong></legend>';
+    echo '<div id="rs-education-sections-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
+    foreach ($sections as $index => $section) {
+        rs_education_render_section_row((int) $index, $section, false, $locale);
+    }
+    echo '</div><div id="rs-education-section-template-' . esc_attr($locale) . '" hidden>';
+    rs_education_render_section_row(0, ['title' => '', 'body' => ''], true, $locale);
+    echo '</div><p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-education-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
+    echo '<input type="hidden" id="rs-education-sections-' . esc_attr($locale) . '-json" name="rs_education_sections_' . esc_attr($locale) . '_json" value="" />';
+    echo '</fieldset></div>';
+
+    echo '<div id="rs-education-institutions-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições</strong></legend>';
+    echo '<div id="rs-education-institutions-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
+    foreach ($institutions as $index => $institution) {
+        rs_education_render_institution_row((int) $index, $institution, false, $locale);
+    }
+    echo '</div><div id="rs-education-institution-template-' . esc_attr($locale) . '" hidden>';
+    rs_education_render_institution_row(0, [
+        'name' => '',
+        'logo_id' => 0,
+        'description' => '',
+        'midGallery' => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
+        'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
+    ], true, $locale);
+    echo '</div><p style="margin:12px 0 0;"><button type="button" class="button button-primary rs-education-add-institution" data-locale="' . esc_attr($locale) . '">+ Adicionar instituição</button></p>';
+    echo '<input type="hidden" id="rs-education-institutions-' . esc_attr($locale) . '-json" name="rs_education_institutions_' . esc_attr($locale) . '_json" value="" />';
+    echo '</fieldset></div>';
+}
+
+function rs_education_render_i18n_meta_box(WP_Post $post): void {
+    wp_nonce_field('rs_education_save', 'rs_education_nonce');
+    $canonical = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id((int) $post->ID)
+        : (int) $post->ID;
+    $i18n = rs_education_i18n_get($canonical);
+
+    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Mídia compartilhada do hero</strong></legend>';
+    rs_render_media_field('rs_education_shared[hero_image_id]', 'Imagem do hero', (int) $i18n['shared']['hero_image_id'], 'rs_education_shared_hero_image', true, 'image');
+    rs_render_media_field('rs_education_shared[hero_video_id]', 'Vídeo do hero', (int) $i18n['shared']['hero_video_id'], 'rs_education_shared_hero_video', true, 'video');
+    echo '</fieldset>';
+
+    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
+    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
+    echo '</div><div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_education_render_locale_fields('en', $i18n['locales']['en']);
+    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_education_render_locale_fields('pt', $i18n['locales']['pt']);
+    echo '</div></div>';
+}
+
 function rs_education_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_education_save', 'rs_education_nonce');
 
@@ -663,10 +926,6 @@ function rs_education_render_meta_box(WP_Post $post): void {
     }
 
     echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. ' . rs_plugin_version_markup() . '</p>';
-    if (function_exists('rs_sync_media_notice_html')) {
-        echo rs_sync_media_notice_html((int) $post->ID);
-    }
-
     $section_count = count($sections);
     $institution_count = count($institutions);
 
@@ -744,9 +1003,11 @@ function rs_education_render_meta_box(WP_Post $post): void {
 /**
  * @return array<int, array{title: string, body: string}>
  */
-function rs_education_parse_sections_from_request(): array {
-    if (!empty($_POST['rs_education_sections_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_education_sections_json']), true);
+function rs_education_parse_sections_from_request(string $locale = 'en'): array {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $json_key = 'rs_education_sections_' . $locale . '_json';
+    if (!empty($_POST[$json_key])) {
+        $decoded = json_decode(wp_unslash((string) $_POST[$json_key]), true);
         if (is_array($decoded) && $decoded !== []) {
             $normalized = rs_education_normalize_sections($decoded);
             if ($normalized !== []) {
@@ -755,30 +1016,40 @@ function rs_education_parse_sections_from_request(): array {
         }
     }
 
-    if (!isset($_POST['rs_education_sections']) || !is_array($_POST['rs_education_sections'])) {
+    $raw_i18n = isset($_POST['rs_education_i18n']) && is_array($_POST['rs_education_i18n'])
+        ? wp_unslash($_POST['rs_education_i18n'])
+        : [];
+    $raw_locale = is_array($raw_i18n[$locale] ?? null) ? $raw_i18n[$locale] : [];
+    if (!isset($raw_locale['sections']) || !is_array($raw_locale['sections'])) {
         return [];
     }
 
-    return rs_education_normalize_sections(wp_unslash($_POST['rs_education_sections']));
+    return rs_education_normalize_sections($raw_locale['sections']);
 }
 
 /**
  * @return array<int, array<string, mixed>>
  */
-function rs_education_parse_institutions_from_request(): array {
-    if (!empty($_POST['rs_education_institutions_json'])) {
-        $decoded = json_decode(wp_unslash((string) $_POST['rs_education_institutions_json']), true);
+function rs_education_parse_institutions_from_request(string $locale = 'en'): array {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $json_key = 'rs_education_institutions_' . $locale . '_json';
+    if (!empty($_POST[$json_key])) {
+        $decoded = json_decode(wp_unslash((string) $_POST[$json_key]), true);
         if (is_array($decoded)) {
             return $decoded;
         }
     }
 
-    if (!isset($_POST['rs_education_institutions']) || !is_array($_POST['rs_education_institutions'])) {
+    $raw_i18n = isset($_POST['rs_education_i18n']) && is_array($_POST['rs_education_i18n'])
+        ? wp_unslash($_POST['rs_education_i18n'])
+        : [];
+    $raw_locale = is_array($raw_i18n[$locale] ?? null) ? $raw_i18n[$locale] : [];
+    if (!isset($raw_locale['institutions']) || !is_array($raw_locale['institutions'])) {
         return [];
     }
 
     $items = [];
-    foreach (wp_unslash($_POST['rs_education_institutions']) as $key => $row) {
+    foreach ($raw_locale['institutions'] as $key => $row) {
         if ($key === '__INDEX__' || !is_array($row)) {
             continue;
         }
@@ -786,6 +1057,43 @@ function rs_education_parse_institutions_from_request(): array {
     }
 
     return $items;
+}
+
+function rs_education_sanitize_institutions(array $institutions): array {
+    $clean = [];
+    foreach ($institutions as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $entry = [
+            'name' => trim(wp_strip_all_tags((string) ($item['name'] ?? ''))),
+            'logo_id' => (int) ($item['logo_id'] ?? 0),
+            'description' => wp_kses_post((string) ($item['description'] ?? '')),
+        ];
+        foreach (['midGallery', 'bottomGallery'] as $key) {
+            $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
+            if ($gallery) {
+                $entry[$key] = [
+                    'layout' => $gallery['layout'],
+                    'image_ids' => $gallery['image_ids'],
+                    'caption' => sanitize_text_field($gallery['caption']),
+                ];
+            }
+        }
+        if (empty($entry['midGallery']['image_ids'] ?? '')) {
+            $legacy_top = rs_education_normalize_gallery_for_storage($item['topGallery'] ?? null);
+            if ($legacy_top && $legacy_top['image_ids'] !== '') {
+                $entry['midGallery'] = [
+                    'layout' => $legacy_top['layout'] ?: 'triple',
+                    'image_ids' => $legacy_top['image_ids'],
+                    'caption' => sanitize_text_field($legacy_top['caption']),
+                ];
+            }
+        }
+        $clean[] = $entry;
+    }
+
+    return rs_education_normalize_institutions($clean);
 }
 
 add_action('save_post_education', function (int $post_id) {
@@ -805,89 +1113,66 @@ add_action('save_post_education', function (int $post_id) {
         return;
     }
 
-    $headline = isset($_POST[RS_EDUCATION_HEADLINE_KEY])
-        ? wp_kses_post(wp_unslash($_POST[RS_EDUCATION_HEADLINE_KEY]))
-        : '';
-    update_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, $headline);
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id($post_id)
+        : $post_id;
+    $data = rs_education_i18n_get($post_id);
+    $prev_shared = is_array($data['shared'] ?? null) ? $data['shared'] : [
+        'hero_image_id' => 0,
+        'hero_video_id' => 0,
+    ];
+    $raw = isset($_POST['rs_education_i18n']) && is_array($_POST['rs_education_i18n'])
+        ? wp_unslash($_POST['rs_education_i18n'])
+        : [];
+    $shared = isset($_POST['rs_education_shared']) && is_array($_POST['rs_education_shared'])
+        ? wp_unslash($_POST['rs_education_shared'])
+        : [];
 
-    if (function_exists('rs_section_save_hero_media')) {
-        rs_section_save_hero_media($post_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
-    }
-
-    $sections = rs_education_parse_sections_from_request();
-    if (function_exists('rs_meta_update_array')) {
-        rs_meta_update_array($post_id, RS_EDUCATION_SECTIONS_KEY, $sections);
-    } else {
-        update_post_meta($post_id, RS_EDUCATION_SECTIONS_KEY, wp_slash(wp_json_encode($sections, JSON_UNESCAPED_UNICODE) ?: '[]'));
-    }
-
-    $institutions = rs_education_parse_institutions_from_request();
-    $to_store = [];
-    foreach ($institutions as $item) {
-        if (!is_array($item)) {
-            continue;
+    // Aceita nested (rs_education_shared[…]) ou fallback flat; não zera mídia se o campo sumiu do POST.
+    $image_raw = $shared['hero_image_id'] ?? ($_POST['rs_education_shared_hero_image'] ?? null);
+    $video_raw = $shared['hero_video_id'] ?? ($_POST['rs_education_shared_hero_video'] ?? null);
+    $data['shared'] = [
+        'hero_image_id' => $image_raw !== null
+            ? (int) $image_raw
+            : (int) ($prev_shared['hero_image_id'] ?? 0),
+        'hero_video_id' => $video_raw !== null
+            ? (int) $video_raw
+            : (int) ($prev_shared['hero_video_id'] ?? 0),
+    ];
+    foreach (['en', 'pt'] as $locale) {
+        $loc = is_array($raw[$locale] ?? null) ? $raw[$locale] : [];
+        // Headline: TinyMCE às vezes só preenche o textarea após triggerSave (feito no JS).
+        $headline = (string) ($loc['headline'] ?? '');
+        if ($headline === '' && isset($_POST['rs_education_headline_' . $locale])) {
+            $headline = (string) wp_unslash($_POST['rs_education_headline_' . $locale]);
         }
-        $name = trim(wp_strip_all_tags((string) ($item['name'] ?? '')));
-        $logo_id = (int) ($item['logo_id'] ?? 0);
-        $description = wp_kses_post((string) ($item['description'] ?? ''));
-
-        $entry = [
-            'name'        => $name,
-            'logo_id'     => $logo_id,
-            'description' => $description,
+        $data['locales'][$locale] = [
+            'headline' => wp_kses_post($headline),
+            'sections' => rs_education_parse_sections_from_request($locale),
+            'institutions' => rs_education_sanitize_institutions(
+                rs_education_parse_institutions_from_request($locale)
+            ),
         ];
-
-        foreach (['midGallery', 'bottomGallery'] as $key) {
-            $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
-            if ($gallery) {
-                $entry[$key] = [
-                    'layout'    => $gallery['layout'],
-                    'image_ids' => $gallery['image_ids'],
-                    'caption'   => $gallery['caption'],
-                ];
-            }
-        }
-
-        // Migra topGallery legado para midGallery.
-        if (empty($entry['midGallery']['image_ids'] ?? '')) {
-            $legacy_top = rs_education_normalize_gallery_for_storage($item['topGallery'] ?? null);
-            if ($legacy_top && $legacy_top['image_ids'] !== '') {
-                $entry['midGallery'] = [
-                    'layout'    => $legacy_top['layout'] !== '' ? $legacy_top['layout'] : 'triple',
-                    'image_ids' => $legacy_top['image_ids'],
-                    'caption'   => $legacy_top['caption'],
-                ];
-            }
-        }
-
-        if ($name === '' && $logo_id <= 0 && trim(wp_strip_all_tags($description)) === ''
-            && empty($entry['midGallery']['image_ids'] ?? '')
-            && empty($entry['bottomGallery']['image_ids'] ?? '')
-        ) {
-            continue;
-        }
-
-        $to_store[] = $entry;
     }
 
-    if (function_exists('rs_meta_update_array')) {
-        rs_meta_update_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY, $to_store);
+    $normalized = rs_education_i18n_normalize($data);
+    if (function_exists('rs_section_i18n_save')) {
+        rs_section_i18n_save($post_id, RS_EDUCATION_I18N_KEY, $normalized);
     } else {
-        update_post_meta($post_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_slash(wp_json_encode($to_store, JSON_UNESCAPED_UNICODE) ?: '[]'));
+        delete_post_meta($post_id, RS_EDUCATION_I18N_KEY);
+        update_post_meta($post_id, RS_EDUCATION_I18N_KEY, $normalized);
     }
+    rs_education_sync_legacy_meta($post_id, $normalized);
 }, 10);
 
 function rs_copy_education_fields(int $from_id, int $to_id): void {
-    update_post_meta($to_id, RS_EDUCATION_HEADLINE_KEY, get_post_meta($from_id, RS_EDUCATION_HEADLINE_KEY, true));
-    update_post_meta($to_id, RS_EDUCATION_SECTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_SECTIONS_KEY, true));
-    update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, get_post_meta($from_id, RS_EDUCATION_INSTITUTIONS_KEY, true));
-    if (function_exists('rs_section_copy_hero_media')) {
-        rs_section_copy_hero_media($from_id, $to_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
-    }
+    // Legado no-op: post único.
 }
 
 add_action('admin_footer-post.php', 'rs_education_admin_footer_script');
 add_action('admin_footer-post-new.php', 'rs_education_admin_footer_script');
+add_action('admin_footer-post.php', 'rs_education_i18n_admin_footer_script', 20);
+add_action('admin_footer-post-new.php', 'rs_education_i18n_admin_footer_script', 20);
 
 add_action('admin_enqueue_scripts', function (string $hook): void {
     if (!in_array($hook, ['post.php', 'post-new.php'], true)) {
@@ -1407,6 +1692,239 @@ function rs_education_admin_footer_script(): void {
         });
 
         initAllGallerySortables();
+    });
+    </script>
+    <?php
+}
+
+function rs_education_i18n_admin_footer_script(): void {
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'education') {
+        return;
+    }
+    ?>
+    <script>
+    jQuery(function ($) {
+        const locales = ['en', 'pt'];
+        const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
+        const nextSection = {};
+        const nextInstitution = {};
+        const sectionApis = {};
+        const institutionApis = {};
+
+        function sectionsList(locale) { return $('#rs-education-sections-list-' + locale); }
+        function institutionsList(locale) { return $('#rs-education-institutions-list-' + locale); }
+
+        function saveEditors() {
+            if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+            if (typeof wp !== 'undefined' && wp.editor && wp.editor.save) {
+                locales.forEach(function (locale) {
+                    wp.editor.save('rs_education_headline_' + locale);
+                });
+                $('textarea[id^="rs_education_section_text_"]').each(function () {
+                    const id = $(this).attr('id');
+                    if (id && id.indexOf('__INDEX__') === -1) wp.editor.save(id);
+                });
+            }
+        }
+
+        function sectionBody($textarea) {
+            const id = $textarea.attr('id');
+            const editor = id && typeof tinymce !== 'undefined' ? tinymce.get(id) : null;
+            return editor && !editor.isHidden() ? editor.getContent() : ($textarea.val() || '');
+        }
+
+        function gallery($block) {
+            const ids = [];
+            $block.find('.rs-education-gallery-item').each(function () {
+                const id = parseInt($(this).attr('data-id'), 10) || 0;
+                if (id > 0) ids.push(id);
+            });
+            $block.find('.rs-education-gallery-ids').val(ids.join(','));
+            return {
+                layout: $block.find('.rs-education-gallery-layout').val() || 'triple',
+                image_ids: ids.join(','),
+                caption: ($block.find('.rs-education-gallery-caption').val() || '').trim()
+            };
+        }
+
+        function collect(locale) {
+            const sections = [];
+            sectionsList(locale).find('.rs-metabox-accordion-item').each(function () {
+                const $row = $(this);
+                const title = ($row.find('.rs-education-section-title').val() || '').trim();
+                const body = sectionBody($row.find('textarea[id^="rs_education_section_text_' + locale + '_"]'));
+                if (title || body) sections.push({ title: title || 'Seção', body: body });
+            });
+            $('#rs-education-sections-' + locale + '-json').val(JSON.stringify(sections));
+
+            const institutions = [];
+            institutionsList(locale).find('.rs-metabox-accordion-item').each(function () {
+                const $row = $(this);
+                const galleries = {};
+                $row.find('.rs-education-gallery-block').each(function () {
+                    const key = $(this).find('.rs-education-gallery-layout').data('gallery');
+                    if (key) galleries[key] = gallery($(this));
+                });
+                const item = {
+                    name: ($row.find('.rs-education-institution-name').val() || '').trim(),
+                    logo_id: parseInt($row.find('input[data-rs-cap-image]').val(), 10) || 0,
+                    description: ($row.find('.rs-education-institution-description').val() || '').trim(),
+                    midGallery: galleries.midGallery || { layout: 'triple', image_ids: '', caption: '' },
+                    bottomGallery: galleries.bottomGallery || { layout: 'grid-2x2', image_ids: '', caption: '' }
+                };
+                if (item.name || item.logo_id || item.description || item.midGallery.image_ids || item.bottomGallery.image_ids) {
+                    institutions.push(item);
+                }
+            });
+            $('#rs-education-institutions-' + locale + '-json').val(JSON.stringify(institutions));
+        }
+
+        function collectAll() {
+            saveEditors();
+            locales.forEach(collect);
+        }
+
+        function initEditor(id) {
+            if (!id || id.indexOf('__INDEX__') !== -1 || typeof wp === 'undefined' || !wp.editor) return;
+            if (typeof tinymce !== 'undefined' && tinymce.get(id)) return;
+            wp.editor.initialize(id, paragraphEditorSettings);
+        }
+
+        function replaceIndexes($row, index) {
+            $row.find('[id]').each(function () {
+                const id = $(this).attr('id');
+                if (id && id.indexOf('__INDEX__') !== -1) $(this).attr('id', id.replace(/__INDEX__/g, String(index)));
+            });
+            $row.find('[data-target]').each(function () {
+                const target = $(this).attr('data-target');
+                if (target && target.indexOf('__INDEX__') !== -1) $(this).attr('data-target', target.replace(/__INDEX__/g, String(index)));
+            });
+        }
+
+        function assignSectionNames($row, locale, index) {
+            const prefix = 'rs_education_i18n[' + locale + '][sections][' + index + ']';
+            $row.find('.rs-education-section-title').attr('name', prefix + '[title]');
+            $row.find('textarea[id^="rs_education_section_text_' + locale + '_"]').attr('name', prefix + '[body]');
+            $row.attr('data-rs-editor-ids', 'rs_education_section_text_' + locale + '_' + index);
+        }
+
+        function assignInstitutionNames($row, locale, index) {
+            const prefix = 'rs_education_i18n[' + locale + '][institutions][' + index + ']';
+            $row.find('.rs-education-institution-name').attr('name', prefix + '[name]');
+            $row.find('.rs-education-institution-description').attr('name', prefix + '[description]');
+            $row.find('input[data-rs-cap-image]').attr('name', prefix + '[logo_id]');
+            $row.find('.rs-education-gallery-block').each(function () {
+                const key = $(this).find('.rs-education-gallery-layout').data('gallery');
+                if (!key) return;
+                $(this).find('.rs-education-gallery-layout').attr('name', prefix + '[' + key + '][layout]');
+                $(this).find('.rs-education-gallery-ids').attr('name', prefix + '[' + key + '][image_ids]');
+                $(this).find('.rs-education-gallery-caption').attr('name', prefix + '[' + key + '][caption]');
+            });
+        }
+
+        function reindexSections(locale) {
+            sectionsList(locale).find('.rs-metabox-accordion-item').each(function (index) {
+                const $row = $(this);
+                const $textarea = $row.find('textarea[id^="rs_education_section_text_' + locale + '_"]');
+                const oldId = $textarea.attr('id');
+                const newId = 'rs_education_section_text_' + locale + '_' + index;
+                if (oldId && oldId !== newId && typeof wp !== 'undefined' && wp.editor) {
+                    wp.editor.remove(oldId);
+                    $textarea.attr('id', newId);
+                    initEditor(newId);
+                }
+                assignSectionNames($row, locale, index);
+            });
+            nextSection[locale] = sectionsList(locale).find('.rs-metabox-accordion-item').length;
+        }
+
+        function reindexInstitutions(locale) {
+            institutionsList(locale).find('.rs-metabox-accordion-item').each(function (index) {
+                assignInstitutionNames($(this), locale, index);
+            });
+            nextInstitution[locale] = institutionsList(locale).find('.rs-metabox-accordion-item').length;
+        }
+
+        locales.forEach(function (locale) {
+            nextSection[locale] = sectionsList(locale).find('.rs-metabox-accordion-item').length;
+            nextInstitution[locale] = institutionsList(locale).find('.rs-metabox-accordion-item').length;
+            const sectionsRoot = document.querySelector('#rs-education-sections-accordion-' + locale);
+            const institutionsRoot = document.querySelector('#rs-education-institutions-accordion-' + locale);
+            if (sectionsRoot && window.RsMetaboxUi) {
+                sectionApis[locale] = window.RsMetaboxUi.initAccordion(sectionsRoot, {
+                    onExpand: function (_$item, ids) { window.RsMetaboxUi.resizeEditors(ids); },
+                    onRemove: function (event, $row) {
+                        event.preventDefault();
+                        if (sectionsList(locale).find('.rs-metabox-accordion-item').length <= 1) return;
+                        $row.remove();
+                        reindexSections(locale);
+                    },
+                    onSortUpdate: function () { reindexSections(locale); }
+                });
+            }
+            if (institutionsRoot && window.RsMetaboxUi) {
+                institutionApis[locale] = window.RsMetaboxUi.initAccordion(institutionsRoot, {
+                    titleInputSelector: '.rs-education-institution-name',
+                    headTitleSelector: '.rs-education-institution-head-title',
+                    defaultTitle: 'Instituição',
+                    onRemove: function (event, $row) {
+                        event.preventDefault();
+                        $row.remove();
+                        reindexInstitutions(locale);
+                    },
+                    onSortUpdate: function () { reindexInstitutions(locale); }
+                });
+            }
+        });
+
+        $('.rs-education-add-section').on('click', function (event) {
+            event.preventDefault();
+            const locale = $(this).data('locale') === 'pt' ? 'pt' : 'en';
+            const index = nextSection[locale];
+            const $row = $('#rs-education-section-template-' + locale + ' .rs-metabox-accordion-item').first().clone();
+            $row.removeAttr('style').removeClass('is-open').attr('data-index', String(index));
+            $row.find('input, textarea').val('');
+            $row.find('.rs-metabox-accordion-head-title').text('Seção');
+            replaceIndexes($row, index);
+            assignSectionNames($row, locale, index);
+            sectionsList(locale).append($row);
+            initEditor('rs_education_section_text_' + locale + '_' + index);
+            if (sectionApis[locale]) sectionApis[locale].openItem($row);
+            nextSection[locale] += 1;
+        });
+
+        $('.rs-education-add-institution').on('click', function (event) {
+            event.preventDefault();
+            const locale = $(this).data('locale') === 'pt' ? 'pt' : 'en';
+            const index = nextInstitution[locale];
+            const $row = $('#rs-education-institution-template-' + locale + ' .rs-metabox-accordion-item').first().clone();
+            $row.removeAttr('style').removeClass('is-open').attr('data-index', String(index));
+            $row.find('input, textarea').val('');
+            $row.find('.rs-media-preview, .rs-education-gallery-grid').empty();
+            $row.find('.rs-metabox-accordion-head-title').text('Instituição');
+            replaceIndexes($row, index);
+            assignInstitutionNames($row, locale, index);
+            institutionsList(locale).append($row);
+            $row.find('.rs-education-gallery-grid').removeClass('ui-sortable').sortable({
+                items: '.rs-education-gallery-item',
+                handle: '.rs-education-gallery-handle, .rs-education-gallery-tile'
+            });
+            if (institutionApis[locale]) institutionApis[locale].openItem($row);
+            nextInstitution[locale] += 1;
+        });
+
+        $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, locale) {
+            if (locale !== 'en' && locale !== 'pt') return;
+            window.setTimeout(function () {
+                $('[data-locale="' + locale + '"] .rs-metabox-accordion-item.is-open').each(function () {
+                    window.RsMetaboxUi.resizeEditors(window.RsMetaboxUi.parseEditorIds($(this)));
+                });
+            }, 0);
+        });
+
+        $('#post').on('submit', collectAll);
+        $(document).on('click', '#publish, #save-post', collectAll);
     });
     </script>
     <?php

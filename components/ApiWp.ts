@@ -310,7 +310,6 @@ export async function GetIntroApi(data: Record<string, string> = {}): Promise<In
         const fullPath = new URL(`${api}/wp-json/wp/v2/intro`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -409,7 +408,7 @@ export function porterFooter(payloadWp: listResponseWp): FooterContent | null {
 }
 
 export async function GetIntroByLocale(locale: WpLocale): Promise<Intro | null> {
-    return GetIntroApi({ slug: wpLangSlug(locale) });
+    return GetIntroApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 export async function GetFooterApi(data: Record<string, string> = {}): Promise<FooterContent | null> {
@@ -420,7 +419,6 @@ export async function GetFooterApi(data: Record<string, string> = {}): Promise<F
         const fullPath = new URL(`${api}/wp-json/wp/v2/footer`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -437,7 +435,7 @@ export async function GetFooterApi(data: Record<string, string> = {}): Promise<F
 }
 
 export async function GetFooterByLocale(locale: WpLocale): Promise<FooterContent | null> {
-    return GetFooterApi({ slug: wpLangSlug(locale) });
+    return GetFooterApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 function isCapabilitySection(value: unknown): value is CapabilitiesContent['sections'][number] {
@@ -479,7 +477,6 @@ export async function GetCapabilitiesApi(data: Record<string, string> = {}): Pro
         const fullPath = new URL(`${api}/wp-json/wp/v2/capabilities`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -496,7 +493,7 @@ export async function GetCapabilitiesApi(data: Record<string, string> = {}): Pro
 }
 
 export async function GetCapabilitiesByLocale(locale: WpLocale): Promise<CapabilitiesContent | null> {
-    return GetCapabilitiesApi({ slug: wpLangSlug(locale) });
+    return GetCapabilitiesApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 function isAboutAccordionSection(value: unknown): value is AboutContent['accordionSections'][number] {
@@ -542,7 +539,6 @@ export async function GetAboutApi(data: Record<string, string> = {}): Promise<Ab
         const fullPath = new URL(`${api}/wp-json/wp/v2/about`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -559,7 +555,7 @@ export async function GetAboutApi(data: Record<string, string> = {}): Promise<Ab
 }
 
 export async function GetAboutByLocale(locale: WpLocale): Promise<AboutContent | null> {
-    return GetAboutApi({ slug: wpLangSlug(locale) });
+    return GetAboutApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 function isEducationAccordionSection(value: unknown): value is EducationContent['accordionSections'][number] {
@@ -613,7 +609,6 @@ export async function GetEducationApi(data: Record<string, string> = {}): Promis
         const fullPath = new URL(`${api}/wp-json/wp/v2/education`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -630,7 +625,7 @@ export async function GetEducationApi(data: Record<string, string> = {}): Promis
 }
 
 export async function GetEducationByLocale(locale: WpLocale): Promise<EducationContent | null> {
-    return GetEducationApi({ slug: wpLangSlug(locale) });
+    return GetEducationApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 function isContactBlock(value: unknown): value is ContactContent['blocks'][number] {
@@ -674,7 +669,6 @@ export async function GetContactApi(data: Record<string, string> = {}): Promise<
         const fullPath = new URL(`${api}/wp-json/wp/v2/contact`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -691,14 +685,14 @@ export async function GetContactApi(data: Record<string, string> = {}): Promise<
 }
 
 export async function GetContactByLocale(locale: WpLocale): Promise<ContactContent | null> {
-    return GetContactApi({ slug: wpLangSlug(locale) });
+    return GetContactApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 export function porterLegal(payloadWp: listResponseWp): LegalContent | null {
     const item = payloadWp[0];
     if (!item?.legal_data || typeof item.legal_data !== 'object') return null;
-    const locale = item.slug === 'pt' ? 'pt' : 'en';
-    return buildLegalContent(item.legal_data as LegalContent, locale);
+    // Conteúdo já vem no locale do ?translate=; defaults ficam em GetLegalByLocale.
+    return item.legal_data as LegalContent;
 }
 
 export async function GetLegalApi(data: Record<string, string> = {}): Promise<LegalContent | null> {
@@ -709,7 +703,6 @@ export async function GetLegalApi(data: Record<string, string> = {}): Promise<Le
         const fullPath = new URL(`${api}/wp-json/wp/v2/legal`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -726,7 +719,7 @@ export async function GetLegalApi(data: Record<string, string> = {}): Promise<Le
 }
 
 export async function GetLegalByLocale(locale: WpLocale): Promise<LegalContent> {
-    const fromWp = await GetLegalApi({ slug: wpLangSlug(locale) });
+    const fromWp = await GetLegalApi(locale === 'pt' ? { translate: 'PT' } : {});
     return buildLegalContent(fromWp, locale === 'pt' ? 'pt' : 'en');
 }
 
@@ -758,7 +751,6 @@ export async function GetProjectsPageApi(data: Record<string, string> = {}): Pro
         const fullPath = new URL(`${api}/wp-json/wp/v2/projects-page`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 
@@ -775,7 +767,7 @@ export async function GetProjectsPageApi(data: Record<string, string> = {}): Pro
 }
 
 export async function GetProjectsPageByLocale(locale: WpLocale): Promise<ProjectsPageContent | null> {
-    return GetProjectsPageApi({ slug: wpLangSlug(locale) });
+    return GetProjectsPageApi(locale === 'pt' ? { translate: 'PT' } : {});
 }
 
 function isSiteUiLabels(value: unknown): value is SiteUiContent['en']['labels'] {
@@ -864,7 +856,6 @@ export async function GetSiteUiApi(data: Record<string, string> = {}): Promise<S
         const fullPath = new URL(`${api}/wp-json/wp/v2/site-ui`);
         fullPath.search = new URLSearchParams({
             per_page: '1',
-            slug: data.slug ?? 'en',
             ...data,
         }).toString();
 

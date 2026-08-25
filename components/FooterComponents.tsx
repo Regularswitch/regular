@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import type { FooterContent, FooterLink, FooterSocialLink } from '../types';
+import type { FooterContent, FooterLink } from '../types';
 import FontVariante from './FontVariante';
 import FooterSocialIcons from './Footer/FooterSocialIcons';
+import { useFooterSocialLinks } from './Footer/FooterSocialProvider';
 import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
 import { useLegalPolicies } from './Legal/LegalPoliciesProvider';
 import { getCookie } from './Translate';
 import { getContactMailto, getNewsletterHref } from '../lib/site/siteLinks';
+import { sanitizeFooterRichHtml } from '../lib/wp/sanitizeRichText';
 
 type FooterLocale = 'en' | 'pt';
 
@@ -41,33 +43,24 @@ function isExternal(href: string) {
 /** Prefer env placeholders for Contato / Newsletter até o cliente confirmar destinos. */
 function resolveFooterLinks(links: FooterLink[]): FooterLink[] {
 	return links.map((item) => {
-		const key = item.title.replace(/<[^>]+>/g, '').trim().toLowerCase();
+		const title = sanitizeFooterRichHtml(item.title);
+		const subtitle = sanitizeFooterRichHtml(item.subtitle);
+		const key = title.replace(/<[^>]+>/g, '').trim().toLowerCase();
 		if (key === 'contact' || key === 'contato') {
-			return { ...item, href: getContactMailto() };
+			return { ...item, title, subtitle, href: getContactMailto() };
 		}
 		if (key === 'newsletter') {
-			return { ...item, href: getNewsletterHref() };
+			return { ...item, title, subtitle, href: getNewsletterHref() };
 		}
-		return item;
+		return { ...item, title, subtitle };
 	});
-}
-
-function resolveSocialLinks(fromWp: FooterContent | null, fallback: FooterContent): FooterSocialLink[] {
-	if (fromWp?.socialLinks) {
-		return fromWp.socialLinks.filter((item) => item.href?.trim());
-	}
-
-	if (fromWp?.social?.href?.trim()) {
-		return [{ network: 'instagram', href: fromWp.social.href.trim(), label: 'Instagram' }];
-	}
-
-	return (fallback.socialLinks ?? []).filter((item) => item.href?.trim());
 }
 
 export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
 	const pathname = usePathname() ?? '';
 	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
 	const { openPolicy, legal: legalFromProvider } = useLegalPolicies();
+	const socialLinks = useFooterSocialLinks();
 
 	useEffect(() => {
 		setLocale(resolveLocale(pathname));
@@ -78,7 +71,6 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	const { brandMark, links: rawLinks } = fromWp ?? fallback;
 	const legal = legalFromProvider;
 	const links = resolveFooterLinks(rawLinks);
-	const socialLinks = resolveSocialLinks(fromWp, fallback);
 
 	return (
 		<footer className="site-footer mt-10 border-t border-white/10 pt-12 md:mt-14 md:pt-16">
@@ -93,13 +85,15 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 								? { target: '_blank', rel: 'noopener noreferrer' }
 								: {})}
 						>
-							<p
+							<div
 								className="font-hk text-base font-bold text-(--fg) md:text-lg"
 								dangerouslySetInnerHTML={{ __html: item.title }}
+								suppressHydrationWarning
 							/>
-							<p
+							<div
 								className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80"
 								dangerouslySetInnerHTML={{ __html: item.subtitle }}
+								suppressHydrationWarning
 							/>
 						</Link>
 					))}

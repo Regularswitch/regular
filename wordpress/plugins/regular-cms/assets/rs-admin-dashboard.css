@@ -1,0 +1,143 @@
+/* Painel Regular CMS */
+
+.rs-dash {
+	margin: -6px 0 0;
+}
+
+.rs-dash-lead {
+	margin: 0 0 14px;
+	color: #50575e;
+	line-height: 1.5;
+}
+
+.rs-dash-stats {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+	margin: 0 0 16px;
+}
+
+.rs-dash-stat {
+	padding: 12px 10px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f6f7f7;
+	text-align: center;
+}
+
+.rs-dash-stat strong {
+	display: block;
+	font-size: 22px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.rs-dash-stat span {
+	display: block;
+	margin-top: 4px;
+	color: #646970;
+	font-size: 12px;
+}
+
+.rs-dash-stat.is-warn {
+	border-color: #dba617;
+	background: #fcf9e8;
+}
+
+.rs-dash-stat.is-warn strong {
+	color: #996800;
+}
+
+.rs-dash-meta {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.rs-dash-meta li {
+	margin: 0 0 6px;
+	color: #50575e;
+	line-height: 1.45;
+}
+
+.rs-dash-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+	gap: 10px;
+}
+
+.rs-dash-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	color: #1d2327;
+	text-decoration: none;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.rs-dash-tile:hover,
+.rs-dash-tile:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	color: #135e96;
+}
+
+.rs-dash-tile .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	color: #2271b1;
+}
+
+.rs-dash-tile-label {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.rs-dash-hint {
+	margin: 12px 0 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+.rs-dash-ok {
+	margin: 0;
+	color: #1e7e34;
+}
+
+.rs-dash-warn {
+	margin: 0 0 10px;
+	color: #996800;
+}
+
+.rs-dash-list {
+	margin: 0;
+	padding-left: 18px;
+	max-height: 280px;
+	overflow: auto;
+}
+
+.rs-dash-list li {
+	margin: 0 0 4px;
+}
+
+/* Fundo ilustrado — widgets legíveis */
+body.index-php #dashboard-widgets-wrap {
+	position: relative;
+	z-index: 1;
+}
+
+body.index-php #dashboard-widgets .postbox {
+	border-color: rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+body.index-php #wpfooter {
+	background: transparent;
+}

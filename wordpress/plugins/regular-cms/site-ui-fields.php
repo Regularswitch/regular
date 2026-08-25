@@ -1,14 +1,14 @@
 <?php
 /**
- * Campos editáveis do CPT site-ui (labels de UI).
- * Cada post (slug en / pt) edita somente o seu idioma.
- * O menu do header é editado em Aparência → Menus (header-menus.php).
+ * CPT site-ui — post único bilíngue (EN + PT).
  */
 
 if (defined('RS_SITE_UI_FIELDS_LOADED')) {
     return;
 }
 define('RS_SITE_UI_FIELDS_LOADED', true);
+
+const RS_SITE_UI_I18N_KEY = 'rs_site_ui_i18n';
 
 const RS_SITE_UI_LABEL_KEYS = [
     'rs_site_ui_selected_projects'  => ['selectedProjects', 'Selected Projects', 'Projetos Selecionados'],
@@ -33,27 +33,64 @@ function rs_site_ui_layout_keys(): array {
     ];
 }
 
-function rs_site_ui_get_layout(): array {
-    $en_id = rs_site_ui_get_post_id_by_locale('en');
-    $columns = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_HOME_COLUMNS_KEY, true) : 2;
-    $initial = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, true) : 5;
-    $latest = $en_id > 0 ? (int) get_post_meta($en_id, RS_SITE_UI_LATEST_COUNT_KEY, true) : 6;
+function rs_site_ui_default_shared(): array {
+    return [
+        'homeColumns'          => 2,
+        'projectsInitialCount' => 5,
+        'latestCount'          => 6,
+    ];
+}
 
-    if (!in_array($columns, [1, 2, 3], true)) {
-        $columns = 2;
-    }
+function rs_site_ui_default_locale(): array {
+    return ['labels' => array_fill_keys(array_column(RS_SITE_UI_LABEL_KEYS, 0), '')];
+}
+
+function rs_site_ui_i18n_default(): array {
+    return [
+        'v'       => 1,
+        'shared'  => rs_site_ui_default_shared(),
+        'locales' => [
+            'en' => rs_site_ui_default_locale(),
+            'pt' => rs_site_ui_default_locale(),
+        ],
+    ];
+}
+
+function rs_site_ui_normalize_layout(array $raw): array {
+    $columns = (int) ($raw['homeColumns'] ?? 2);
+    $initial = (int) ($raw['projectsInitialCount'] ?? 5);
+    $latest = (int) ($raw['latestCount'] ?? 6);
     if ($initial < 1) {
         $initial = 5;
     }
-    if ($latest < 3 || $latest > 12) {
-        $latest = 6;
-    }
 
     return [
-        'homeColumns'          => $columns,
-        'projectsInitialCount' => $initial,
-        'latestCount'          => $latest,
+        'homeColumns'          => in_array($columns, [1, 2, 3], true) ? $columns : 2,
+        'projectsInitialCount' => min(100, $initial),
+        'latestCount'          => in_array($latest, [4, 6, 8, 12], true) ? $latest : 6,
     ];
+}
+
+function rs_site_ui_i18n_normalize(array $raw): array {
+    $data = rs_site_ui_i18n_default();
+    $shared = is_array($raw['shared'] ?? null) ? $raw['shared'] : [];
+    $en_raw = is_array($raw['locales']['en'] ?? null) ? $raw['locales']['en'] : [];
+    $data['shared'] = rs_site_ui_normalize_layout([
+        'homeColumns' => $shared['homeColumns'] ?? $en_raw['homeColumns'] ?? 2,
+        'projectsInitialCount' => $shared['projectsInitialCount'] ?? $en_raw['projectsInitialCount'] ?? 5,
+        'latestCount' => $shared['latestCount'] ?? $en_raw['latestCount'] ?? 6,
+    ]);
+
+    foreach (['en', 'pt'] as $locale) {
+        $loc = is_array($raw['locales'][$locale] ?? null) ? $raw['locales'][$locale] : [];
+        $labels = is_array($loc['labels'] ?? null) ? $loc['labels'] : $loc;
+        foreach (RS_SITE_UI_LABEL_KEYS as $config) {
+            $field = $config[0];
+            $data['locales'][$locale]['labels'][$field] = trim((string) ($labels[$field] ?? ''));
+        }
+    }
+
+    return $data;
 }
 
 function rs_site_ui_locale_suffix(string $lang): string {
@@ -62,126 +99,73 @@ function rs_site_ui_locale_suffix(string $lang): string {
 
 function rs_site_ui_all_meta_keys(): array {
     $keys = [];
-
-    foreach (array_keys(RS_SITE_UI_LABEL_KEYS) as $base_key) {
-        $config = RS_SITE_UI_LABEL_KEYS[$base_key];
+    foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
         $keys["{$base_key}_en"] = $config[1] . ' (EN)';
         $keys["{$base_key}_pt"] = $config[2] . ' (PT)';
     }
-
     return $keys;
 }
 
-/** Meta keys editáveis no post do idioma informado. */
-function rs_site_ui_editable_keys_for_locale(string $lang): array {
-    $suffix = rs_site_ui_locale_suffix($lang);
-    $keys = [];
-
-    foreach (array_keys(RS_SITE_UI_LABEL_KEYS) as $base_key) {
-        $keys[] = "{$base_key}{$suffix}";
-    }
-
-    return $keys;
+function rs_site_ui_get_post_id_by_locale(string $lang = 'en'): int {
+    return function_exists('rs_section_i18n_canonical_id')
+        ? rs_section_i18n_canonical_id('site-ui')
+        : 0;
 }
 
-function rs_site_ui_get_post_id_by_locale(string $lang): int {
-    $posts = get_posts([
-        'post_type'      => 'site-ui',
-        'post_status'    => 'publish',
-        'name'           => $lang,
-        'posts_per_page' => 1,
-        'fields'         => 'ids',
-    ]);
-
-    if (!empty($posts[0])) {
-        return (int) $posts[0];
-    }
-
-    return 0;
-}
-
-function rs_site_ui_resolve_locale(int $post_id): string {
-    $post = get_post($post_id);
-    if ($post && $post->post_type === 'site-ui') {
-        if (function_exists('rs_normalize_locale')) {
-            $from_slug = rs_normalize_locale($post->post_name);
-            if ($from_slug) {
-                return $from_slug;
-            }
-        } elseif (in_array($post->post_name, ['en', 'pt'], true)) {
-            return $post->post_name;
-        }
-    }
-
-    return function_exists('rs_detect_post_locale')
-        ? rs_detect_post_locale($post_id)
-        : 'en';
-}
-
-function rs_site_ui_get_locale_meta(int $post_id, string $locale): array {
+function rs_site_ui_locale_from_legacy_post(int $post_id, string $locale): array {
     $suffix = rs_site_ui_locale_suffix($locale);
-    $meta = [];
-
-    foreach (array_keys(RS_SITE_UI_LABEL_KEYS) as $base_key) {
-        $key = "{$base_key}{$suffix}";
-        $meta[$key] = (string) get_post_meta($post_id, $key, true);
-    }
-
-    return $meta;
-}
-
-function rs_site_ui_get_meta(int $post_id): array {
-    $data = [];
-    foreach (array_keys(rs_site_ui_all_meta_keys()) as $key) {
-        $data[$key] = (string) get_post_meta($post_id, $key, true);
-    }
-
-    return $data;
-}
-
-function rs_site_ui_merged_meta(): array {
-    $en_id = rs_site_ui_get_post_id_by_locale('en');
-    $pt_id = rs_site_ui_get_post_id_by_locale('pt');
-
-    $meta = array_fill_keys(array_keys(rs_site_ui_all_meta_keys()), '');
-
-    if ($en_id > 0) {
-        $meta = array_merge($meta, rs_site_ui_get_meta($en_id));
-    }
-
-    if ($pt_id > 0) {
-        foreach (rs_site_ui_get_meta($pt_id) as $key => $value) {
-            if ($value === '') {
-                continue;
-            }
-            if (str_ends_with($key, '_pt')) {
-                $meta[$key] = $value;
-            }
-        }
-    }
-
-    return $meta;
-}
-
-function rs_site_ui_build_labels(array $meta, string $lang): array {
-    $suffix = rs_site_ui_locale_suffix($lang);
     $labels = [];
-
     foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
-        $field = $config[0];
-        $labels[$field] = trim($meta["{$base_key}{$suffix}"] ?? '');
+        $labels[$config[0]] = $post_id > 0
+            ? trim((string) get_post_meta($post_id, "{$base_key}{$suffix}", true))
+            : '';
     }
 
-    return $labels;
+    $locale_data = ['labels' => $labels];
+    if ($locale === 'en' && $post_id > 0) {
+        $locale_data += [
+            'homeColumns' => (int) get_post_meta($post_id, RS_SITE_UI_HOME_COLUMNS_KEY, true),
+            'projectsInitialCount' => (int) get_post_meta($post_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, true),
+            'latestCount' => (int) get_post_meta($post_id, RS_SITE_UI_LATEST_COUNT_KEY, true),
+        ];
+    }
+
+    return $locale_data;
 }
 
-function rs_site_ui_meta_to_payload(?array $meta = null): array {
-    $meta = $meta ?? rs_site_ui_merged_meta();
+function rs_site_ui_i18n_get(int $post_id): array {
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id($post_id)
+        : $post_id;
+    $raw = function_exists('rs_section_i18n_get_raw')
+        ? rs_section_i18n_get_raw($post_id, RS_SITE_UI_I18N_KEY)
+        : get_post_meta($post_id, RS_SITE_UI_I18N_KEY, true);
+    if (is_array($raw)) {
+        return rs_site_ui_i18n_normalize($raw);
+    }
 
+    $data = rs_site_ui_i18n_default();
+    $data['locales']['en'] = rs_site_ui_locale_from_legacy_post($post_id, 'en');
+    $data['shared'] = rs_site_ui_normalize_layout($data['locales']['en']);
+    $pt_id = (int) get_post_meta($post_id, 'PT', true);
+    if ($pt_id > 0) {
+        $data['locales']['pt'] = rs_site_ui_locale_from_legacy_post($pt_id, 'pt');
+    }
+    return rs_site_ui_i18n_normalize($data);
+}
+
+function rs_site_ui_get_layout(?int $post_id = null): array {
+    $post_id = $post_id ?? rs_site_ui_get_post_id_by_locale('en');
+    return rs_site_ui_i18n_get($post_id)['shared'];
+}
+
+function rs_site_ui_meta_to_payload(?array $data = null, ?int $post_id = null): array {
+    $post_id = $post_id ?? rs_site_ui_get_post_id_by_locale('en');
+    $data = $data ?? rs_site_ui_i18n_get($post_id);
     return [
-        'en' => ['labels' => rs_site_ui_build_labels($meta, 'en')],
-        'pt' => ['labels' => rs_site_ui_build_labels($meta, 'pt')],
-        'layout' => rs_site_ui_get_layout(),
+        'en' => ['labels' => $data['locales']['en']['labels']],
+        'pt' => ['labels' => $data['locales']['pt']['labels']],
+        'layout' => $data['shared'],
     ];
 }
 
@@ -194,7 +178,54 @@ function rs_site_ui_label_for_locale(string $base_key, string $lang): string {
     return $lang === 'pt' ? $config[2] : $config[1];
 }
 
+function rs_site_ui_sync_legacy_meta(int $post_id, array $data): void {
+    foreach (['en', 'pt'] as $locale) {
+        $suffix = rs_site_ui_locale_suffix($locale);
+        $labels = is_array($data['locales'][$locale]['labels'] ?? null)
+            ? $data['locales'][$locale]['labels']
+            : [];
+        foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
+            update_post_meta($post_id, "{$base_key}{$suffix}", (string) ($labels[$config[0]] ?? ''));
+        }
+    }
+
+    $layout = rs_site_ui_normalize_layout((array) ($data['shared'] ?? []));
+    update_post_meta($post_id, RS_SITE_UI_HOME_COLUMNS_KEY, (string) $layout['homeColumns']);
+    update_post_meta($post_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, (string) $layout['projectsInitialCount']);
+    update_post_meta($post_id, RS_SITE_UI_LATEST_COUNT_KEY, (string) $layout['latestCount']);
+}
+
+function rs_site_ui_migrate_to_i18n_once(): void {
+    if (!function_exists('rs_section_i18n_migrate_twins')) {
+        return;
+    }
+
+    $id = rs_section_i18n_migrate_twins(
+        'site-ui',
+        RS_SITE_UI_I18N_KEY,
+        'rs_site_ui_i18n_migrated_v1',
+        'Site UI',
+        static function (int $post_id, string $locale): array {
+            return rs_site_ui_locale_from_legacy_post($post_id, $locale);
+        },
+        'rs_site_ui_i18n_normalize'
+    );
+
+    if ($id > 0) {
+        rs_site_ui_sync_legacy_meta($id, rs_site_ui_i18n_get($id));
+    }
+}
+
 add_action('init', function () {
+    register_post_meta('site-ui', RS_SITE_UI_I18N_KEY, [
+        'single'        => true,
+        'type'          => 'array',
+        'show_in_rest'  => false,
+        'auth_callback' => static function (): bool {
+            return current_user_can('edit_posts');
+        },
+    ]);
+
     foreach (array_keys(rs_site_ui_all_meta_keys()) as $key) {
         register_post_meta('site-ui', $key, [
             'single'        => true,
@@ -216,12 +247,17 @@ add_action('init', function () {
             },
         ]);
     }
-});
+}, 20);
+
+add_action('init', 'rs_site_ui_migrate_to_i18n_once', 30);
 
 add_action('rest_api_init', function () {
     register_rest_field('site-ui', 'site_ui_data', [
-        'get_callback' => function () {
-            return rs_site_ui_meta_to_payload();
+        'get_callback' => function (array $post) {
+            $post_id = function_exists('rs_section_i18n_resolve_id')
+                ? rs_section_i18n_resolve_id((int) $post['id'])
+                : (int) $post['id'];
+            return rs_site_ui_meta_to_payload(null, $post_id);
         },
         'schema' => [
             'description' => 'Labels de UI (EN/PT combinados)',
@@ -247,59 +283,61 @@ add_action('add_meta_boxes_site-ui', function () {
 function rs_site_ui_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_site_ui_save', 'rs_site_ui_nonce');
 
-    $locale = rs_site_ui_resolve_locale($post->ID);
-    $meta = rs_site_ui_get_locale_meta($post->ID, $locale);
-    $lang_label = $locale === 'pt' ? 'Português' : 'English';
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id((int) $post->ID)
+        : (int) $post->ID;
+    $data = rs_site_ui_i18n_get($post_id);
+    $layout = $data['shared'];
     $menus_url = admin_url('nav-menus.php');
 
-    echo '<p style="margin-top:0;color:#646970;">';
-    echo 'Este post edita somente os textos em <strong>' . esc_html($lang_label) . '</strong>. ';
-    echo 'Campos vazios usam o fallback do código Next.js.';
-    echo '</p>';
+    echo '<p style="margin-top:0;color:#646970;">Um único post. Layout compartilhado e labels em <strong>English</strong> e <strong>Português</strong>. Campos vazios usam o fallback do código Next.js. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
     echo '<p style="margin:0 0 16px;color:#646970;">';
     echo 'O menu do header é editado em <a href="' . esc_url($menus_url) . '">Aparência → Menus</a>.';
     echo '</p>';
 
-    echo '<fieldset style="margin:0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Labels de seção (' . esc_html(strtoupper($locale)) . ')</strong></legend>';
-
-    foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
-        $key = "{$base_key}_" . rs_site_ui_locale_suffix($locale);
-        $value = $meta[$key] ?? '';
-        $label = rs_site_ui_label_for_locale($base_key, $locale);
-
-        echo '<p style="margin:0 0 12px;">';
-        echo '<label for="' . esc_attr($key) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
-        echo '<input type="text" style="width:100%;" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '" />';
-        echo '</p>';
+    echo '<fieldset class="rs-metabox-fieldset">';
+    echo '<legend><strong>Geral — layout compartilhado</strong></legend>';
+    echo '<p style="margin:0 0 12px;"><label for="rs_site_ui_home_columns_shared" style="display:block;font-weight:500;margin-bottom:4px;">Colunas na home (Selected Projects)</label>';
+    echo '<select id="rs_site_ui_home_columns_shared" name="rs_site_ui_shared[homeColumns]">';
+    foreach ([1, 2, 3] as $cols) {
+        echo '<option value="' . $cols . '"' . selected($layout['homeColumns'], $cols, false) . '>' . $cols . '</option>';
     }
-
-    echo '</fieldset>';
-
-    if ($locale === 'en') {
-        $layout = rs_site_ui_get_layout();
-        echo '<fieldset style="margin:16px 0 0;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-        echo '<legend style="font-weight:600;padding:0 6px;"><strong>Layout (global)</strong></legend>';
-        echo '<p style="margin:0 0 10px;color:#646970;font-size:12px;">Valores compartilhados EN/PT. Editáveis só no post <code>en</code>.</p>';
-
-        echo '<p style="margin:0 0 12px;"><label for="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Colunas na home (Selected Projects)</label>';
-        echo '<select id="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '" name="' . esc_attr(RS_SITE_UI_HOME_COLUMNS_KEY) . '">';
-        foreach ([1, 2, 3] as $cols) {
-            echo '<option value="' . $cols . '"' . selected($layout['homeColumns'], $cols, false) . '>' . $cols . '</option>';
-        }
-        echo '</select></p>';
-
-        echo '<p style="margin:0 0 12px;"><label for="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
-        echo '<input type="number" min="1" max="100" style="width:100px;" id="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" name="' . esc_attr(RS_SITE_UI_PROJECTS_INITIAL_KEY) . '" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" /></p>';
-
-        echo '<p style="margin:0;"><label for="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" style="display:block;font-weight:500;margin-bottom:4px;">Itens no carrossel “The Latest”</label>';
-        echo '<select id="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '" name="' . esc_attr(RS_SITE_UI_LATEST_COUNT_KEY) . '">';
-        foreach ([4, 6, 8, 12] as $n) {
-            echo '<option value="' . $n . '"' . selected($layout['latestCount'], $n, false) . '>' . $n . '</option>';
-        }
-        echo '</select></p>';
-        echo '</fieldset>';
+    echo '</select></p>';
+    echo '<p style="margin:0 0 12px;"><label for="rs_site_ui_projects_initial_shared" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
+    echo '<input type="number" min="1" max="100" style="width:100px;" id="rs_site_ui_projects_initial_shared" name="rs_site_ui_shared[projectsInitialCount]" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" /></p>';
+    echo '<p style="margin:0;"><label for="rs_site_ui_latest_count_shared" style="display:block;font-weight:500;margin-bottom:4px;">Itens no carrossel “The Latest”</label>';
+    echo '<select id="rs_site_ui_latest_count_shared" name="rs_site_ui_shared[latestCount]">';
+    foreach ([4, 6, 8, 12] as $n) {
+        echo '<option value="' . $n . '"' . selected($layout['latestCount'], $n, false) . '>' . $n . '</option>';
     }
+    echo '</select></p></fieldset>';
+
+    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
+    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
+    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
+    foreach (['en', 'pt'] as $locale) {
+        $active = $locale === 'en';
+        echo '<div class="rs-metabox-tabpanel' . ($active ? ' is-active' : '') . '" data-tab="' . esc_attr($locale) . '" role="tabpanel"' . ($active ? '' : ' hidden') . '>';
+        echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Labels de seção</strong></legend>';
+        echo '<div data-rs-accordion class="rs-site-ui-accordion">';
+        rs_metabox_accordion_item_open('Labels', true);
+        foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
+            $field = $config[0];
+            $label = rs_site_ui_label_for_locale($base_key, $locale);
+            $id = 'rs_site_ui_' . $field . '_' . $locale;
+            echo '<p class="rs-admin-text-field" style="margin:0 0 12px;"><label for="' . esc_attr($id) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
+            rs_render_rich_text_field(
+                $id,
+                'rs_site_ui_i18n_input[' . $locale . '][labels][' . $field . ']',
+                (string) ($data['locales'][$locale]['labels'][$field] ?? ''),
+                'compact'
+            );
+            echo '</p>';
+        }
+        rs_metabox_accordion_item_close();
+        echo '</div></fieldset></div>';
+    }
+    echo '</div>';
 }
 
 add_action('save_post_site-ui', function (int $post_id) {
@@ -319,90 +357,38 @@ add_action('save_post_site-ui', function (int $post_id) {
         return;
     }
 
-    $locale = rs_site_ui_resolve_locale($post_id);
-
-    foreach (rs_site_ui_editable_keys_for_locale($locale) as $key) {
-        if (!array_key_exists($key, $_POST)) {
-            continue;
-        }
-
-        $value = sanitize_text_field(wp_unslash($_POST[$key]));
-        update_post_meta($post_id, $key, $value);
-    }
-
-    if ($locale === 'en') {
-        if (isset($_POST[RS_SITE_UI_HOME_COLUMNS_KEY])) {
-            $cols = (int) $_POST[RS_SITE_UI_HOME_COLUMNS_KEY];
-            update_post_meta($post_id, RS_SITE_UI_HOME_COLUMNS_KEY, in_array($cols, [1, 2, 3], true) ? (string) $cols : '2');
-        }
-        if (isset($_POST[RS_SITE_UI_PROJECTS_INITIAL_KEY])) {
-            $initial = max(1, min(100, (int) $_POST[RS_SITE_UI_PROJECTS_INITIAL_KEY]));
-            update_post_meta($post_id, RS_SITE_UI_PROJECTS_INITIAL_KEY, (string) $initial);
-        }
-        if (isset($_POST[RS_SITE_UI_LATEST_COUNT_KEY])) {
-            $latest = (int) $_POST[RS_SITE_UI_LATEST_COUNT_KEY];
-            update_post_meta(
-                $post_id,
-                RS_SITE_UI_LATEST_COUNT_KEY,
-                in_array($latest, [4, 6, 8, 12], true) ? (string) $latest : '6'
-            );
+    $post_id = function_exists('rs_section_i18n_resolve_id')
+        ? rs_section_i18n_resolve_id($post_id)
+        : $post_id;
+    $data = rs_site_ui_i18n_get($post_id);
+    $shared = isset($_POST['rs_site_ui_shared']) && is_array($_POST['rs_site_ui_shared'])
+        ? wp_unslash($_POST['rs_site_ui_shared'])
+        : [];
+    $data['shared'] = rs_site_ui_normalize_layout($shared);
+    $raw = isset($_POST['rs_site_ui_i18n_input']) && is_array($_POST['rs_site_ui_i18n_input'])
+        ? wp_unslash($_POST['rs_site_ui_i18n_input'])
+        : [];
+    foreach (['en', 'pt'] as $locale) {
+        $labels = is_array($raw[$locale]['labels'] ?? null) ? $raw[$locale]['labels'] : [];
+        foreach (RS_SITE_UI_LABEL_KEYS as $config) {
+            $field = $config[0];
+            $data['locales'][$locale]['labels'][$field] = wp_kses_post((string) ($labels[$field] ?? ''));
         }
     }
+
+    $data = rs_site_ui_i18n_normalize($data);
+    if (function_exists('rs_section_i18n_save')) {
+        rs_section_i18n_save($post_id, RS_SITE_UI_I18N_KEY, $data);
+    } else {
+        update_post_meta($post_id, RS_SITE_UI_I18N_KEY, $data);
+    }
+    rs_site_ui_sync_legacy_meta($post_id, $data);
 });
 
 function rs_copy_site_ui_fields(int $from_id, int $to_id): void {
-    $from_locale = function_exists('rs_detect_post_locale') ? rs_detect_post_locale($from_id) : 'en';
-    $to_locale = function_exists('rs_detect_post_locale') ? rs_detect_post_locale($to_id) : 'pt';
-
-    foreach (rs_site_ui_editable_keys_for_locale($from_locale) as $key) {
-        $target_key = str_replace(rs_site_ui_locale_suffix($from_locale), rs_site_ui_locale_suffix($to_locale), $key);
-        if (!in_array($target_key, rs_site_ui_editable_keys_for_locale($to_locale), true)) {
-            continue;
-        }
-
-        update_post_meta($to_id, $target_key, get_post_meta($from_id, $key, true));
-    }
+    // Legado no-op: post único.
 }
 
 function rs_site_ui_ensure_locale_posts(): void {
-    if (get_option('rs_site_ui_posts_ensured_v1')) {
-        return;
-    }
-
-    $en_id = rs_site_ui_get_post_id_by_locale('en');
-    $pt_id = rs_site_ui_get_post_id_by_locale('pt');
-
-    if ($en_id > 0 && $pt_id === 0) {
-        $en_post = get_post($en_id);
-        if ($en_post) {
-            $pt_id = (int) wp_insert_post([
-                'post_title'  => $en_post->post_title,
-                'post_status' => 'publish',
-                'post_type'   => 'site-ui',
-                'post_name'   => 'pt',
-                'post_author' => (int) $en_post->post_author ?: 1,
-            ], true);
-
-            if (!is_wp_error($pt_id) && $pt_id > 0) {
-                foreach (rs_site_ui_editable_keys_for_locale('pt') as $key) {
-                    $value = get_post_meta($en_id, $key, true);
-                    if ($value !== '') {
-                        update_post_meta($pt_id, $key, $value);
-                    }
-                }
-
-                if (function_exists('rs_translate_link_pair')) {
-                    rs_translate_link_pair($en_id, 'PT', $pt_id);
-                }
-
-                if (function_exists('rs_apply_locale_slug')) {
-                    rs_apply_locale_slug($pt_id);
-                }
-            }
-        }
-    }
-
-    update_option('rs_site_ui_posts_ensured_v1', 1);
+    // Legado no-op: a migração mantém um único post.
 }
-
-add_action('init', 'rs_site_ui_ensure_locale_posts', 25);

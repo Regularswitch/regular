@@ -162,6 +162,46 @@
 	background: #f0f6fc;
 }
 
+/* Editores compactos (footer, contact, labels, títulos) */
+.rs-admin-text-field .wp-editor-wrap,
+.rs-metabox-accordion-panel .wp-editor-wrap {
+	margin-bottom: 4px;
+}
+
+.rs-admin-text-field .wp-editor-container,
+.rs-metabox-accordion-panel .wp-editor-container {
+	border-radius: 4px;
+}
+
+.rs-admin-text-field .mce-tinymce,
+.rs-metabox-accordion-panel .mce-tinymce {
+	box-shadow: none !important;
+}
+
+.rs-admin-text-field iframe,
+.rs-metabox-accordion-panel .rs-admin-text-field iframe {
+	min-height: 70px !important;
+}
+
+.rs-footer-accordion,
+.rs-contact-accordion,
+.rs-legal-accordion,
+.rs-site-ui-accordion {
+	margin-top: 8px;
+}
+
+.rs-footer-accordion .rs-metabox-accordion-item,
+.rs-contact-accordion .rs-metabox-accordion-item,
+.rs-legal-accordion .rs-metabox-accordion-item,
+.rs-site-ui-accordion .rs-metabox-accordion-item {
+	margin-bottom: 8px;
+}
+
+.rs-metabox-accordion-panel {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
 .rs-media-thumb {
 	position: relative;
 	aspect-ratio: 1;

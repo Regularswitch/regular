@@ -1,6 +1,6 @@
 import type { FooterContent } from '../../types';
 import { ABOUT_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
-import { getContactMailto, getNewsletterHref, SOCIAL_LINKS } from '../../lib/site/siteLinks';
+import { getContactMailto, getNewsletterHref } from '../../lib/site/siteLinks';
 
 const YEAR = new Date().getFullYear();
 
@@ -18,10 +18,7 @@ export const DEFAULT_FOOTER_EN: FooterContent = {
 		cookies: 'Cookies Policy',
 		cookiesHref: '/cookies-policy',
 	},
-	socialLinks: [
-		{ network: 'instagram', href: SOCIAL_LINKS.instagram, label: 'Instagram' },
-		{ network: 'linkedin', href: SOCIAL_LINKS.linkedin, label: 'LinkedIn' },
-	],
+	socialLinks: [],
 };
 
 export const DEFAULT_FOOTER_PT: FooterContent = {
@@ -38,8 +35,5 @@ export const DEFAULT_FOOTER_PT: FooterContent = {
 		cookies: 'Política de Cookies',
 		cookiesHref: '/cookies-policy',
 	},
-	socialLinks: [
-		{ network: 'instagram', href: SOCIAL_LINKS.instagram, label: 'Instagram' },
-		{ network: 'linkedin', href: SOCIAL_LINKS.linkedin, label: 'LinkedIn' },
-	],
+	socialLinks: [],
 };

@@ -43,7 +43,6 @@ export default async function PtHomePage() {
 				per_page: '100',
 				orderby: 'menu_order',
 				order: 'asc',
-				translate: 'PT',
 			}),
 			GetIntroByLocale('pt'),
 			GetSiteUiApi(),

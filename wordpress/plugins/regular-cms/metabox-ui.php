@@ -14,7 +14,18 @@ define('RS_METABOX_UI_LOADED', true);
  * @return array<int, string>
  */
 function rs_metabox_ui_post_types(): array {
-    return ['project', 'capabilities', 'education', 'contact', 'about'];
+    return [
+        'project',
+        'capabilities',
+        'education',
+        'contact',
+        'about',
+        'intro',
+        'footer',
+        'projects-page',
+        'site-ui',
+        'legal',
+    ];
 }
 
 function rs_metabox_ui_asset_version(): string {

@@ -164,6 +164,25 @@ function rs_apply_locale_slug(int $post_id): void {
         return;
     }
 
+    // Seções bilíngues em post único: slug fixo "main".
+    if (function_exists('rs_section_i18n_is_migrated_type') && rs_section_i18n_is_migrated_type($post->post_type)) {
+        if ($post->post_name === 'main') {
+            return;
+        }
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->posts,
+            ['post_name' => 'main'],
+            ['ID' => $post_id],
+            ['%s'],
+            ['%d']
+        );
+        clean_post_cache($post_id);
+        delete_post_meta($post_id, 'rs_locale');
+
+        return;
+    }
+
     $locale = rs_detect_post_locale($post_id);
     update_post_meta($post_id, 'rs_locale', $locale);
 

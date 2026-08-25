@@ -120,7 +120,11 @@ jQuery(function ($) {
 
         frame.on('select', function () {
             const attachment = frame.state().get('selection').first().toJSON();
-            $('#' + target).val(attachment.id);
+            const el = document.getElementById(String(target));
+            if (el) {
+                el.value = String(attachment.id);
+                el.setAttribute('value', String(attachment.id));
+            }
             setPreview(target, attachment);
         });
 
@@ -130,7 +134,11 @@ jQuery(function ($) {
     $(document).on('click', '.rs-media-clear, .rs-project-clear-media', function (event) {
         event.preventDefault();
         const target = $(this).data('target');
-        $('#' + target).val('');
+        const el = document.getElementById(String(target));
+        if (el) {
+            el.value = '';
+            el.setAttribute('value', '');
+        }
         setPreview(target, null);
     });
 });

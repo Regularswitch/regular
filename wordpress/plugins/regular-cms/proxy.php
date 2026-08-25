@@ -1,7 +1,15 @@
 <?php
 
 function rs_translate_same_type_cpts(): array {
-    return ['footer', 'intro', 'brand', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'];
+    // Marcas = logo + título, sem gêmeos EN/PT. Seções migradas = post único.
+    $types = ['footer', 'intro', 'capabilities', 'about', 'education', 'contact', 'legal', 'projects-page', 'site-ui'];
+    if (!function_exists('rs_section_i18n_is_migrated_type')) {
+        return [];
+    }
+
+    return array_values(array_filter($types, static function (string $type): bool {
+        return !rs_section_i18n_is_migrated_type($type);
+    }));
 }
 
 function rs_translate_target_post_type(WP_Post $source): string {

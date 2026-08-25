@@ -46,3 +46,26 @@ export function sanitizeAboutBody(html: string): string {
 		.replace(/<div[^>]*class="[^"]*px-7[^"]*"[^>]*>[\s\S]*$/gi, '')
 		.trim();
 }
+
+/**
+ * Rich text do footer (títulos/subtítulos): remove lixo de extensões (Google Translate)
+ * e normaliza wrappers que quebram hidratação (<p> dentro de <p>).
+ */
+export function sanitizeFooterRichHtml(html: string): string {
+	let out = (html || '').replace(/\r\n/g, '\n').trim();
+	if (!out) return '';
+
+	// Chrome Google Translate injeta #gtx-trans no DOM — às vezes grava no WP.
+	out = out.replace(/<div[^>]*class=["'][^"']*gtx-trans-icon[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '');
+	out = out.replace(/<div[^>]*\bid=["']gtx-trans["'][^>]*>\s*<\/div>/gi, '');
+	out = out.replace(/<div[^>]*\bid=["']gtx-trans["'][^>]*>[\s\S]*?<\/div>/gi, '');
+	out = out.replace(/<\/?font[^>]*>/gi, '');
+
+	// Desembrulha <p>…</p> único para evitar <p><p>…</p></p> no front.
+	const singleP = out.match(/^<p(?:\s[^>]*)?>([\s\S]*)<\/p>\s*$/i);
+	if (singleP) {
+		out = singleP[1].trim();
+	}
+
+	return out.replace(/\u00A0|&nbsp;/gi, ' ').trim();
+}

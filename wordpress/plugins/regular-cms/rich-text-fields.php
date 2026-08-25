@@ -18,6 +18,7 @@ const RS_RICH_TEXT_CPT_TYPES = [
     'legal',
     'projects-page',
     'project',
+    'site-ui',
 ];
 
 /**
@@ -30,26 +31,46 @@ function rs_rich_text_editor_settings(string $profile = 'inline'): array {
         'textarea_rows' => 5,
     ];
 
+    if ($profile === 'compact') {
+        return array_merge($base, [
+            'textarea_rows' => 2,
+            'teeny'         => true,
+            'quicktags'     => ['buttons' => 'strong,em,link,close'],
+            'tinymce'       => [
+                'toolbar1'          => 'bold,italic,link,unlink,undo,redo',
+                'toolbar2'          => '',
+                'forced_root_block' => false,
+                'force_br_newlines' => true,
+                'force_p_newlines'  => false,
+                'height'            => 90,
+            ],
+        ]);
+    }
+
     if ($profile === 'paragraph') {
         return array_merge($base, [
-            'teeny'     => true,
-            'quicktags' => true,
-            'tinymce'   => [
+            'textarea_rows' => 4,
+            'teeny'         => true,
+            'quicktags'     => true,
+            'tinymce'       => [
                 'toolbar1' => 'bold,italic,link,unlink,bullist,undo,redo',
                 'toolbar2' => '',
+                'height'   => 160,
             ],
         ]);
     }
 
     return array_merge($base, [
-        'teeny'     => false,
-        'quicktags' => ['buttons' => 'strong,em,link,close'],
-        'tinymce'   => [
+        'textarea_rows' => 3,
+        'teeny'         => false,
+        'quicktags'     => ['buttons' => 'strong,em,link,close'],
+        'tinymce'       => [
             'toolbar1'          => 'bold,italic,link,unlink,undo,redo',
             'toolbar2'          => '',
             'forced_root_block' => false,
             'force_br_newlines' => true,
             'force_p_newlines'  => false,
+            'height'            => 120,
         ],
     ]);
 }
@@ -68,18 +89,17 @@ function rs_render_rich_text_field(string $id, string $name, string $value, stri
 }
 
 function rs_field_is_href_key(string $key): bool {
-    return str_contains($key, '_href');
+    return str_contains($key, '_href')
+        || str_ends_with($key, '_tel')
+        || str_contains($key, '_email')
+        || str_contains($key, '_phone');
 }
 
 function rs_field_is_plain_text_key(string $key): bool {
-    return $key === 'rs_footer_brand_mark'
-        || $key === 'rs_footer_legal_brand'
-        || $key === 'rs_footer_legal_privacy'
-        || $key === 'rs_footer_legal_cookies'
-        || $key === 'rs_footer_social_label'
-        || str_starts_with($key, 'rs_footer_social_')
+    // Só URLs / contatos técnicos ficam em input simples.
+    return rs_field_is_href_key($key)
         || str_ends_with($key, '_image_slug')
-        || (str_contains($key, 'rs_footer_link_') && str_ends_with($key, '_title'));
+        || str_contains($key, 'phone_tel');
 }
 
 function rs_field_rich_text_profile(string $key): string {
@@ -87,19 +107,21 @@ function rs_field_rich_text_profile(string $key): string {
         str_contains($key, '_body')
         || str_contains($key, '_text')
         || str_contains($key, '_subtitle')
+        || str_contains($key, '_excerpt')
         || $key === 'rs_intro_body'
     ) {
         return 'paragraph';
     }
 
-    return 'inline';
+    // Títulos, labels, marcas — rich text compacto.
+    return 'compact';
 }
 
 function rs_render_admin_text_field(string $id, string $name, string $label, string $value): void {
-    echo '<p style="margin:0 0 10px;">';
+    echo '<p class="rs-admin-text-field" style="margin:0 0 10px;">';
     echo '<label for="' . esc_attr($id) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
 
-    if (rs_field_is_href_key($name) || rs_field_is_plain_text_key($name)) {
+    if (rs_field_is_plain_text_key($name) || rs_field_is_href_key($name)) {
         echo '<input type="text" style="width:100%;" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
         echo '</p>';
         return;
@@ -109,12 +131,43 @@ function rs_render_admin_text_field(string $id, string $name, string $label, str
     echo '</p>';
 }
 
+/**
+ * Abre um item de acordeão no meta box (mesmo chrome das outras seções).
+ */
+function rs_metabox_accordion_item_open(string $title, bool $is_open = false): void {
+    $class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
+    echo '<fieldset class="' . esc_attr($class) . '">';
+    echo '<div class="rs-metabox-accordion-head">';
+    echo '<button type="button" class="rs-metabox-accordion-toggle" aria-expanded="' . ($is_open ? 'true' : 'false') . '">';
+    echo '<span class="rs-metabox-accordion-head-title">' . esc_html($title) . '</span>';
+    echo '</button>';
+    echo '</div>';
+    echo '<div class="rs-metabox-accordion-panel">';
+}
+
+function rs_metabox_accordion_item_close(): void {
+    echo '</div></fieldset>';
+}
+
 function rs_sanitize_admin_text_field(string $key, string $raw): string {
     if (rs_field_is_href_key($key) || rs_field_is_plain_text_key($key)) {
         return sanitize_text_field($raw);
     }
 
-    return wp_kses_post($raw);
+    return rs_clean_editor_html(wp_kses_post($raw));
+}
+
+/**
+ * Remove lixo de extensões (ex.: Google Translate #gtx-trans) colado no editor.
+ */
+function rs_clean_editor_html(string $html): string {
+    $html = preg_replace('/\r\n?/', "\n", $html) ?? $html;
+    // Ícone interno primeiro; depois o wrapper #gtx-trans (evitar cortar no </div> interno).
+    $html = preg_replace('/<div[^>]*class=(["\'])[^"\']*gtx-trans-icon[^"\']*\1[^>]*>.*?<\/div>/is', '', $html) ?? $html;
+    $html = preg_replace('/<div[^>]*\bid=(["\'])gtx-trans\1[^>]*>\s*<\/div>/is', '', $html) ?? $html;
+    $html = preg_replace('/<div[^>]*\bid=(["\'])gtx-trans\1[^>]*>[\s\S]*?<\/div>/is', '', $html) ?? $html;
+    $html = preg_replace('/<font[^>]*>.*?<\/font>/is', '', $html) ?? $html;
+    return trim($html);
 }
 
 function rs_rich_text_js_settings(string $profile = 'paragraph'): array {

@@ -93,9 +93,11 @@ function rs_meta_get_array(int $post_id, string $key): ?array {
 
 /**
  * Grava meta como array (serialização nativa do WP — sem stripslashes no JSON).
+ * Remove duplicatas da mesma key (get_post_meta single pode ler uma linha e update outra).
  *
  * @param array<mixed> $value
  */
 function rs_meta_update_array(int $post_id, string $key, array $value): void {
-    update_post_meta($post_id, $key, $value);
+    delete_post_meta($post_id, $key);
+    add_post_meta($post_id, $key, $value, true);
 }
