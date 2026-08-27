@@ -174,6 +174,8 @@ export type ProjectGalleryImage = {
 export type ProjectStructuredData = {
   heroImage?: ProjectStructuredImage | null;
   logoImage?: ProjectStructuredImage | null;
+  /** Imagem destacada do WP (cards home/listagem). */
+  featuredImage?: ProjectStructuredImage | null;
   accordion?: Array<{ index: number; title?: string; body: string }>;
   /** URLs (legado) ou objetos com dimensões para grid fluido. */
   gallery?: Array<string | ProjectGalleryImage>;

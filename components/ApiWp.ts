@@ -8,7 +8,7 @@ import { buildLegalContent } from '../lib/content/legal/build';
 import type { ProjectsPageContent } from '../lib/content/projects-page/defaults';
 import { wpLangSlug, type WpLocale } from '../lib/wp/localeSlug';
 import { normalizeGalleryItems } from '../lib/projects/gallery';
-import { getProjectHeroImage, normalizeProjectData } from '../lib/projects/images';
+import { normalizeProjectData, structuredImageUrl } from '../lib/projects/images';
 import { excludeProjectTranslationTwins } from '../lib/projects/sort';
 import { wpMediaUrl } from '../lib/wp/mediaUrl';
 import type { HeaderNavContent } from '../lib/site/resolveSiteUi';
@@ -88,27 +88,26 @@ export type listResponseWp = Array<responseWp>
 
 export function porter(payloadWp: listResponseWp): Projects {
     return payloadWp.map((p) => {
-        const featuredFull = wpMediaUrl(
-            p._embedded?.['wp:featuredmedia']?.[0]?.media_details?.sizes.full?.source_url,
-        );
-        const featuredMedium = wpMediaUrl(
-            p._embedded?.['wp:featuredmedia']?.[0]?.media_details?.sizes?.medium?.source_url,
-        );
         const project_data = normalizeProjectData(p.project_data ?? null);
-        const cardImage = getProjectHeroImage({ project_data, image_full: featuredFull });
+        // Preferir project_data.featuredImage (URL via PHP) — o embed /media
+        // falha com 401 em vários attachments e os cards ficavam vazios.
+        const fromMeta = structuredImageUrl(project_data?.featuredImage);
+        const featuredFull = fromMeta ?? featuredImageUrl(p);
+        const featuredMedium = fromMeta ?? featuredMediumUrl(p) ?? featuredFull;
 
         return {
-        id: p.id,
-        title: p?.title?.rendered || p.name,
-        slug: p.slug,
-        link: p.link,
-            image_medium: cardImage ?? featuredMedium,
-            image_full: cardImage ?? featuredFull,
+            id: p.id,
+            title: p?.title?.rendered || p.name,
+            slug: p.slug,
+            link: p.link,
+            // Cards (home / listagem) = imagem destacada do WP.
+            image_medium: featuredMedium,
+            image_full: featuredFull,
             content: p?.content?.rendered,
-        more: p?.excerpt?.rendered,
+            more: p?.excerpt?.rendered,
             category: p['project-category'],
-        description: p.description,
-        created_at: p.date,
+            description: p.description,
+            created_at: p.date,
             image: wpMediaUrl(p?._links?.['wp:attachment']?.[0]?.href),
             project_data,
         };
@@ -149,9 +148,15 @@ async function fetchWpList(path: string, data: Record<string, string | number> =
 }
 
 export async function GetApi(path: string, data: Record<string, string | number> = {}): Promise<Projects> {
-    const projects = porter(await fetchWpList(path, data));
+    const query: Record<string, string | number> = { ...data };
+    // Sem embed a imagem destacada não vem — cards da home/listagem ficavam sem/atualizar.
+    if (path.includes('project') && (query._embed === '' || query._embed == null)) {
+        query._embed = 'wp:featuredmedia';
+    }
+
+    const projects = porter(await fetchWpList(path, query));
     // Pedido por slug pode ser o gêmeo PT; listagens só usam o canônico EN.
-    if (data.slug) return projects;
+    if (query.slug) return projects;
     return excludeProjectTranslationTwins(projects);
 }
 
@@ -234,7 +239,19 @@ function featuredImageUrl(item: responseWp): string | undefined {
     if (!media) return undefined;
 
     const sizes = media.media_details?.sizes;
-    return wpMediaUrl(sizes?.full?.source_url ?? sizes?.medium?.source_url ?? (media as { source_url?: string }).source_url);
+    return wpMediaUrl(
+        sizes?.full?.source_url ?? sizes?.medium?.source_url ?? media.source_url,
+    );
+}
+
+function featuredMediumUrl(item: responseWp): string | undefined {
+    const media = item._embedded?.['wp:featuredmedia']?.[0];
+    if (!media) return undefined;
+
+    const sizes = media.media_details?.sizes;
+    return wpMediaUrl(
+        sizes?.medium?.source_url ?? sizes?.full?.source_url ?? media.source_url,
+    );
 }
 
 function brandName(item: responseWp): string {

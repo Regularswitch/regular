@@ -83,13 +83,18 @@ export default function Header({ isLight = false }: HeaderProps) {
 	}, [isOpen]);
 
 	useEffect(() => {
+		const readScrollY = () =>
+			window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
 		const onScroll = () => {
-			const y = window.scrollY;
+			const y = readScrollY();
 			const atTop = y <= SCROLL_TOP_THRESHOLD;
 
 			setScrolled(!atTop);
 
-			if (isOpenRef.current || atTop || isTopHoverRef.current) {
+			// Menu aberto ou topo da página: sempre visível.
+			// Hover no topo NÃO bloqueia o hide — só revela via mousemove.
+			if (isOpenRef.current || atTop) {
 				setIsHeaderHidden(false);
 				lastScrollY.current = y;
 				return;
@@ -110,15 +115,18 @@ export default function Header({ isLight = false }: HeaderProps) {
 			const hover = e.clientY <= TOP_HOVER_ZONE;
 			if (hover === isTopHoverRef.current) return;
 			isTopHoverRef.current = hover;
+			// Só revela o header escondido; não impede recolher ao rolar.
 			if (hover) setIsHeaderHidden(false);
 		};
 
 		onScroll();
 		window.addEventListener('scroll', onScroll, { passive: true });
+		document.addEventListener('scroll', onScroll, { passive: true, capture: true });
 		window.addEventListener('mousemove', onMouseMove, { passive: true });
 
 		return () => {
 			window.removeEventListener('scroll', onScroll);
+			document.removeEventListener('scroll', onScroll, { capture: true });
 			window.removeEventListener('mousemove', onMouseMove);
 		};
 	}, []);
@@ -137,10 +145,14 @@ export default function Header({ isLight = false }: HeaderProps) {
 				duration: 0.38,
 				ease: 'power2.in',
 				overwrite: true,
+				onStart: () => {
+					bar.style.pointerEvents = 'none';
+				},
 			});
 			return;
 		}
 
+		bar.style.pointerEvents = '';
 		headerHideTween.current = gsap.to(bar, {
 			yPercent: 0,
 			duration: 0.72,
@@ -152,7 +164,9 @@ export default function Header({ isLight = false }: HeaderProps) {
 	useEffect(() => {
 		const bar = headerBarRef.current;
 		if (!bar) return;
+		headerHideTween.current?.kill();
 		gsap.set(bar, { yPercent: 0 });
+		bar.style.pointerEvents = '';
 	}, [pathname]);
 
 	const prefix = language === 'PT' ? 'PT' : '';
@@ -309,8 +323,8 @@ export default function Header({ isLight = false }: HeaderProps) {
 		// close overlay on route change
 		closeMenu();
 		setIsHeaderHidden(false);
-		lastScrollY.current = 0;
-		setScrolled(false);
+		lastScrollY.current = window.scrollY || document.documentElement.scrollTop || 0;
+		setScrolled(lastScrollY.current > SCROLL_TOP_THRESHOLD);
 		isTopHoverRef.current = false;
 	}, [pathname]);
 

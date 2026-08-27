@@ -3,7 +3,7 @@
  * Plugin Name: Regular CMS
  * Plugin URI:  https://regularswitch.com
  * Description: CPTs, meta boxes, i18n EN/PT e REST (api-etc/v2/all-posts) do site Regular Switch.
- * Version:     1.5.16
+ * Version:     1.5.18
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Regular

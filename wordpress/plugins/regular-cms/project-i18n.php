@@ -479,10 +479,13 @@ function rs_project_meta_to_payload_for_locale(int $post_id, string $locale = 'e
 
     $hero_id = (int) ($shared['hero_id'] ?? 0);
     $logo_id = (int) ($shared['logo_id'] ?? 0);
+    $thumb_id = (int) get_post_thumbnail_id($post_id);
 
     return [
         'heroImage'      => rs_project_attachment_info($hero_id > 0 ? $hero_id : rs_project_get_hero_id($post_id)),
         'logoImage'      => rs_project_attachment_info($logo_id > 0 ? $logo_id : (int) get_post_meta($post_id, RS_PROJECT_LOGO_KEY, true)),
+        // Imagem destacada (home/listagem) — URL direta, sem depender do embed /media.
+        'featuredImage'  => rs_project_attachment_info($thumb_id),
         'accordion'      => $accordion,
         'gallery'        => $gallery,
         'youtubeVideos'  => $youtube,

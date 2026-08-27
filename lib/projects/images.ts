@@ -36,6 +36,7 @@ export function normalizeProjectData(
 		...data,
 		heroImage: normalizeStructuredMedia(data.heroImage) ?? data.heroImage,
 		logoImage: normalizeStructuredMedia(data.logoImage) ?? data.logoImage,
+		featuredImage: normalizeStructuredMedia(data.featuredImage) ?? data.featuredImage,
 		gallery: normalizeGalleryItems(data.gallery),
 		youtubeVideos: normalizeYoutubeVideos(data.youtubeVideos),
 	};

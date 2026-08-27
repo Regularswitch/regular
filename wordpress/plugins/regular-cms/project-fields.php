@@ -315,9 +315,13 @@ function rs_project_meta_to_payload(int $post_id): array {
         }
     }
 
+    $thumb_id = (int) get_post_thumbnail_id($post_id);
+
     return [
         'heroImage'      => rs_project_attachment_info(rs_project_get_hero_id($post_id)),
         'logoImage'      => rs_project_attachment_info(rs_project_get_logo_id($post_id)),
+        // Imagem destacada (home/listagem) — URL direta, sem depender do embed /media.
+        'featuredImage'  => rs_project_attachment_info($thumb_id),
         'accordion'      => $accordion,
         'gallery'        => $gallery,
         'youtubeVideos'  => rs_project_get_youtube_videos($post_id),
@@ -769,25 +773,13 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Imagem de destaque (home e listagem)</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">Aparece nos cards da <strong>home</strong> e da página de <strong>projetos</strong>. Defina na caixa <em>Imagem destacada</em> da barra lateral →.</p>';
-    $thumb_id = (int) get_post_thumbnail_id($canonical_id);
-    if ($thumb_id > 0) {
-        $thumb_url = (string) (wp_get_attachment_image_url($thumb_id, 'medium') ?: wp_get_attachment_url($thumb_id));
-        if ($thumb_url !== '') {
-            echo '<p style="margin:0 0 8px;"><img src="' . esc_url($thumb_url) . '" alt="" style="max-width:220px;height:auto;border-radius:4px;" /></p>';
-        }
-    } else {
-        echo '<p style="margin:0;color:#b32d2e;">Nenhuma imagem destacada definida — os cards podem ficar sem foto.</p>';
-    }
-    echo '</fieldset>';
+    echo '<p class="description" style="margin:0 0 14px;">Cards da <strong>home</strong> e da listagem usam a <em>Imagem destacada</em> da barra lateral. Abaixo: mídia só da página do projeto.</p>';
 
     echo '<fieldset class="rs-project-fieldset">';
     echo '<legend><strong>Hero e vignette (só na página do projeto)</strong></legend>';
     rs_render_media_field('rs_project_hero_id', 'Hero / fundo (imagem, GIF ou vídeo mp4) — 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', false, 'media');
     rs_render_media_field('rs_project_logo_id', 'Vignette / logo — canto inferior esquerdo sobre o hero (desktop)', $logo_id, 'rs_project_logo_id', false);
-    echo '<p class="description" style="margin:0 0 10px;">A opção de exibir a vignette fica na aba <strong>Geral</strong>. Hero e vignette <strong>não</strong> aparecem na home nem na listagem.</p>';
+    echo '<p class="description" style="margin:0 0 10px;">A opção de exibir a vignette fica na aba <strong>Geral</strong>.</p>';
     echo '</fieldset>';
 
     echo '<fieldset class="rs-project-fieldset">';
