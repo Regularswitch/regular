@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { CONTACT_PAGE_SLUG, pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
 import { isHomeProject } from '../../lib/projects/categories';
-import { homeFeaturedSlotIndex, orderHomeProjects } from '../../lib/projects/featured';
+import { orderHomeProjects } from '../../lib/projects/featured';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects, SiteUiLabels } from '../../types';
@@ -22,7 +22,9 @@ type SelectedProjectsProps = {
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
 	const layout = useSiteUiLayout();
-	const maxProjects = Math.max(layout.projectsInitialCount, layout.homeColumns === 3 ? 6 : 5);
+	/** Home: exatamente 2 linhas (2 col → 4 cards; 3 col → 6; 1 col → 2). Sem card full-width no meio. */
+	const maxProjects =
+		layout.homeColumns === 1 ? 2 : layout.homeColumns === 3 ? 6 : 4;
 
 	const selected = orderHomeProjects(
 		sortProjectsByDate(projects)
@@ -32,8 +34,6 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 
 	if (!selected.length) return null;
 
-	const featuredIndex =
-		layout.homeColumns === 1 ? 0 : homeFeaturedSlotIndex(selected.length);
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const contactHref = withLocalePrefix(pagePath(CONTACT_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
@@ -61,7 +61,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getHomeGridSpan(index, featuredIndex, layout.homeColumns)}
+						span={getHomeGridSpan(index, -1, layout.homeColumns)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}

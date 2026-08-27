@@ -3,7 +3,7 @@
  * CPT intro — post único bilíngue (EN + PT).
  *
  * content corresponde ao headline legado (post_content) e excerpt ao body
- * legado (post_excerpt). O post continua sincronizado com EN para o editor WP.
+ * legado (post_excerpt). O editor WP nativo foi removido — só o metabox EN/PT.
  */
 
 if (defined('RS_INTRO_FIELDS_LOADED')) {
@@ -158,9 +158,15 @@ add_action('rest_api_init', function () {
     ]);
 });
 
+add_action('init', function () {
+    remove_post_type_support('intro', 'editor');
+    remove_post_type_support('intro', 'excerpt');
+}, 100);
+
 add_action('add_meta_boxes_intro', function () {
     add_meta_box('rs_intro_fields', 'Conteúdo da Intro (home)', 'rs_intro_render_meta_box', 'intro', 'normal', 'high');
     remove_meta_box('postexcerpt', 'intro', 'normal');
+    remove_meta_box('postexcerpt', 'intro', 'side');
 }, 10);
 
 function rs_intro_render_locale_fields(string $locale, array $loc): void {

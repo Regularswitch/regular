@@ -14,6 +14,21 @@ add_action('rest_api_init', function (): void {
         'callback'            => 'rs_rest_all_posts_callback',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('rs/v1', '/health', [
+        'methods'             => 'GET',
+        'permission_callback' => '__return_true',
+        'callback'            => static function () {
+            return [
+                'ok'              => true,
+                'plugin'          => function_exists('rs_plugin_name') ? rs_plugin_name() : 'Regular CMS',
+                'version'         => function_exists('rs_plugin_version') ? rs_plugin_version() : '',
+                'max_input_vars'  => (int) ini_get('max_input_vars'),
+                'post_max_size'   => (string) ini_get('post_max_size'),
+                'php'             => PHP_VERSION,
+            ];
+        },
+    ]);
 });
 
 function rs_rest_attachment_info(int $file_id): array {

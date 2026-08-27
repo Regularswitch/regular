@@ -263,10 +263,81 @@ function rs_project_i18n_from_legacy_post(int $post_id, int $pt_id = 0): array {
 }
 
 /**
+ * True se shared/acordeão/youtube estão vazios (possível wipe acidental).
+ *
+ * @param array<string, mixed> $data
+ */
+function rs_project_i18n_is_effectively_empty(array $data): bool {
+    $shared = is_array($data['shared'] ?? null) ? $data['shared'] : [];
+    if ((int) ($shared['hero_id'] ?? 0) > 0) {
+        return false;
+    }
+    if ((int) ($shared['logo_id'] ?? 0) > 0) {
+        return false;
+    }
+    if (trim((string) ($shared['gallery_ids'] ?? '')) !== '') {
+        return false;
+    }
+
+    foreach (['en', 'pt'] as $locale) {
+        $loc = is_array($data['locales'][$locale] ?? null) ? $data['locales'][$locale] : [];
+        if (!empty($loc['accordion']) && is_array($loc['accordion'])) {
+            return false;
+        }
+        if (!empty($loc['youtube']) && is_array($loc['youtube'])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Evita sobrescrever conteúdo rico com payload vazio (POST truncado / delete / autosave).
+ *
+ * @param array<string, mixed> $incoming
+ * @param array<string, mixed> $previous
+ * @return array<string, mixed>
+ */
+function rs_project_i18n_guard_against_wipe(array $incoming, array $previous): array {
+    if (rs_project_i18n_is_effectively_empty($previous)) {
+        return $incoming;
+    }
+    if (!rs_project_i18n_is_effectively_empty($incoming)) {
+        return $incoming;
+    }
+
+    $explicit_clear = !empty($_POST['rs_project_hero_id_cleared'])
+        || !empty($_POST['rs_project_logo_id_cleared'])
+        || !empty($_POST['rs_project_gallery_cleared'])
+        || !empty($_POST['rs_project_accordion_en_cleared'])
+        || !empty($_POST['rs_project_accordion_pt_cleared']);
+
+    if ($explicit_clear) {
+        return $incoming;
+    }
+
+    // Mantém mídia + acordeão anteriores; atualiza só flags/títulos do incoming.
+    $incoming['shared']['hero_id'] = (int) ($previous['shared']['hero_id'] ?? 0);
+    $incoming['shared']['logo_id'] = (int) ($previous['shared']['logo_id'] ?? 0);
+    $incoming['shared']['gallery_ids'] = (string) ($previous['shared']['gallery_ids'] ?? '');
+    $incoming['shared']['gallery_featured_ids'] = (string) ($previous['shared']['gallery_featured_ids'] ?? '');
+    $incoming['locales']['en']['accordion'] = $previous['locales']['en']['accordion'] ?? [];
+    $incoming['locales']['pt']['accordion'] = $previous['locales']['pt']['accordion'] ?? [];
+    $incoming['locales']['en']['youtube'] = $previous['locales']['en']['youtube'] ?? [];
+    $incoming['locales']['pt']['youtube'] = $previous['locales']['pt']['youtube'] ?? [];
+
+    return $incoming;
+}
+
+/**
  * @param array<string, mixed> $data
  */
 function rs_project_i18n_save(int $post_id, array $data): void {
-    $normalized = rs_project_i18n_normalize($data);
+    $previous = rs_project_i18n_get($post_id);
+    $normalized = rs_project_i18n_normalize(
+        rs_project_i18n_guard_against_wipe(rs_project_i18n_normalize($data), $previous)
+    );
 
     // Array nativo + dedupe (evita linhas duplicadas de rs_project_i18n).
     if (function_exists('rs_meta_update_array')) {
@@ -274,6 +345,12 @@ function rs_project_i18n_save(int $post_id, array $data): void {
     } else {
         update_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized);
     }
+
+    // Se a meta sumiu (Hostinger / object cache), força rewrite.
+    if (!metadata_exists('post', $post_id, RS_PROJECT_I18N_KEY)) {
+        add_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized, true);
+    }
+
     rs_project_i18n_sync_legacy_meta($post_id, $normalized);
 }
 
@@ -298,7 +375,7 @@ function rs_project_i18n_sync_legacy_meta(int $post_id, array $data): void {
     $logo_id = (int) ($shared['logo_id'] ?? 0);
     if ($logo_id > 0) {
         update_post_meta($post_id, RS_PROJECT_LOGO_KEY, $logo_id);
-        set_post_thumbnail($post_id, $logo_id);
+        // Não chama set_post_thumbnail: a imagem destacada é só para home/listagem.
     } else {
         delete_post_meta($post_id, RS_PROJECT_LOGO_KEY);
     }

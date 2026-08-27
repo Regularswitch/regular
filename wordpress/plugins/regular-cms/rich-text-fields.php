@@ -83,6 +83,7 @@ function rs_render_rich_text_field(string $id, string $name, string $value, stri
         $id,
         array_merge(
             rs_rich_text_editor_settings($profile),
+            // name vazio: não entra no POST (conteúdo vai no JSON do projeto).
             ['textarea_name' => $name],
         ),
     );

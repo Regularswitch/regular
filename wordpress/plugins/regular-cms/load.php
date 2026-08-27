@@ -35,6 +35,7 @@ require_once $rs_plugin_dir . '/header-menus.php';
 // Projetos (i18n + meta boxes)
 require_once $rs_plugin_dir . '/project-fields.php';
 require_once $rs_plugin_dir . '/project-i18n.php';
+require_once $rs_plugin_dir . '/project-media-protect.php';
 
 // Admin, i18n e REST
 require_once $rs_plugin_dir . '/hide-themerain-meta.php';

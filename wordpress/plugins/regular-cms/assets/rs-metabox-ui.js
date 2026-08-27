@@ -156,6 +156,16 @@
 				placeholder: 'rs-metabox-accordion-placeholder',
 				forcePlaceholderSize: true,
 				tolerance: 'pointer',
+				start: function () {
+					// Flush TinyMCE → textarea antes de mover o DOM (evita perder HTML).
+					if (typeof tinymce !== 'undefined' && tinymce.triggerSave) {
+						try {
+							tinymce.triggerSave();
+						} catch (err) {
+							/* ignore */
+						}
+					}
+				},
 				update: function () {
 					if (typeof options.onSortUpdate === 'function') {
 						options.onSortUpdate($list);

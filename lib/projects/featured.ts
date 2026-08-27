@@ -7,7 +7,7 @@ export function isFeaturedOnHome(project: Project): boolean {
 
 /**
  * Índice do único destaque na lista da home.
- * Prioriza o flag do CMS; se ninguém estiver marcado, usa o 3º item (meio do bento).
+ * Prioriza o flag do CMS; se ninguém estiver marcado, 0 (mantém ordem por data).
  */
 export function resolveFeaturedIndex(projects: Projects): number {
 	if (!projects.length) return -1;
@@ -15,28 +15,26 @@ export function resolveFeaturedIndex(projects: Projects): number {
 	const flagged = projects.findIndex(isFeaturedOnHome);
 	if (flagged >= 0) return flagged;
 
-	// Padrão visual: half | half | featured | half | half
-	return Math.min(2, projects.length - 1);
+	return 0;
 }
 
 /**
- * Posiciona o destaque no meio do bento (índice 2):
- * half | half | featured | half | half
+ * Coloca o destaque do CMS no início da lista da home
+ * (cards iguais em 2 linhas — sem slot full-width no meio).
  */
 export function orderHomeProjects(projects: Projects): Projects {
 	if (projects.length <= 1) return projects;
 
 	const from = resolveFeaturedIndex(projects);
+	if (from <= 0) return projects;
+
 	const next = [...projects];
 	const [featured] = next.splice(from, 1);
-	const insertAt = Math.min(2, next.length);
-	next.splice(insertAt, 0, featured);
-	return next;
+	return [featured, ...next];
 }
 
-/** Índice do destaque após `orderHomeProjects`. */
+/** @deprecated Home não usa mais slot full-width; mantido por compat. */
 export function homeFeaturedSlotIndex(count: number): number {
 	if (count <= 0) return -1;
-	if (count <= 2) return 0;
-	return 2;
+	return 0;
 }

@@ -693,13 +693,29 @@ function rs_capabilities_render_admin_footer_script(): void {
 
         function assignSectionNames($section, locale, index) {
             const prefix = 'rs_cap_i18n[' + locale + '][sections][' + index + ']';
+            const $textarea = $section.find('textarea[id^="rs_cap_section_text_' + locale + '_"]');
             $section.find('.rs-cap-section-title').attr('name', prefix + '[title]');
-            $section.find('textarea[id^="rs_cap_section_text_' + locale + '_"]').attr('name', prefix + '[text]');
+            $textarea.attr('name', prefix + '[text]');
             $section.find('input[data-rs-cap-image]').attr('name', prefix + '[image_id]');
-            $section.attr('data-rs-editor-ids', 'rs_cap_section_text_' + locale + '_' + index);
+            const editorId = $textarea.attr('id');
+            if (editorId) {
+                $section.attr('data-rs-editor-ids', editorId);
+            }
+        }
+
+        function maxEditorSuffix(locale) {
+            let max = -1;
+            list(locale).find('textarea[id^="rs_cap_section_text_' + locale + '_"]').each(function () {
+                const match = String(this.id || '').match(/_(\d+)$/);
+                if (match) {
+                    max = Math.max(max, parseInt(match[1], 10));
+                }
+            });
+            return max;
         }
 
         function reindexSections(locale) {
+            // Só name=/data-index — não recria TinyMCE (perdia conteúdo ao reordenar).
             list(locale).find('.rs-metabox-accordion-item').each(function (index) {
                 const $section = $(this);
                 $section.attr('data-index', String(index));
@@ -708,24 +724,31 @@ function rs_capabilities_render_admin_footer_script(): void {
                 $section.find('[id^="rs_cap_image_' + locale + '_"]').each(function () {
                     const oldId = $(this).attr('id');
                     const newId = 'rs_cap_image_' + locale + '_' + index;
+                    if (oldId === newId) {
+                        return;
+                    }
                     $(this).attr('id', newId);
                     $section.find('[data-target="' + oldId + '"]').attr('data-target', newId);
                 });
-
-                const $textarea = $section.find('textarea[id^="rs_cap_section_text_' + locale + '_"]');
-                const oldEditorId = $textarea.attr('id');
-                const newEditorId = 'rs_cap_section_text_' + locale + '_' + index;
-                if (oldEditorId && oldEditorId !== newEditorId) {
-                    removeEditor(oldEditorId);
-                    $textarea.attr('id', newEditorId);
-                    initEditor(newEditorId);
-                }
             });
-            nextIndex[locale] = list(locale).find('.rs-metabox-accordion-item').length;
+            nextIndex[locale] = Math.max(
+                maxEditorSuffix(locale) + 1,
+                list(locale).find('.rs-metabox-accordion-item').length
+            );
         }
 
         locales.forEach(function (locale) {
-            nextIndex[locale] = list(locale).find('.rs-metabox-accordion-item').length;
+            nextIndex[locale] = Math.max(
+                list(locale).find('.rs-metabox-accordion-item').length,
+                (function () {
+                    let max = -1;
+                    list(locale).find('textarea[id^="rs_cap_section_text_' + locale + '_"]').each(function () {
+                        const match = String(this.id || '').match(/_(\d+)$/);
+                        if (match) max = Math.max(max, parseInt(match[1], 10));
+                    });
+                    return max + 1;
+                })()
+            );
             const root = document.querySelector('#rs-cap-accordion-' + locale);
 
             if (root && window.RsMetaboxUi) {

@@ -30,7 +30,7 @@ add_action('init', function () {
             'menu_position' => 27,
             'menu_icon'     => 'dashicons-text-page',
             'show_in_rest'  => true,
-            'supports'      => ['title', 'editor', 'excerpt'],
+            'supports'      => ['title'],
             'rewrite'       => ['slug' => 'intro'],
         ]
     );

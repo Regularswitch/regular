@@ -1412,26 +1412,30 @@ function rs_education_admin_footer_script(): void {
         }
 
         function assignSectionNames(section, index) {
-            const editorId = 'rs_education_section_text_' + index;
+            const $textarea = section.find('textarea[id^="rs_education_section_text_"]');
             section.find('.rs-education-section-title').attr('name', 'rs_education_sections[' + index + '][title]');
-            section.find('textarea[id^="rs_education_section_text_"]').attr('name', 'rs_education_sections[' + index + '][body]');
-            section.attr('data-rs-editor-ids', editorId);
+            $textarea.attr('name', 'rs_education_sections[' + index + '][body]');
+            const editorId = $textarea.attr('id');
+            if (editorId) {
+                section.attr('data-rs-editor-ids', editorId);
+            }
         }
 
         function reindexSections() {
+            // Só name=/data-index — não recria TinyMCE ao reordenar.
             $('#rs-education-sections-list .rs-metabox-accordion-item').each(function (i) {
                 $(this).attr('data-index', String(i));
                 assignSectionNames($(this), i);
-                const textarea = $(this).find('textarea[id^="rs_education_section_text_"]');
-                const oldEditorId = textarea.attr('id');
-                const newEditorId = 'rs_education_section_text_' + i;
-                if (oldEditorId && oldEditorId !== newEditorId) {
-                    removeEditor(oldEditorId);
-                    textarea.attr('id', newEditorId);
-                    initEditor(newEditorId);
-                }
             });
-            nextSectionIndex = $('#rs-education-sections-list .rs-metabox-accordion-item').length;
+            let maxEd = -1;
+            $('#rs-education-sections-list textarea[id^="rs_education_section_text_"]').each(function () {
+                const match = String(this.id || '').match(/_(\d+)$/);
+                if (match) maxEd = Math.max(maxEd, parseInt(match[1], 10));
+            });
+            nextSectionIndex = Math.max(
+                maxEd + 1,
+                $('#rs-education-sections-list .rs-metabox-accordion-item').length
+            );
         }
 
         function assignInstitutionNames(row, index) {
@@ -1804,9 +1808,13 @@ function rs_education_i18n_admin_footer_script(): void {
 
         function assignSectionNames($row, locale, index) {
             const prefix = 'rs_education_i18n[' + locale + '][sections][' + index + ']';
+            const $textarea = $row.find('textarea[id^="rs_education_section_text_' + locale + '_"]');
             $row.find('.rs-education-section-title').attr('name', prefix + '[title]');
-            $row.find('textarea[id^="rs_education_section_text_' + locale + '_"]').attr('name', prefix + '[body]');
-            $row.attr('data-rs-editor-ids', 'rs_education_section_text_' + locale + '_' + index);
+            $textarea.attr('name', prefix + '[body]');
+            const editorId = $textarea.attr('id');
+            if (editorId) {
+                $row.attr('data-rs-editor-ids', editorId);
+            }
         }
 
         function assignInstitutionNames($row, locale, index) {
@@ -1824,19 +1832,21 @@ function rs_education_i18n_admin_footer_script(): void {
         }
 
         function reindexSections(locale) {
+            // Só name= — ids do TinyMCE ficam estáveis ao arrastar.
             sectionsList(locale).find('.rs-metabox-accordion-item').each(function (index) {
                 const $row = $(this);
-                const $textarea = $row.find('textarea[id^="rs_education_section_text_' + locale + '_"]');
-                const oldId = $textarea.attr('id');
-                const newId = 'rs_education_section_text_' + locale + '_' + index;
-                if (oldId && oldId !== newId && typeof wp !== 'undefined' && wp.editor) {
-                    wp.editor.remove(oldId);
-                    $textarea.attr('id', newId);
-                    initEditor(newId);
-                }
+                $row.attr('data-index', String(index));
                 assignSectionNames($row, locale, index);
             });
-            nextSection[locale] = sectionsList(locale).find('.rs-metabox-accordion-item').length;
+            let maxEd = -1;
+            sectionsList(locale).find('textarea[id^="rs_education_section_text_' + locale + '_"]').each(function () {
+                const match = String(this.id || '').match(/_(\d+)$/);
+                if (match) maxEd = Math.max(maxEd, parseInt(match[1], 10));
+            });
+            nextSection[locale] = Math.max(
+                maxEd + 1,
+                sectionsList(locale).find('.rs-metabox-accordion-item').length
+            );
         }
 
         function reindexInstitutions(locale) {

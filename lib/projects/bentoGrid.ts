@@ -9,8 +9,8 @@ export function getGridSpan(index: number): GridSpan {
 }
 
 /**
- * Home: bento 2 colunas — half | half | featured | half | half.
- * O destaque (largura total) fica no meio; altura visual ≈ 1 card half.
+ * Home: cards iguais nas colunas do CMS (sem full-width no meio).
+ * `featuredIndex` negativo desativa o span de destaque.
  * `columns` vem do CMS (site-ui layout).
  */
 export function getHomeGridSpan(
@@ -19,12 +19,12 @@ export function getHomeGridSpan(
 	columns: 1 | 2 | 3 = 2,
 ): GridSpan {
 	if (columns === 1) return 'full';
-	if (index === featuredIndex) return 'featured';
+	if (featuredIndex >= 0 && index === featuredIndex) return 'featured';
 	if (columns === 3) return 'third';
 	return 'half';
 }
 
-/** Primeira dobra: 1 ciclo 3+2 (listagem) ou 1 destaque + 4 (home). */
+/** Listagem /projects: 1 ciclo 3+2. */
 export const INITIAL_BENTO_COUNT = 5;
 
 /** Lotes da listagem /projects: 2 ciclos 3+2 = 4 linhas. */

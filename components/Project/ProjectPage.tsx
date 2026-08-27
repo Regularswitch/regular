@@ -63,14 +63,13 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 
 	const structured = project.project_data ?? meta?.project_data ?? null;
 
-	const fallbackHero =
-		mediaUrl(meta?.img_single) || project.image_full;
+	const fallbackHero = mediaUrl(meta?.img_single);
 	const heroMedia =
 		getProjectHeroMedia(project, fallbackHero ?? undefined) ??
 		(structured?.heroImage ? structured.heroImage : null);
 	const heroImage = structuredImageUrl(heroMedia) || fallbackHero;
-	const logoImage =
-		mediaUrl(structured?.logoImage) || mediaUrl(meta?.img_primary) || mediaUrl(meta?.img_secondary);
+	// Vignette só do campo logo — não misturar com imagem destacada (cards).
+	const logoImage = mediaUrl(structured?.logoImage);
 
 	const summary = project.more?.trim() || '';
 	const contentHtml = project.content || '';

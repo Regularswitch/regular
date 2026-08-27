@@ -1,5 +1,5 @@
 import { wpMediaUrl } from '../wp/mediaUrl';
-import { isProjectMediaVideo, normalizeGalleryItems, resolveProjectMediaType } from './gallery';
+import { normalizeGalleryItems, resolveProjectMediaType } from './gallery';
 import { normalizeYoutubeVideos } from './youtube';
 import type { Project, ProjectStructuredData, ProjectStructuredImage } from '../../types';
 
@@ -42,36 +42,24 @@ export function normalizeProjectData(
 }
 
 /**
- * Thumbnail para cards (home / listagem).
- * Prefere imagem estática; evita hero GIF pesado quando há featured/galeria menores.
- * Ignora vídeo.
+ * Thumbnail para cards (home / listagem de projetos).
+ * Prefere a imagem destacada do WP — não o hero da página do projeto.
  */
 export function getProjectHeroImage(
 	project: Pick<Project, 'image_full' | 'project_data'>,
 ): string | undefined {
-	const hero = project.project_data?.heroImage;
-	const heroUrl = hero && !isProjectMediaVideo(hero) ? structuredImageUrl(hero) : undefined;
-	const heroIsGif = heroUrl
-		? resolveProjectMediaType(heroUrl, hero?.mime, hero?.type) === 'gif'
-		: false;
-
-	// Imagem estática no hero (não GIF)
-	if (heroUrl && !heroIsGif) return heroUrl;
-
-	const gallery = normalizeGalleryItems(project.project_data?.gallery);
-	const staticStill = gallery.find((item) => item.type === 'image');
-	if (staticStill?.url) return staticStill.url;
-
-	// Featured / image_full costuma ser menor que o hero GIF animado
 	if (project.image_full) {
 		const featured = wpMediaUrl(project.image_full) ?? project.image_full;
 		if (featured) return featured;
 	}
 
+	const gallery = normalizeGalleryItems(project.project_data?.gallery);
+	const staticStill = gallery.find((item) => item.type === 'image');
+	if (staticStill?.url) return staticStill.url;
+
 	const galleryGif = gallery.find((item) => item.type === 'gif');
 	if (galleryGif?.url) return galleryGif.url;
 
-	if (heroUrl) return heroUrl;
 	return undefined;
 }
 

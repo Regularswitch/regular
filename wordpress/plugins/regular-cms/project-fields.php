@@ -151,12 +151,8 @@ function rs_project_get_hero_id(int $post_id): int {
 }
 
 function rs_project_get_logo_id(int $post_id): int {
-    $custom = (int) get_post_meta($post_id, RS_PROJECT_LOGO_KEY, true);
-    if ($custom > 0) {
-        return $custom;
-    }
-
-    return (int) get_post_thumbnail_id($post_id);
+    // Vignette da página do projeto — NÃO usar imagem destacada (cards home/listagem).
+    return (int) get_post_meta($post_id, RS_PROJECT_LOGO_KEY, true);
 }
 
 /**
@@ -481,7 +477,6 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
                     style="width:100%;"
                     class="rs-project-accordion-title"
                     <?php if (!$is_template) : ?>
-                        name="<?php echo esc_attr($name_prefix); ?>[title]"
                         value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
                     <?php endif; ?>
                 />
@@ -496,7 +491,10 @@ function rs_project_render_accordion_row(int $index, array $section, bool $is_te
                         id="<?php echo esc_attr($editor_id); ?>"
                     ></textarea>
                 <?php else : ?>
-                    <?php rs_render_rich_text_field($editor_id, $name_prefix . '[body]', $body, 'paragraph'); ?>
+                    <?php
+                    // Sem name= — evita max_input_vars no Hostinger; o POST usa só o JSON oculto.
+                    rs_render_rich_text_field($editor_id, '', $body, 'paragraph');
+                    ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -517,7 +515,6 @@ function rs_project_render_youtube_row(int $index, string $url = '', bool $is_te
         <input
             type="url"
             class="rs-project-youtube-url regular-text"
-            name="<?php echo esc_attr($name); ?>"
             value="<?php echo esc_attr($url); ?>"
             placeholder="https://www.youtube.com/watch?v=…"
             <?php echo $locked ? 'readonly' : ''; ?>
@@ -565,7 +562,6 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
         <div class="rs-project-gallery-tile<?php echo $featured ? ' is-featured' : ''; ?>">
             <input
                 type="hidden"
-                name="<?php echo esc_attr($name); ?>"
                 id="<?php echo esc_attr($field_id); ?>"
                 value="<?php echo esc_attr((string) $attachment_id); ?>"
                 data-rs-cap-image="1"
@@ -574,7 +570,6 @@ function rs_project_render_gallery_row(int $index, int $attachment_id, bool $is_
             <input
                 type="hidden"
                 class="rs-project-gallery-featured-flag"
-                name="<?php echo esc_attr($featured_name); ?>"
                 value="<?php echo $featured ? '1' : '0'; ?>"
             />
             <div class="rs-project-gallery-media">
@@ -665,19 +660,25 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<div class="rs-metabox-tabs rs-project-tabs" data-rs-tabs>';
     echo '<input type="hidden" name="rs_project_active_tab" id="rs_project_active_tab" value="general" />';
+    // Espelhos cedo no POST (antes do acordeão) — Hostinger corta max_input_vars no fim do formulário.
+    echo '<input type="hidden" name="rs_project_hero_id" id="rs_project_hero_id_post" value="' . esc_attr((string) $hero_id) . '" />';
+    echo '<input type="hidden" name="rs_project_hero_id_cleared" id="rs_project_hero_id_cleared_post" value="0" />';
+    echo '<input type="hidden" name="rs_project_logo_id" id="rs_project_logo_id_post" value="' . esc_attr((string) $logo_id) . '" />';
+    echo '<input type="hidden" name="rs_project_logo_id_cleared" id="rs_project_logo_id_cleared_post" value="0" />';
     // Campos PT sempre no POST (abas hidden às vezes falham em alguns browsers/hosts).
     echo '<input type="hidden" name="rs_project_pt_title" id="rs_project_pt_title_submit" value="' . esc_attr($title_pt) . '" />';
     echo '<textarea name="rs_project_pt_excerpt" id="rs_project_pt_excerpt_submit" hidden>' . esc_textarea($excerpt_pt) . '</textarea>';
-    echo '<input type="hidden" id="rs-project-accordion-en-json" name="rs_project_accordion_en_json" value="' . esc_attr(wp_json_encode($en_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '" />';
-    echo '<input type="hidden" id="rs-project-accordion-pt-json" name="rs_project_accordion_pt_json" value="' . esc_attr(wp_json_encode($pt_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '" />';
-    echo '<input type="hidden" id="rs-project-youtube-en-json" name="rs_project_youtube_en_json" value="' . esc_attr(wp_json_encode(array_values(array_map(static function (array $v): string {
+    // textareas (não input hidden) — JSON grande do acordeão não cabe bem em value="".
+    echo '<textarea id="rs-project-accordion-en-json" name="rs_project_accordion_en_json" hidden>' . esc_textarea(wp_json_encode($en_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-project-accordion-pt-json" name="rs_project_accordion_pt_json" hidden>' . esc_textarea(wp_json_encode($pt_accordion, JSON_UNESCAPED_UNICODE) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-project-youtube-en-json" name="rs_project_youtube_en_json" hidden>' . esc_textarea(wp_json_encode(array_values(array_map(static function (array $v): string {
         return (string) ($v['url'] ?? '');
-    }, $en_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '" />';
-    echo '<input type="hidden" id="rs-project-youtube-pt-json" name="rs_project_youtube_pt_json" value="' . esc_attr(wp_json_encode(array_values(array_map(static function (array $v): string {
+    }, $en_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-project-youtube-pt-json" name="rs_project_youtube_pt_json" hidden>' . esc_textarea(wp_json_encode(array_values(array_map(static function (array $v): string {
         return (string) ($v['url'] ?? '');
-    }, $pt_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '" />';
-    echo '<input type="hidden" id="rs-project-gallery-json" name="rs_project_gallery_json" value="' . esc_attr(wp_json_encode($gallery_ids) ?: '[]') . '" />';
-    echo '<input type="hidden" id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" value="' . esc_attr(wp_json_encode(array_keys($gallery_featured_ids)) ?: '[]') . '" />';
+    }, $pt_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-project-gallery-json" name="rs_project_gallery_json" hidden>' . esc_textarea(wp_json_encode($gallery_ids) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" hidden>' . esc_textarea(wp_json_encode(array_keys($gallery_featured_ids)) ?: '[]') . '</textarea>';
     echo '<div class="rs-metabox-tablist rs-project-tablist" role="tablist">';
     echo '<button type="button" class="rs-metabox-tab rs-project-tab is-active" role="tab" aria-selected="true" data-tab="general">Geral</button>';
     echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="en">English (' . count($en_accordion) . ')</button>';
@@ -695,6 +696,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Home</strong></legend>';
     echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto deve estar marcado)</label></p>';
+    echo '<p style="margin:8px 0 0;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
     echo '</fieldset>';
     echo '</div>';
 
@@ -768,11 +770,24 @@ function rs_project_render_meta_box(WP_Post $post): void {
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
     echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Hero (topo)</strong></legend>';
-    rs_render_media_field('rs_project_hero_id', 'Fundo (imagem, GIF ou vídeo mp4) — proporção 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', true, 'media');
-    rs_render_media_field('rs_project_logo_id', 'Logo / vignette — aparece sobre a mídia no desktop (canto inferior esquerdo)', $logo_id, 'rs_project_logo_id');
-    echo '<p style="margin:0 0 10px;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
-    echo '<p style="margin:0;color:#646970;font-size:12px;">A <em>imagem destacada</em> da barra lateral só é usada como fallback se o campo Logo acima estiver vazio.</p>';
+    echo '<legend><strong>Imagem de destaque (home e listagem)</strong></legend>';
+    echo '<p class="description" style="margin-top:0;">Aparece nos cards da <strong>home</strong> e da página de <strong>projetos</strong>. Defina na caixa <em>Imagem destacada</em> da barra lateral →.</p>';
+    $thumb_id = (int) get_post_thumbnail_id($canonical_id);
+    if ($thumb_id > 0) {
+        $thumb_url = (string) (wp_get_attachment_image_url($thumb_id, 'medium') ?: wp_get_attachment_url($thumb_id));
+        if ($thumb_url !== '') {
+            echo '<p style="margin:0 0 8px;"><img src="' . esc_url($thumb_url) . '" alt="" style="max-width:220px;height:auto;border-radius:4px;" /></p>';
+        }
+    } else {
+        echo '<p style="margin:0;color:#b32d2e;">Nenhuma imagem destacada definida — os cards podem ficar sem foto.</p>';
+    }
+    echo '</fieldset>';
+
+    echo '<fieldset class="rs-project-fieldset">';
+    echo '<legend><strong>Hero e vignette (só na página do projeto)</strong></legend>';
+    rs_render_media_field('rs_project_hero_id', 'Hero / fundo (imagem, GIF ou vídeo mp4) — 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', false, 'media');
+    rs_render_media_field('rs_project_logo_id', 'Vignette / logo — canto inferior esquerdo sobre o hero (desktop)', $logo_id, 'rs_project_logo_id', false);
+    echo '<p class="description" style="margin:0 0 10px;">A opção de exibir a vignette fica na aba <strong>Geral</strong>. Hero e vignette <strong>não</strong> aparecem na home nem na listagem.</p>';
     echo '</fieldset>';
 
     echo '<fieldset class="rs-project-fieldset">';
@@ -802,6 +817,15 @@ add_action('save_post_project', function (int $post_id) {
         return;
     }
 
+    // Trash/untrash/bulk na listagem não deve regravar meta a partir de POST incompleto.
+    $request_action = isset($_REQUEST['action']) ? (string) $_REQUEST['action'] : '';
+    if (in_array($request_action, ['trash', 'untrash', 'delete', 'deleteperm'], true)) {
+        return;
+    }
+    if (!empty($_GET['action']) && in_array((string) $_GET['action'], ['trash', 'untrash', 'delete'], true)) {
+        return;
+    }
+
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }
@@ -822,8 +846,67 @@ add_action('save_post_project', function (int $post_id) {
         return;
     }
 
-    rs_project_i18n_save($post_id, rs_project_i18n_parse_from_request($post_id));
+    $parsed = rs_project_i18n_parse_from_request($post_id);
+    rs_project_i18n_save($post_id, $parsed);
+
+    // Relê o que ficou no banco (após guard anti-wipe).
+    $saved = function_exists('rs_project_i18n_get') ? rs_project_i18n_get($post_id) : $parsed;
+    $shared = $saved['shared'] ?? [];
+    $en_acc = is_array($saved['locales']['en']['accordion'] ?? null) ? $saved['locales']['en']['accordion'] : [];
+    $pt_acc = is_array($saved['locales']['pt']['accordion'] ?? null) ? $saved['locales']['pt']['accordion'] : [];
+    $gallery_csv = trim((string) ($shared['gallery_ids'] ?? ''));
+    $gallery_n = $gallery_csv === '' ? 0 : count(array_filter(explode(',', $gallery_csv)));
+    $meta_ok = metadata_exists('post', $post_id, 'rs_project_i18n');
+
+    set_transient(
+        'rs_project_save_notice_' . get_current_user_id(),
+        [
+            'post_id'      => $post_id,
+            'hero_id'      => (int) ($shared['hero_id'] ?? 0),
+            'logo_id'      => (int) ($shared['logo_id'] ?? 0),
+            'gallery'      => $gallery_n,
+            'accordion_en' => count($en_acc),
+            'accordion_pt' => count($pt_acc),
+            'version'      => function_exists('rs_plugin_version') ? rs_plugin_version() : '',
+            'post_keys'    => isset($_POST['rs_project_hero_id']) ? 1 : 0,
+            'max_input'    => (int) ini_get('max_input_vars'),
+            'meta_ok'      => $meta_ok ? 1 : 0,
+        ],
+        60
+    );
 }, 10);
+
+add_action('admin_notices', function (): void {
+    $uid = get_current_user_id();
+    if ($uid <= 0) {
+        return;
+    }
+    $notice = get_transient('rs_project_save_notice_' . $uid);
+    if (!is_array($notice)) {
+        return;
+    }
+    delete_transient('rs_project_save_notice_' . $uid);
+
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || $screen->post_type !== 'project') {
+        return;
+    }
+
+    $meta_ok = !empty($notice['meta_ok']);
+    $class = $meta_ok ? 'notice-success' : 'notice-error';
+    printf(
+        '<div class="notice %s is-dismissible"><p><strong>Regular CMS v%s</strong> — projeto salvo: hero=%d, logo=%d, galeria=%d, acordeão EN=%d / PT=%d. meta i18n=%s (max_input_vars=%d)</p></div>',
+        esc_attr($class),
+        esc_html((string) ($notice['version'] ?? '')),
+        (int) ($notice['hero_id'] ?? 0),
+        (int) ($notice['logo_id'] ?? 0),
+        (int) ($notice['gallery'] ?? 0),
+        (int) ($notice['accordion_en'] ?? 0),
+        (int) ($notice['accordion_pt'] ?? 0),
+        $meta_ok ? 'OK' : 'FALHOU',
+        (int) ($notice['max_input'] ?? 0)
+    );
+});
 
 rs_enqueue_admin_media_picker(['project']);
 
@@ -1148,6 +1231,22 @@ function rs_project_render_admin_footer_script(): void {
             collectGalleryJson();
             collectAllYoutubeJson();
 
+            // Espelha hero/logo nos hiddens cedo (max_input_vars no Hostinger corta o fim do form).
+            const heroEl = document.getElementById('rs_project_hero_id');
+            const logoEl = document.getElementById('rs_project_logo_id');
+            $('#rs_project_hero_id_post').val(heroEl ? (heroEl.value || '0') : '0');
+            $('#rs_project_hero_id_cleared_post').val(
+                heroEl && heroEl.dataset.rsCleared === '1' ? '1' : '0'
+            );
+            $('#rs_project_logo_id_post').val(logoEl ? (logoEl.value || '0') : '0');
+            $('#rs_project_logo_id_cleared_post').val(
+                logoEl && logoEl.dataset.rsCleared === '1' ? '1' : '0'
+            );
+
+            // Remove names residuais de UI (acordeão/galeria/youtube) — dados já estão nos JSON.
+            $('#rs-project-gallery-list [name], [data-rs-locale] [name^="rs_project_accordion_"], [data-rs-locale] [name^="rs_project_youtube_"]')
+                .removeAttr('name');
+
             $('#rs_project_pt_title_submit').val($('#rs_project_pt_title_ui').val() || '');
             $('#rs_project_pt_excerpt_submit').val($('#rs_project_pt_excerpt_ui').val() || '');
 
@@ -1287,8 +1386,9 @@ function rs_project_render_admin_footer_script(): void {
         }
 
         function assignAccordionNames(row, index, locale) {
-            row.find('.rs-project-accordion-title').attr('name', 'rs_project_accordion_' + locale + '[' + index + '][title]');
-            row.find('textarea[id^="rs_project_accordion_body_' + locale + '_"]').attr('name', 'rs_project_accordion_' + locale + '[' + index + '][body]');
+            // Sem name= — POST usa só JSON (evita max_input_vars).
+            row.find('.rs-project-accordion-title').removeAttr('name');
+            row.find('textarea[id^="rs_project_accordion_body_' + locale + '_"]').removeAttr('name');
         }
 
         function reindexAccordion(locale) {
@@ -1301,8 +1401,8 @@ function rs_project_render_admin_footer_script(): void {
 
         function assignGalleryNames(row, index) {
             const fieldId = 'rs_project_gallery_image_' + index;
-            row.find('input[data-rs-cap-image]').attr('name', 'rs_project_gallery[' + index + '][image_id]').attr('id', fieldId);
-            row.find('.rs-project-gallery-featured-flag').attr('name', 'rs_project_gallery[' + index + '][featured]');
+            row.find('input[data-rs-cap-image]').removeAttr('name').attr('id', fieldId);
+            row.find('.rs-project-gallery-featured-flag').removeAttr('name');
             row.find('.rs-media-preview').attr('data-target', fieldId);
         }
 
@@ -1475,7 +1575,7 @@ function rs_project_render_admin_footer_script(): void {
             const index = nextYoutubeIndex[locale];
             const template = $('#rs-project-youtube-template-' + locale + ' .rs-project-youtube-row').first().clone();
             template.removeAttr('style').removeClass('is-locked is-invalid').attr('data-index', String(index));
-            template.find('.rs-project-youtube-url').val('').prop('readonly', false).attr('name', 'rs_project_youtube_' + locale + '[' + index + '][url]');
+            template.find('.rs-project-youtube-url').val('').prop('readonly', false).removeAttr('name');
             template.find('.rs-project-confirm-youtube').attr('hidden', true);
             list.append(template);
             nextYoutubeIndex[locale] += 1;
@@ -1513,7 +1613,7 @@ function rs_project_render_admin_footer_script(): void {
             row.remove();
             youtubeList(locale).find('.rs-project-youtube-row').each(function (i) {
                 $(this).attr('data-index', String(i));
-                $(this).find('.rs-project-youtube-url').attr('name', 'rs_project_youtube_' + locale + '[' + i + '][url]');
+                $(this).find('.rs-project-youtube-url').removeAttr('name');
             });
             nextYoutubeIndex[locale] = youtubeList(locale).find('.rs-project-youtube-row').length;
         });

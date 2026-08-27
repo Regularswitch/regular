@@ -93,11 +93,48 @@ function rs_meta_get_array(int $post_id, string $key): ?array {
 
 /**
  * Grava meta como array (serialização nativa do WP — sem stripslashes no JSON).
- * Remove duplicatas da mesma key (get_post_meta single pode ler uma linha e update outra).
+ * Nunca usa delete+add_unique (no Hostinger a meta pode sumir se o add falhar).
  *
  * @param array<mixed> $value
  */
 function rs_meta_update_array(int $post_id, string $key, array $value): void {
-    delete_post_meta($post_id, $key);
-    add_post_meta($post_id, $key, $value, true);
+    global $wpdb;
+
+    $existing_ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id ASC",
+        $post_id,
+        $key
+    ));
+
+    if (count($existing_ids) > 1) {
+        array_shift($existing_ids);
+        foreach ($existing_ids as $meta_id) {
+            $wpdb->delete($wpdb->postmeta, ['meta_id' => (int) $meta_id], ['%d']);
+        }
+        wp_cache_delete($post_id, 'post_meta');
+    }
+
+    if (!metadata_exists('post', $post_id, $key)) {
+        $added = add_post_meta($post_id, $key, $value, true);
+        if ($added === false && !metadata_exists('post', $post_id, $key)) {
+            // Fallback direto no DB (evita meta ausente após falha silenciosa).
+            $wpdb->insert(
+                $wpdb->postmeta,
+                [
+                    'post_id'    => $post_id,
+                    'meta_key'   => $key,
+                    'meta_value' => maybe_serialize($value),
+                ],
+                ['%d', '%s', '%s']
+            );
+            wp_cache_delete($post_id, 'post_meta');
+        }
+        return;
+    }
+
+    update_post_meta($post_id, $key, $value);
+
+    if (!metadata_exists('post', $post_id, $key)) {
+        add_post_meta($post_id, $key, $value, true);
+    }
 }

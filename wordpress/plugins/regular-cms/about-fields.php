@@ -662,38 +662,62 @@ function rs_about_render_admin_footer_script(): void {
         }
 
         function assignSectionNames(section, locale, index) {
-            const editorId = 'rs_about_section_text_' + locale + '_' + index;
             const prefix = 'rs_about_i18n[' + locale + '][sections][' + index + ']';
+            const $textarea = section.find('textarea[id^="rs_about_section_text_' + locale + '_"]');
             section.find('.rs-about-section-title').attr('name', prefix + '[title]');
-            section.find('textarea[id^="rs_about_section_text_' + locale + '_"]').attr('name', prefix + '[text]');
+            $textarea.attr('name', prefix + '[text]');
             section.find('input[data-rs-cap-image]').attr('name', prefix + '[image_id]');
-            section.attr('data-rs-editor-ids', editorId);
+            // Mantém o id do TinyMCE estável — só atualiza data-rs-editor-ids.
+            const editorId = $textarea.attr('id');
+            if (editorId) {
+                section.attr('data-rs-editor-ids', editorId);
+            }
+        }
+
+        function maxEditorSuffix(locale) {
+            let max = -1;
+            list(locale).find('textarea[id^="rs_about_section_text_' + locale + '_"]').each(function () {
+                const match = String(this.id || '').match(/_(\d+)$/);
+                if (match) {
+                    max = Math.max(max, parseInt(match[1], 10));
+                }
+            });
+            return max;
         }
 
         function reindexSections(locale) {
+            // Só renomeia name=/data-index. Nunca destroy/recria TinyMCE (apaga conteúdo).
             list(locale).find('.rs-metabox-accordion-item').each(function (i) {
                 $(this).attr('data-index', String(i));
                 assignSectionNames($(this), locale, i);
                 $(this).find('[id^="rs_about_image_' + locale + '_"]').each(function () {
                     const oldId = $(this).attr('id');
                     const newId = 'rs_about_image_' + locale + '_' + i;
+                    if (oldId === newId) {
+                        return;
+                    }
                     $(this).attr('id', newId);
                     $(this).closest('.rs-media-field').find('[data-target="' + oldId + '"]').attr('data-target', newId);
                 });
-                const textarea = $(this).find('textarea[id^="rs_about_section_text_' + locale + '_"]');
-                const oldEditorId = textarea.attr('id');
-                const newEditorId = 'rs_about_section_text_' + locale + '_' + i;
-                if (oldEditorId && oldEditorId !== newEditorId) {
-                    removeEditor(oldEditorId);
-                    textarea.attr('id', newEditorId);
-                    initEditor(newEditorId);
-                }
             });
-            nextIndex[locale] = list(locale).find('.rs-metabox-accordion-item').length;
+            nextIndex[locale] = Math.max(
+                maxEditorSuffix(locale) + 1,
+                list(locale).find('.rs-metabox-accordion-item').length
+            );
         }
 
         locales.forEach(function (locale) {
-            nextIndex[locale] = list(locale).find('.rs-metabox-accordion-item').length;
+            nextIndex[locale] = Math.max(
+                list(locale).find('.rs-metabox-accordion-item').length,
+                (function () {
+                    let max = -1;
+                    list(locale).find('textarea[id^="rs_about_section_text_' + locale + '_"]').each(function () {
+                        const match = String(this.id || '').match(/_(\d+)$/);
+                        if (match) max = Math.max(max, parseInt(match[1], 10));
+                    });
+                    return max + 1;
+                })()
+            );
             const accordionRoot = document.querySelector('#rs-about-accordion-' + locale);
             if (accordionRoot && window.RsMetaboxUi) {
             accordionApis[locale] = window.RsMetaboxUi.initAccordion(accordionRoot, {
