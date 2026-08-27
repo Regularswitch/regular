@@ -9,7 +9,7 @@ export function getGridSpan(index: number): GridSpan {
 }
 
 /**
- * Home: cards iguais nas colunas do CMS (sem full-width no meio).
+ * Home: cards nas colunas do CMS; o índice do destaque (CMS) ocupa largura total.
  * `featuredIndex` negativo desativa o span de destaque.
  * `columns` vem do CMS (site-ui layout).
  */

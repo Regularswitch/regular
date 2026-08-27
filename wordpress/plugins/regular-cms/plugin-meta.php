@@ -8,7 +8,7 @@ if (defined('RS_PLUGIN_META_LOADED')) {
 }
 define('RS_PLUGIN_META_LOADED', true);
 
-define('RS_PLUGIN_VERSION', '1.5.18');
+define('RS_PLUGIN_VERSION', '1.5.19');
 define('RS_PLUGIN_NAME', 'Regular CMS');
 define('RS_PLUGIN_SLUG', 'regular-cms');
 define('RS_PLUGIN_TEXT_DOMAIN', 'regular-cms');

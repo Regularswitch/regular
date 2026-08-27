@@ -4,7 +4,12 @@ import Link from 'next/link';
 
 import { CONTACT_PAGE_SLUG, pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
 import { isHomeProject } from '../../lib/projects/categories';
-import { orderHomeProjects } from '../../lib/projects/featured';
+import {
+	homeProjectLimit,
+	isFeaturedOnHome,
+	pickHomeProjects,
+	resolveFeaturedIndex,
+} from '../../lib/projects/featured';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects, SiteUiLabels } from '../../types';
@@ -22,15 +27,13 @@ type SelectedProjectsProps = {
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
 	const layout = useSiteUiLayout();
-	/** Home: exatamente 2 linhas (2 col → 4 cards; 3 col → 6; 1 col → 2). Sem card full-width no meio. */
-	const maxProjects =
-		layout.homeColumns === 1 ? 2 : layout.homeColumns === 3 ? 6 : 4;
+	const homePool = sortProjectsByDate(projects).filter((p) => isHomeProject(p, categories));
+	const hasFeatured = homePool.some(isFeaturedOnHome);
+	/** Exatamente 2 linhas: 4 iguais, ou 1 destaque + 2 (grid 2 col). */
+	const maxProjects = homeProjectLimit(layout.homeColumns, hasFeatured);
 
-	const selected = orderHomeProjects(
-		sortProjectsByDate(projects)
-			.filter((p) => isHomeProject(p, categories))
-			.slice(0, maxProjects),
-	);
+	const selected = pickHomeProjects(homePool, maxProjects);
+	const featuredIndex = resolveFeaturedIndex(selected);
 
 	if (!selected.length) return null;
 
@@ -61,7 +64,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getHomeGridSpan(index, -1, layout.homeColumns)}
+						span={getHomeGridSpan(index, featuredIndex, layout.homeColumns)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 					/>
 				))}

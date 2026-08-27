@@ -228,7 +228,7 @@ html:not(.dark) .brand-mark {
 	opacity: 0.7;
 }
 
-/* Selected projects — home: 2 linhas de cards iguais (2 ou 3 colunas) */
+/* Selected projects — home grid; destaque CMS em largura total */
 .selected-projects-grid {
 	display: grid;
 	grid-template-columns: 1fr;

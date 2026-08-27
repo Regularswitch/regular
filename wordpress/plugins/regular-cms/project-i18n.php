@@ -355,6 +355,59 @@ function rs_project_i18n_save(int $post_id, array $data): void {
 }
 
 /**
+ * Garante no máximo um projeto com "Destaque na home".
+ * Atualiza meta legada + blob i18n sem reentrar no save completo.
+ */
+function rs_project_clear_other_featured_home(int $keep_post_id): void {
+    static $running = false;
+    if ($running || $keep_post_id <= 0) {
+        return;
+    }
+    $running = true;
+
+    // Varre todos os projetos: meta legada e blob i18n podem divergir.
+    $other_ids = get_posts([
+        'post_type'              => 'project',
+        'post_status'            => 'any',
+        'posts_per_page'         => -1,
+        'fields'                 => 'ids',
+        'post__not_in'           => [$keep_post_id],
+        'no_found_rows'          => true,
+        'update_post_meta_cache' => true,
+        'update_post_term_cache' => false,
+    ]);
+
+    foreach ($other_ids as $other_id) {
+        $other_id = (int) $other_id;
+        if ($other_id <= 0) {
+            continue;
+        }
+
+        $legacy_featured = (bool) get_post_meta($other_id, RS_PROJECT_FEATURED_KEY, true);
+        $data = rs_project_i18n_get($other_id);
+        $i18n_featured = !empty($data['shared']['featured_home']);
+
+        if (!$legacy_featured && !$i18n_featured) {
+            continue;
+        }
+
+        update_post_meta($other_id, RS_PROJECT_FEATURED_KEY, 0);
+
+        if ($i18n_featured) {
+            $data['shared']['featured_home'] = false;
+            $normalized = rs_project_i18n_normalize($data);
+            if (function_exists('rs_meta_update_array')) {
+                rs_meta_update_array($other_id, RS_PROJECT_I18N_KEY, $normalized);
+            } else {
+                update_post_meta($other_id, RS_PROJECT_I18N_KEY, $normalized);
+            }
+        }
+    }
+
+    $running = false;
+}
+
+/**
  * Mantém meta legadas alinhadas ao EN + mídia compartilhada (api-etc / fallbacks).
  *
  * @param array<string, mixed> $data
@@ -382,8 +435,13 @@ function rs_project_i18n_sync_legacy_meta(int $post_id, array $data): void {
 
     update_post_meta($post_id, RS_PROJECT_GALLERY_KEY, (string) ($shared['gallery_ids'] ?? ''));
     update_post_meta($post_id, RS_PROJECT_GALLERY_FEATURED_KEY, (string) ($shared['gallery_featured_ids'] ?? ''));
-    update_post_meta($post_id, RS_PROJECT_FEATURED_KEY, !empty($shared['featured_home']) ? 1 : 0);
+    $is_featured_home = !empty($shared['featured_home']);
+    update_post_meta($post_id, RS_PROJECT_FEATURED_KEY, $is_featured_home ? 1 : 0);
     update_post_meta($post_id, RS_PROJECT_VIGNETTE_KEY, !empty($shared['show_vignette']) ? 1 : 0);
+
+    if ($is_featured_home) {
+        rs_project_clear_other_featured_home($post_id);
+    }
 
     $accordion = is_array($en['accordion'] ?? null) ? $en['accordion'] : [];
     // wp_slash: update_post_meta faz wp_unslash e corromperia o JSON do accordion.

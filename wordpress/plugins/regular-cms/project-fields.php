@@ -699,7 +699,7 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '</fieldset>';
     echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
     echo '<legend><strong>Home</strong></legend>';
-    echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto deve estar marcado)</label></p>';
+    echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto — ao salvar, os outros são desmarcados)</label></p>';
     echo '<p style="margin:8px 0 0;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
     echo '</fieldset>';
     echo '</div>';
