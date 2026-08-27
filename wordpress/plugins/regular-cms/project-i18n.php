@@ -171,14 +171,18 @@ function rs_project_i18n_get(int $post_id): array {
 
     // Formato novo: array serializado pelo WordPress (evita corrupção de JSON).
     if (is_array($raw)) {
-        return rs_project_i18n_normalize($raw);
+        if ($raw === []) {
+            return rs_project_i18n_from_legacy_post($post_id);
+        }
+
+        return rs_project_i18n_merge_legacy_gaps($post_id, rs_project_i18n_normalize($raw));
     }
 
     // Formato legado: string JSON.
     if (is_string($raw) && $raw !== '') {
         $decoded = rs_project_i18n_decode_json_string($raw);
         if (is_array($decoded)) {
-            return rs_project_i18n_normalize($decoded);
+            return rs_project_i18n_merge_legacy_gaps($post_id, rs_project_i18n_normalize($decoded));
         }
     }
 
@@ -200,24 +204,7 @@ function rs_project_i18n_maybe_migrate_storage(int $post_id): void {
         return;
     }
 
-    $data = rs_project_i18n_normalize($decoded);
-    $legacy_hero = function_exists('rs_project_get_hero_id') ? rs_project_get_hero_id($post_id) : 0;
-    $legacy_gallery = function_exists('rs_project_get_gallery_ids')
-        ? implode(',', rs_project_get_gallery_ids($post_id))
-        : '';
-    $legacy_logo = (int) get_post_meta($post_id, defined('RS_PROJECT_LOGO_KEY') ? RS_PROJECT_LOGO_KEY : 'rs_project_logo_id', true);
-
-    if ((int) ($data['shared']['hero_id'] ?? 0) <= 0 && $legacy_hero > 0) {
-        $data['shared']['hero_id'] = $legacy_hero;
-    }
-    if (trim((string) ($data['shared']['gallery_ids'] ?? '')) === '' && $legacy_gallery !== '') {
-        $data['shared']['gallery_ids'] = $legacy_gallery;
-    }
-    if ((int) ($data['shared']['logo_id'] ?? 0) <= 0 && $legacy_logo > 0) {
-        $data['shared']['logo_id'] = $legacy_logo;
-    }
-
-    rs_project_i18n_save($post_id, $data);
+    rs_project_i18n_save($post_id, rs_project_i18n_merge_legacy_gaps($post_id, rs_project_i18n_normalize($decoded)));
 }
 
 /**
@@ -293,6 +280,69 @@ function rs_project_i18n_is_effectively_empty(array $data): bool {
 }
 
 /**
+ * Preenche lacunas do blob i18n a partir das meta legadas (blob vazio/corrompido).
+ *
+ * @param array<string, mixed> $data
+ * @return array<string, mixed>
+ */
+function rs_project_i18n_merge_legacy_gaps(int $post_id, array $data): array {
+    $legacy_hero = function_exists('rs_project_get_hero_id') ? rs_project_get_hero_id($post_id) : 0;
+    $legacy_gallery = function_exists('rs_project_get_gallery_ids')
+        ? implode(',', rs_project_get_gallery_ids($post_id))
+        : '';
+    $legacy_logo = (int) get_post_meta($post_id, RS_PROJECT_LOGO_KEY, true);
+    $legacy_featured_gallery = function_exists('rs_project_get_gallery_featured_ids')
+        ? implode(',', rs_project_get_gallery_featured_ids($post_id))
+        : '';
+
+    if ((int) ($data['shared']['hero_id'] ?? 0) <= 0 && $legacy_hero > 0) {
+        $data['shared']['hero_id'] = $legacy_hero;
+    }
+    if (trim((string) ($data['shared']['gallery_ids'] ?? '')) === '' && $legacy_gallery !== '') {
+        $data['shared']['gallery_ids'] = $legacy_gallery;
+    }
+    if (trim((string) ($data['shared']['gallery_featured_ids'] ?? '')) === '' && $legacy_featured_gallery !== '') {
+        $data['shared']['gallery_featured_ids'] = $legacy_featured_gallery;
+    }
+    if ((int) ($data['shared']['logo_id'] ?? 0) <= 0 && $legacy_logo > 0) {
+        $data['shared']['logo_id'] = $legacy_logo;
+    }
+
+    $pt_id = (int) get_post_meta($post_id, 'PT', true);
+    foreach (['en' => $post_id, 'pt' => $pt_id] as $locale => $source_id) {
+        if ($source_id <= 0) {
+            continue;
+        }
+
+        $loc = is_array($data['locales'][$locale] ?? null) ? $data['locales'][$locale] : [];
+        $acc = is_array($loc['accordion'] ?? null) ? $loc['accordion'] : [];
+        if ($acc === [] && function_exists('rs_project_get_accordion_sections')) {
+            $legacy_acc = rs_project_get_accordion_sections($source_id);
+            if ($legacy_acc !== []) {
+                $data['locales'][$locale]['accordion'] = $legacy_acc;
+            }
+        }
+
+        $yt = is_array($loc['youtube'] ?? null) ? $loc['youtube'] : [];
+        if ($yt === [] && function_exists('rs_project_get_youtube_videos')) {
+            $legacy_yt = rs_project_get_youtube_videos($source_id);
+            if ($legacy_yt !== []) {
+                $data['locales'][$locale]['youtube'] = $legacy_yt;
+            }
+        }
+    }
+
+    if (rs_project_i18n_is_effectively_empty($data)) {
+        $legacy = rs_project_i18n_from_legacy_post($post_id);
+        if (!rs_project_i18n_is_effectively_empty($legacy)) {
+            return $legacy;
+        }
+    }
+
+    return rs_project_i18n_normalize($data);
+}
+
+/**
  * Evita sobrescrever conteúdo rico com payload vazio (POST truncado / delete / autosave).
  * Clear explícito é por campo: remover só a vignette NÃO libera wipe de hero/galeria/acordeão.
  *
@@ -300,7 +350,14 @@ function rs_project_i18n_is_effectively_empty(array $data): bool {
  * @param array<string, mixed> $previous
  * @return array<string, mixed>
  */
-function rs_project_i18n_guard_against_wipe(array $incoming, array $previous): array {
+function rs_project_i18n_guard_against_wipe(array $incoming, array $previous, int $post_id = 0): array {
+    if (rs_project_i18n_is_effectively_empty($previous) && $post_id > 0) {
+        $legacy = rs_project_i18n_from_legacy_post($post_id);
+        if (!rs_project_i18n_is_effectively_empty($legacy)) {
+            $previous = $legacy;
+        }
+    }
+
     if (rs_project_i18n_is_effectively_empty($previous)) {
         return $incoming;
     }
@@ -366,7 +423,7 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous): a
 function rs_project_i18n_save(int $post_id, array $data): void {
     $previous = rs_project_i18n_get($post_id);
     $normalized = rs_project_i18n_normalize(
-        rs_project_i18n_guard_against_wipe(rs_project_i18n_normalize($data), $previous)
+        rs_project_i18n_guard_against_wipe(rs_project_i18n_normalize($data), $previous, $post_id)
     );
 
     // Array nativo + dedupe (evita linhas duplicadas de rs_project_i18n).
@@ -382,6 +439,35 @@ function rs_project_i18n_save(int $post_id, array $data): void {
     }
 
     rs_project_i18n_sync_legacy_meta($post_id, $normalized);
+}
+
+/**
+ * Atualiza só a flag de destaque na home — nunca regrava hero/galeria/acordeão de outros projetos.
+ */
+function rs_project_i18n_set_featured_home(int $post_id, bool $featured): void {
+    update_post_meta($post_id, RS_PROJECT_FEATURED_KEY, $featured ? 1 : 0);
+
+    if (!metadata_exists('post', $post_id, RS_PROJECT_I18N_KEY)) {
+        return;
+    }
+
+    $raw = get_post_meta($post_id, RS_PROJECT_I18N_KEY, true);
+    if (!is_array($raw) || $raw === []) {
+        return;
+    }
+
+    $data = rs_project_i18n_get($post_id);
+    if ((bool) ($data['shared']['featured_home'] ?? false) === $featured) {
+        return;
+    }
+
+    $data['shared']['featured_home'] = $featured;
+    $normalized = rs_project_i18n_normalize($data);
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($post_id, RS_PROJECT_I18N_KEY, $normalized);
+    } else {
+        update_post_meta($post_id, RS_PROJECT_I18N_KEY, $normalized);
+    }
 }
 
 /**
@@ -421,17 +507,7 @@ function rs_project_clear_other_featured_home(int $keep_post_id): void {
             continue;
         }
 
-        update_post_meta($other_id, RS_PROJECT_FEATURED_KEY, 0);
-
-        if ($i18n_featured) {
-            $data['shared']['featured_home'] = false;
-            $normalized = rs_project_i18n_normalize($data);
-            if (function_exists('rs_meta_update_array')) {
-                rs_meta_update_array($other_id, RS_PROJECT_I18N_KEY, $normalized);
-            } else {
-                update_post_meta($other_id, RS_PROJECT_I18N_KEY, $normalized);
-            }
-        }
+        rs_project_i18n_set_featured_home($other_id, false);
     }
 
     $running = false;
