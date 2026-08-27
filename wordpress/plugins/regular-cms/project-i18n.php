@@ -354,6 +354,9 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous, in
     if (rs_project_i18n_is_effectively_empty($previous) && $post_id > 0) {
         $legacy = rs_project_i18n_from_legacy_post($post_id);
         if (!rs_project_i18n_is_effectively_empty($legacy)) {
+            if (function_exists('rs_cms_log')) {
+                rs_cms_log('guard.previous_from_legacy', ['post_id' => $post_id], 'warning');
+            }
             $previous = $legacy;
         }
     }
@@ -378,15 +381,24 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous, in
     // Restaura campo a campo se sumiu no POST sem flag de remoção.
     if (!$hero_cleared && (int) ($incoming['shared']['hero_id'] ?? 0) <= 0 && $prev_hero > 0) {
         $incoming['shared']['hero_id'] = $prev_hero;
+        if (function_exists('rs_cms_log')) {
+            rs_cms_log('guard.restore', ['post_id' => $post_id, 'field' => 'hero_id', 'value' => $prev_hero], 'warning');
+        }
     }
     if (!$logo_cleared && (int) ($incoming['shared']['logo_id'] ?? 0) <= 0 && $prev_logo > 0) {
         $incoming['shared']['logo_id'] = $prev_logo;
+        if (function_exists('rs_cms_log')) {
+            rs_cms_log('guard.restore', ['post_id' => $post_id, 'field' => 'logo_id', 'value' => $prev_logo], 'warning');
+        }
     }
     if (!$gallery_cleared) {
         $inc_gallery = trim((string) ($incoming['shared']['gallery_ids'] ?? ''));
         if ($inc_gallery === '' && $prev_gallery !== '') {
             $incoming['shared']['gallery_ids'] = $prev_gallery;
             $incoming['shared']['gallery_featured_ids'] = $prev_gallery_featured;
+            if (function_exists('rs_cms_log')) {
+                rs_cms_log('guard.restore', ['post_id' => $post_id, 'field' => 'gallery', 'count' => count(array_filter(explode(',', $prev_gallery)))], 'warning');
+            }
         }
     }
 
@@ -397,9 +409,15 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous, in
 
     if (!$acc_en_cleared && $inc_en_acc === [] && $prev_en_acc !== []) {
         $incoming['locales']['en']['accordion'] = $prev_en_acc;
+        if (function_exists('rs_cms_log')) {
+            rs_cms_log('guard.restore', ['post_id' => $post_id, 'field' => 'accordion_en', 'sections' => count($prev_en_acc)], 'warning');
+        }
     }
     if (!$acc_pt_cleared && $inc_pt_acc === [] && $prev_pt_acc !== []) {
         $incoming['locales']['pt']['accordion'] = $prev_pt_acc;
+        if (function_exists('rs_cms_log')) {
+            rs_cms_log('guard.restore', ['post_id' => $post_id, 'field' => 'accordion_pt', 'sections' => count($prev_pt_acc)], 'warning');
+        }
     }
 
     $prev_en_yt = is_array($previous['locales']['en']['youtube'] ?? null) ? $previous['locales']['en']['youtube'] : [];
@@ -422,6 +440,10 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous, in
  */
 function rs_project_i18n_save(int $post_id, array $data): void {
     $previous = rs_project_i18n_get($post_id);
+    $before = function_exists('rs_cms_project_save_snapshot')
+        ? rs_cms_project_save_snapshot($post_id, $previous)
+        : [];
+
     $normalized = rs_project_i18n_normalize(
         rs_project_i18n_guard_against_wipe(rs_project_i18n_normalize($data), $previous, $post_id)
     );
@@ -439,6 +461,16 @@ function rs_project_i18n_save(int $post_id, array $data): void {
     }
 
     rs_project_i18n_sync_legacy_meta($post_id, $normalized);
+
+    if (function_exists('rs_cms_log')) {
+        rs_cms_log('project.save', [
+            'before'       => $before,
+            'after'        => rs_cms_project_save_snapshot($post_id, $normalized),
+            'hero_cleared' => !empty($_POST['rs_project_hero_id_cleared']) ? 1 : 0,
+            'logo_cleared' => !empty($_POST['rs_project_logo_id_cleared']) ? 1 : 0,
+            'meta_ok'      => metadata_exists('post', $post_id, RS_PROJECT_I18N_KEY) ? 1 : 0,
+        ]);
+    }
 }
 
 /**
@@ -463,6 +495,13 @@ function rs_project_i18n_set_featured_home(int $post_id, bool $featured): void {
 
     $data['shared']['featured_home'] = $featured;
     $normalized = rs_project_i18n_normalize($data);
+    if (function_exists('rs_cms_log')) {
+        rs_cms_log('featured.set', [
+            'post_id'  => $post_id,
+            'featured' => $featured ? 1 : 0,
+            'snapshot' => rs_cms_project_save_snapshot($post_id, $normalized),
+        ]);
+    }
     if (function_exists('rs_meta_update_array')) {
         rs_meta_update_array($post_id, RS_PROJECT_I18N_KEY, $normalized);
     } else {
@@ -505,6 +544,15 @@ function rs_project_clear_other_featured_home(int $keep_post_id): void {
 
         if (!$legacy_featured && !$i18n_featured) {
             continue;
+        }
+
+        if (function_exists('rs_cms_log')) {
+            rs_cms_log('featured.clear_other', [
+                'keep_post_id' => $keep_post_id,
+                'other_id'     => $other_id,
+                'legacy'       => $legacy_featured ? 1 : 0,
+                'i18n'         => $i18n_featured ? 1 : 0,
+            ], 'warning');
         }
 
         rs_project_i18n_set_featured_home($other_id, false);

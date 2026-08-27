@@ -157,8 +157,25 @@ Crie posts no CPT Footer no admin do **staging** e preencha os campos.
 **Mudou plugin em produção por engano**  
 Restaure backup da Hostinger ou reimporte export de produção feito antes da mudança.
 
-**`staging-wp` redireciona para `wp.regularswitch.com`**  
-O WordPress ainda aponta `siteurl`/`home` para produção. Em **Configurações → Gerais**, ajuste as duas URLs para `https://staging-wp.regularswitch.com` (ou use WP-CLI / banco). Enquanto redirecionar, o admin e os plugins são os de **produção**.
+**`staging-wp` redireciona para `wp.regularswitch.com` ou `regularswitch-wp.local`**
+O WordPress ainda aponta `siteurl`/`home` para outro host. Em **Configurações → Gerais**, ajuste as duas URLs para `https://staging-wp.regularswitch.com` (ou use WP-CLI / banco). Após import do Local, use o script de search-replace (abaixo).
+
+**Import do Local → staging ainda redireciona para `.local`**
+1. Confirme `WP_HOME` / `WP_SITEURL` no `wp-config.php` do servidor.
+2. Gere e envie o script de troca em massa (serializado, seguro):
+
+```bash
+./scripts/fix-wp-search-replace-staging.sh > /tmp/rs-search-replace-staging.php
+```
+
+- Upload para a raiz do `staging-wp/` (mesma pasta que `wp-config.php`)
+- Abra `https://staging-wp.regularswitch.com/rs-search-replace-staging.php` — copie a `key` na resposta 403
+- Dry run: `?key=...&dry=1`
+- Aplicar: `?key=...` (sem `dry`)
+- **Apague** o arquivo do servidor
+- Limpe cache LiteSpeed no hPanel
+
+O script recria `siteurl`/`home`, ativa `regular-cms`, troca `.local` em todas as tabelas `wp_*` (inclui meta serializada) e limpa transients. Se redirecionar para **produção** (`wp.regularswitch.com`), repita o search-replace trocando também essas URLs no script (`prepare-wp-sql-for-staging.sh` cobre dump SQL).
 
 **Caixas de metadados não aparecem em Projects**  
 1. Confirme que o plugin **Regular CMS** está ativo e atualizado (`project-fields.php` no ZIP).  

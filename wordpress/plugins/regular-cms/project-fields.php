@@ -841,6 +841,22 @@ add_action('save_post_project', function (int $post_id) {
     $parsed = rs_project_i18n_parse_from_request($post_id);
     rs_project_i18n_save($post_id, $parsed);
 
+    $max_input = (int) ini_get('max_input_vars');
+    $input_count = function_exists('rs_cms_count_request_inputs') ? rs_cms_count_request_inputs() : count($_POST);
+    $maybe_truncated = $max_input > 0 && $input_count >= ($max_input - 5);
+
+    if (function_exists('rs_cms_log')) {
+        rs_cms_log('project.request', [
+            'post_id'          => $post_id,
+            'input_count'      => $input_count,
+            'max_input_vars'   => $max_input,
+            'maybe_truncated'  => $maybe_truncated ? 1 : 0,
+            'has_hero_post'    => isset($_POST['rs_project_hero_id']) ? 1 : 0,
+            'hero_cleared'     => !empty($_POST['rs_project_hero_id_cleared']) ? 1 : 0,
+            'logo_cleared'     => !empty($_POST['rs_project_logo_id_cleared']) ? 1 : 0,
+        ], $maybe_truncated ? 'warning' : 'info');
+    }
+
     // Relê o que ficou no banco (após guard anti-wipe).
     $saved = function_exists('rs_project_i18n_get') ? rs_project_i18n_get($post_id) : $parsed;
     $shared = $saved['shared'] ?? [];
@@ -861,7 +877,9 @@ add_action('save_post_project', function (int $post_id) {
             'accordion_pt' => count($pt_acc),
             'version'      => function_exists('rs_plugin_version') ? rs_plugin_version() : '',
             'post_keys'    => isset($_POST['rs_project_hero_id']) ? 1 : 0,
-            'max_input'    => (int) ini_get('max_input_vars'),
+            'max_input'    => $max_input,
+            'input_count'  => $input_count,
+            'truncated'    => $maybe_truncated ? 1 : 0,
             'meta_ok'      => $meta_ok ? 1 : 0,
         ],
         60
@@ -885,9 +903,11 @@ add_action('admin_notices', function (): void {
     }
 
     $meta_ok = !empty($notice['meta_ok']);
-    $class = $meta_ok ? 'notice-success' : 'notice-error';
+    $truncated = !empty($notice['truncated']);
+    $class = !$meta_ok ? 'notice-error' : ($truncated ? 'notice-warning' : 'notice-success');
+    $log_url = admin_url('tools.php?page=rs-cms-debug-log');
     printf(
-        '<div class="notice %s is-dismissible"><p><strong>Regular CMS v%s</strong> — projeto salvo: hero=%d, logo=%d, galeria=%d, acordeão EN=%d / PT=%d. meta i18n=%s (max_input_vars=%d)</p></div>',
+        '<div class="notice %s is-dismissible"><p><strong>Regular CMS v%s</strong> — projeto salvo: hero=%d, logo=%d, galeria=%d, acordeão EN=%d / PT=%d. meta i18n=%s · inputs=%d / max_input_vars=%d%s</p>%s</div>',
         esc_attr($class),
         esc_html((string) ($notice['version'] ?? '')),
         (int) ($notice['hero_id'] ?? 0),
@@ -896,7 +916,12 @@ add_action('admin_notices', function (): void {
         (int) ($notice['accordion_en'] ?? 0),
         (int) ($notice['accordion_pt'] ?? 0),
         $meta_ok ? 'OK' : 'FALHOU',
-        (int) ($notice['max_input'] ?? 0)
+        (int) ($notice['input_count'] ?? 0),
+        (int) ($notice['max_input'] ?? 0),
+        $truncated ? ' — <strong>POST pode estar truncado</strong> (aumente max_input_vars no PHP)' : '',
+        function_exists('rs_cms_debug_enabled') && rs_cms_debug_enabled()
+            ? '<p style="margin:8px 0 0;"><a href="' . esc_url($log_url) . '">Ver log detalhado</a> (Ferramentas → Regular CMS Log)</p>'
+            : ''
     );
 });
 

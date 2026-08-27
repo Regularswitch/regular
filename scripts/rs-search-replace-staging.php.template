@@ -1,0 +1,267 @@
+<?php
+/**
+ * Search-replace serializado: Local → staging em todas as tabelas wp_*.
+ * APAGUE ESTE ARQUIVO IMEDIATAMENTE APÓS USAR.
+ *
+ * Gerado por scripts/fix-wp-search-replace-staging.sh — não editar no servidor.
+ */
+
+declare(strict_types=1);
+
+header('Content-Type: text/plain; charset=utf-8');
+
+$secret = $_GET['key'] ?? '';
+if ($secret !== 'rs-sr-' . md5(__FILE__)) {
+    http_response_code(403);
+    echo "Forbidden. Use: ?key=rs-sr-" . md5(__FILE__) . "\n";
+    exit;
+}
+
+$dry_run = !empty($_GET['dry']);
+
+$wp_config = __DIR__ . '/wp-config.php';
+if (!is_readable($wp_config)) {
+    echo "wp-config.php não encontrado nesta pasta.\n";
+    exit(1);
+}
+
+require $wp_config;
+
+$staging = '__STAGING_URL__';
+$replacements = [
+    ['__LOCAL_HTTPS__', $staging],
+    ['__LOCAL_HTTP__', $staging],
+    ['regularswitch-wp.local', parse_url($staging, PHP_URL_HOST) ?: 'staging-wp.regularswitch.com'],
+];
+
+/**
+ * @param mixed $data
+ * @return mixed
+ */
+function rs_sr_replace_value($data, array $replacements, bool &$changed): mixed {
+    if (is_string($data)) {
+        $unserialized = @unserialize($data, ['allowed_classes' => false]);
+        if ($unserialized !== false || $data === 'b:0;') {
+            $inner = rs_sr_replace_value($unserialized, $replacements, $changed);
+            $out = serialize($inner);
+            if ($out !== $data) {
+                $changed = true;
+            }
+            return $out;
+        }
+
+        $out = $data;
+        foreach ($replacements as [$from, $to]) {
+            if ($from === '' || !str_contains($out, $from)) {
+                continue;
+            }
+            $next = str_replace($from, $to, $out);
+            if ($next !== $out) {
+                $out = $next;
+                $changed = true;
+            }
+        }
+        return $out;
+    }
+
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            $data[$key] = rs_sr_replace_value($value, $replacements, $changed);
+        }
+        return $data;
+    }
+
+    if (is_object($data)) {
+        foreach (get_object_vars($data) as $key => $value) {
+            $data->$key = rs_sr_replace_value($value, $replacements, $changed);
+        }
+        return $data;
+    }
+
+    return $data;
+}
+
+$db_host = DB_HOST;
+$socket = null;
+if (str_contains($db_host, ':')) {
+    [$db_host, $socket] = explode(':', $db_host, 2);
+}
+
+$mysqli = $socket
+    ? new mysqli($db_host, DB_USER, DB_PASSWORD, DB_NAME, 0, $socket)
+    : new mysqli($db_host, DB_USER, DB_PASSWORD, DB_NAME);
+
+if ($mysqli->connect_error) {
+    echo 'Erro DB: ' . $mysqli->connect_error . "\n";
+    exit(1);
+}
+
+$mysqli->set_charset('utf8mb4');
+
+$prefix = $GLOBALS['table_prefix'] ?? 'wp_';
+$options_table = $prefix . 'options';
+
+echo ($dry_run ? "DRY RUN — nada será gravado\n\n" : "EXECUTANDO search-replace\n\n");
+echo "Staging: {$staging}\n";
+echo "De: __LOCAL_HTTPS__, __LOCAL_HTTP__, regularswitch-wp.local\n\n";
+
+$mysqli->query("DELETE FROM `{$options_table}` WHERE option_name IN ('siteurl', 'home')");
+if (!$dry_run) {
+    $stmt = $mysqli->prepare(
+        "INSERT INTO `{$options_table}` (option_name, option_value, autoload) VALUES (?, ?, 'yes')"
+    );
+    foreach (['siteurl', 'home'] as $name) {
+        $stmt->bind_param('ss', $name, $staging);
+        $stmt->execute();
+    }
+    $stmt->close();
+}
+echo "OK — siteurl/home = {$staging}\n";
+
+$res = $mysqli->query("SELECT option_value FROM `{$options_table}` WHERE option_name = 'active_plugins' LIMIT 1");
+$row = $res ? $res->fetch_row() : null;
+$self = 'regular-cms/regular-cms.php';
+$legacy = ['traducao/traducao.php', 'api-etc/api-etc.php'];
+$plugins = is_array($row) && isset($row[0]) ? @unserialize($row[0], ['allowed_classes' => false]) : [];
+if (!is_array($plugins)) {
+    $plugins = [];
+}
+$plugins = array_values(array_filter(
+    $plugins,
+    static fn($p) => !in_array($p, $legacy, true)
+));
+if (!in_array($self, $plugins, true)) {
+    array_unshift($plugins, $self);
+}
+if (!$dry_run) {
+    $serialized = serialize($plugins);
+    $stmt = $mysqli->prepare("UPDATE `{$options_table}` SET option_value = ? WHERE option_name = 'active_plugins'");
+    if ($stmt) {
+        $stmt->bind_param('s', $serialized);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $stmt = $mysqli->prepare("INSERT INTO `{$options_table}` (option_name, option_value, autoload) VALUES ('active_plugins', ?, 'yes')");
+        $stmt->bind_param('s', $serialized);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+echo "OK — active_plugins inclui regular-cms/regular-cms.php\n";
+
+$tables = [];
+$like = $mysqli->real_escape_string($prefix . '%');
+$res = $mysqli->query("SHOW TABLES LIKE '{$like}'");
+while ($res && ($r = $res->fetch_row())) {
+    $tables[] = $r[0];
+}
+
+$total_cells = 0;
+$updated_rows = 0;
+
+foreach ($tables as $table) {
+    $cols_res = $mysqli->query("SHOW COLUMNS FROM `{$table}`");
+    if (!$cols_res) {
+        continue;
+    }
+
+    $text_cols = [];
+    $pk_cols = [];
+    while ($col = $cols_res->fetch_assoc()) {
+        if (preg_match('/^(varchar|text|mediumtext|longtext|tinytext)/i', (string) $col['Type'])) {
+            $text_cols[] = $col['Field'];
+        }
+        if ($col['Key'] === 'PRI') {
+            $pk_cols[] = $col['Field'];
+        }
+    }
+
+    if ($text_cols === [] || $pk_cols === []) {
+        continue;
+    }
+
+    $pk_list = implode(', ', array_map(static fn($c) => "`{$c}`", $pk_cols));
+    $select = $pk_list . ', ' . implode(', ', array_map(static fn($c) => "`{$c}`", $text_cols));
+    $rows_res = $mysqli->query("SELECT {$select} FROM `{$table}`");
+    if (!$rows_res) {
+        continue;
+    }
+
+    $table_updates = 0;
+
+    while ($row = $rows_res->fetch_assoc()) {
+        $set_parts = [];
+        $bind_values = [];
+        $row_changed = false;
+
+        foreach ($text_cols as $col) {
+            $val = $row[$col] ?? null;
+            if (!is_string($val) || $val === '') {
+                continue;
+            }
+            if (!str_contains($val, 'regularswitch-wp.local')) {
+                continue;
+            }
+
+            $cell_changed = false;
+            $new_val = rs_sr_replace_value($val, $replacements, $cell_changed);
+            if ($cell_changed && $new_val !== $val) {
+                $set_parts[] = "`{$col}` = ?";
+                $bind_values[] = $new_val;
+                $row_changed = true;
+                ++$total_cells;
+            }
+        }
+
+        if (!$row_changed) {
+            continue;
+        }
+
+        ++$updated_rows;
+        ++$table_updates;
+
+        if ($dry_run) {
+            continue;
+        }
+
+        $where = [];
+        $where_vals = [];
+        foreach ($pk_cols as $pk) {
+            $where[] = "`{$pk}` = ?";
+            $where_vals[] = $row[$pk];
+        }
+
+        $sql = "UPDATE `{$table}` SET " . implode(', ', $set_parts) . ' WHERE ' . implode(' AND ', $where);
+        $stmt = $mysqli->prepare($sql);
+        if (!$stmt) {
+            echo "WARN — prepare falhou em {$table}: " . $mysqli->error . "\n";
+            continue;
+        }
+
+        $types = str_repeat('s', count($bind_values) + count($where_vals));
+        $params = array_merge($bind_values, $where_vals);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    if ($table_updates > 0) {
+        echo "  {$table}: {$table_updates} linha(s)\n";
+    }
+}
+
+if (!$dry_run) {
+    $mysqli->query("DELETE FROM `{$options_table}` WHERE option_name LIKE '_transient_%'");
+    $mysqli->query("DELETE FROM `{$options_table}` WHERE option_name LIKE '_site_transient_%'");
+    echo "\nOK — transients limpos\n";
+}
+
+echo "\nResumo: {$updated_rows} linha(s), {$total_cells} célula(s) com .local\n";
+
+if ($dry_run) {
+    echo "\nDry run concluído. Rode sem &dry=1 para aplicar.\n";
+} else {
+    echo "\nTeste:\n";
+    echo "  curl -sI \"{$staging}/wp-admin/\" | grep -i location\n";
+    echo "\nAPAGUE rs-search-replace-staging.php do servidor agora.\n";
+}

@@ -18,6 +18,7 @@ require_once $rs_plugin_dir . '/intro-fields.php';
 require_once $rs_plugin_dir . '/rich-text-fields.php';
 require_once $rs_plugin_dir . '/media-fields.php';
 require_once $rs_plugin_dir . '/meta-storage.php';
+require_once $rs_plugin_dir . '/debug-log.php';
 require_once $rs_plugin_dir . '/section-i18n.php';
 require_once $rs_plugin_dir . '/footer-fields.php';
 require_once $rs_plugin_dir . '/capabilities-fields.php';
@@ -32,7 +33,8 @@ require_once $rs_plugin_dir . '/site-ui-fields.php';
 require_once $rs_plugin_dir . '/blob-visual-fields.php';
 require_once $rs_plugin_dir . '/header-menus.php';
 
-// Projetos (i18n + meta boxes)
+// Projetos (CPT + i18n + meta boxes)
+require_once $rs_plugin_dir . '/project-cpt.php';
 require_once $rs_plugin_dir . '/project-fields.php';
 require_once $rs_plugin_dir . '/project-i18n.php';
 require_once $rs_plugin_dir . '/project-media-protect.php';

@@ -20,6 +20,8 @@ echo "URL WP:   $STAGING_URL"
 
 sed \
   -e "s/DEFAULT x AS \`\([0-9a-f]*\)\`/DEFAULT x'\1'/g" \
+  -e "s|https://regularswitch-wp.local|${STAGING_URL}|g" \
+  -e "s|http://regularswitch-wp.local|${STAGING_URL}|g" \
   -e "s|https://wp.regularswitch.com|${STAGING_URL}|g" \
   -e "s|http://wp.regularswitch.com|${STAGING_URL}|g" \
   -e "s|https://regularswitch.com|${STAGING_URL}|g" \
