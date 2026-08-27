@@ -134,6 +134,15 @@ jQuery(function ($) {
             if (cleared) {
                 cleared.value = '0';
             }
+            // Espelhos cedo do formulário de projeto (hero/logo).
+            const valuePost = document.getElementById(String(target) + '_post');
+            if (valuePost) {
+                valuePost.value = String(attachment.id);
+            }
+            const clearedPost = document.getElementById(String(target) + '_cleared_post');
+            if (clearedPost) {
+                clearedPost.value = '0';
+            }
             setPreview(target, attachment);
         });
 
@@ -152,6 +161,15 @@ jQuery(function ($) {
         const cleared = document.getElementById(String(target) + '_cleared');
         if (cleared) {
             cleared.value = '1';
+        }
+        // Só o campo clicado: não zerar hero ao remover logo (e vice-versa).
+        const valuePost = document.getElementById(String(target) + '_post');
+        if (valuePost) {
+            valuePost.value = '0';
+        }
+        const clearedPost = document.getElementById(String(target) + '_cleared_post');
+        if (clearedPost) {
+            clearedPost.value = '1';
         }
         setPreview(target, null);
     });

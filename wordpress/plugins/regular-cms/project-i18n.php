@@ -294,6 +294,7 @@ function rs_project_i18n_is_effectively_empty(array $data): bool {
 
 /**
  * Evita sobrescrever conteúdo rico com payload vazio (POST truncado / delete / autosave).
+ * Clear explícito é por campo: remover só a vignette NÃO libera wipe de hero/galeria/acordeão.
  *
  * @param array<string, mixed> $incoming
  * @param array<string, mixed> $previous
@@ -303,29 +304,58 @@ function rs_project_i18n_guard_against_wipe(array $incoming, array $previous): a
     if (rs_project_i18n_is_effectively_empty($previous)) {
         return $incoming;
     }
-    if (!rs_project_i18n_is_effectively_empty($incoming)) {
-        return $incoming;
+
+    $hero_cleared = !empty($_POST['rs_project_hero_id_cleared']);
+    $logo_cleared = !empty($_POST['rs_project_logo_id_cleared']);
+    $gallery_cleared = !empty($_POST['rs_project_gallery_cleared']);
+    $acc_en_cleared = !empty($_POST['rs_project_accordion_en_cleared']);
+    $acc_pt_cleared = !empty($_POST['rs_project_accordion_pt_cleared']);
+    $yt_en_cleared = !empty($_POST['rs_project_youtube_en_cleared']);
+    $yt_pt_cleared = !empty($_POST['rs_project_youtube_pt_cleared']);
+
+    $prev_hero = (int) ($previous['shared']['hero_id'] ?? 0);
+    $prev_logo = (int) ($previous['shared']['logo_id'] ?? 0);
+    $prev_gallery = trim((string) ($previous['shared']['gallery_ids'] ?? ''));
+    $prev_gallery_featured = trim((string) ($previous['shared']['gallery_featured_ids'] ?? ''));
+
+    // Restaura campo a campo se sumiu no POST sem flag de remoção.
+    if (!$hero_cleared && (int) ($incoming['shared']['hero_id'] ?? 0) <= 0 && $prev_hero > 0) {
+        $incoming['shared']['hero_id'] = $prev_hero;
+    }
+    if (!$logo_cleared && (int) ($incoming['shared']['logo_id'] ?? 0) <= 0 && $prev_logo > 0) {
+        $incoming['shared']['logo_id'] = $prev_logo;
+    }
+    if (!$gallery_cleared) {
+        $inc_gallery = trim((string) ($incoming['shared']['gallery_ids'] ?? ''));
+        if ($inc_gallery === '' && $prev_gallery !== '') {
+            $incoming['shared']['gallery_ids'] = $prev_gallery;
+            $incoming['shared']['gallery_featured_ids'] = $prev_gallery_featured;
+        }
     }
 
-    $explicit_clear = !empty($_POST['rs_project_hero_id_cleared'])
-        || !empty($_POST['rs_project_logo_id_cleared'])
-        || !empty($_POST['rs_project_gallery_cleared'])
-        || !empty($_POST['rs_project_accordion_en_cleared'])
-        || !empty($_POST['rs_project_accordion_pt_cleared']);
+    $prev_en_acc = is_array($previous['locales']['en']['accordion'] ?? null) ? $previous['locales']['en']['accordion'] : [];
+    $prev_pt_acc = is_array($previous['locales']['pt']['accordion'] ?? null) ? $previous['locales']['pt']['accordion'] : [];
+    $inc_en_acc = is_array($incoming['locales']['en']['accordion'] ?? null) ? $incoming['locales']['en']['accordion'] : [];
+    $inc_pt_acc = is_array($incoming['locales']['pt']['accordion'] ?? null) ? $incoming['locales']['pt']['accordion'] : [];
 
-    if ($explicit_clear) {
-        return $incoming;
+    if (!$acc_en_cleared && $inc_en_acc === [] && $prev_en_acc !== []) {
+        $incoming['locales']['en']['accordion'] = $prev_en_acc;
+    }
+    if (!$acc_pt_cleared && $inc_pt_acc === [] && $prev_pt_acc !== []) {
+        $incoming['locales']['pt']['accordion'] = $prev_pt_acc;
     }
 
-    // Mantém mídia + acordeão anteriores; atualiza só flags/títulos do incoming.
-    $incoming['shared']['hero_id'] = (int) ($previous['shared']['hero_id'] ?? 0);
-    $incoming['shared']['logo_id'] = (int) ($previous['shared']['logo_id'] ?? 0);
-    $incoming['shared']['gallery_ids'] = (string) ($previous['shared']['gallery_ids'] ?? '');
-    $incoming['shared']['gallery_featured_ids'] = (string) ($previous['shared']['gallery_featured_ids'] ?? '');
-    $incoming['locales']['en']['accordion'] = $previous['locales']['en']['accordion'] ?? [];
-    $incoming['locales']['pt']['accordion'] = $previous['locales']['pt']['accordion'] ?? [];
-    $incoming['locales']['en']['youtube'] = $previous['locales']['en']['youtube'] ?? [];
-    $incoming['locales']['pt']['youtube'] = $previous['locales']['pt']['youtube'] ?? [];
+    $prev_en_yt = is_array($previous['locales']['en']['youtube'] ?? null) ? $previous['locales']['en']['youtube'] : [];
+    $prev_pt_yt = is_array($previous['locales']['pt']['youtube'] ?? null) ? $previous['locales']['pt']['youtube'] : [];
+    $inc_en_yt = is_array($incoming['locales']['en']['youtube'] ?? null) ? $incoming['locales']['en']['youtube'] : [];
+    $inc_pt_yt = is_array($incoming['locales']['pt']['youtube'] ?? null) ? $incoming['locales']['pt']['youtube'] : [];
+
+    if (!$yt_en_cleared && $inc_en_yt === [] && $prev_en_yt !== []) {
+        $incoming['locales']['en']['youtube'] = $prev_en_yt;
+    }
+    if (!$yt_pt_cleared && $inc_pt_yt === [] && $prev_pt_yt !== []) {
+        $incoming['locales']['pt']['youtube'] = $prev_pt_yt;
+    }
 
     return $incoming;
 }
