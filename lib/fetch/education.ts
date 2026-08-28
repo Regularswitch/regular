@@ -1,6 +1,6 @@
 import { GetApi, GetEducationByLocale } from '../../components/ApiWp';
 import { buildEducationContent } from '../content/education/build';
-import { getDefaultEducationContent, type EducationContent } from '../content/education/defaults';
+import { getEmptyEducationContent, type EducationContent } from '../content/education/defaults';
 import { excludeProjectTranslationTwins, sortProjectsByDate } from '../projects/sort';
 import type { Category, Projects } from '../../types';
 
@@ -30,7 +30,7 @@ export async function fetchEducationPage(locale: 'en' | 'pt'): Promise<Education
 	return fetchEducationFromWp(locale).catch((error) => {
 		console.error('Error fetching education page', error);
 		return {
-			content: getDefaultEducationContent(locale),
+			content: getEmptyEducationContent(),
 			projects: [],
 			categories: [],
 		};

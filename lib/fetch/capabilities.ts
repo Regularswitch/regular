@@ -1,6 +1,5 @@
 import { GetApi, GetCapabilitiesByLocale } from '../../components/ApiWp';
 import { buildCapabilitiesContent } from '../content/capabilities/build';
-import { getDefaultCapabilitiesContent } from '../content/capabilities/defaults';
 import { excludeProjectTranslationTwins, sortProjectsByDate } from '../projects/sort';
 import type { CapabilitiesContent, Projects } from '../../types';
 
@@ -30,7 +29,10 @@ export async function fetchCapabilitiesPage(locale: 'en' | 'pt'): Promise<Capabi
 	return fetchCapabilitiesFromWp(locale).catch((error) => {
 		console.error('Error fetching capabilities page', error);
 		return {
-			content: getDefaultCapabilitiesContent(locale),
+			content: {
+				headline: '',
+				sections: [],
+			},
 			latestProjects: [],
 		};
 	});

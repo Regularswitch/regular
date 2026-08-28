@@ -890,8 +890,16 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
 
     echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
     echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Mídia compartilhada do hero</strong></legend>';
-    rs_render_media_field('rs_education_shared[hero_image_id]', 'Imagem do hero', (int) $i18n['shared']['hero_image_id'], 'rs_education_shared_hero_image', true, 'image');
-    rs_render_media_field('rs_education_shared[hero_video_id]', 'Vídeo do hero', (int) $i18n['shared']['hero_video_id'], 'rs_education_shared_hero_video', true, 'video');
+    rs_section_shared_hero_render_fields(
+        $canonical,
+        $i18n['shared'],
+        'rs_education',
+        'rs_education_shared',
+        RS_EDUCATION_HERO_IMAGE_KEY,
+        RS_EDUCATION_HERO_VIDEO_KEY,
+        'rs_education_shared_hero_image',
+        'rs_education_shared_hero_video'
+    );
     echo '</fieldset>';
 
     echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
@@ -1116,29 +1124,11 @@ add_action('save_post_education', function (int $post_id) {
     $post_id = function_exists('rs_section_i18n_resolve_id')
         ? rs_section_i18n_resolve_id($post_id)
         : $post_id;
-    $data = rs_education_i18n_get($post_id);
-    $prev_shared = is_array($data['shared'] ?? null) ? $data['shared'] : [
-        'hero_image_id' => 0,
-        'hero_video_id' => 0,
-    ];
+    $previous = rs_education_i18n_get($post_id);
+    $data = rs_section_shared_hero_parse_from_request($previous, 'rs_education', 'rs_education_shared');
     $raw = isset($_POST['rs_education_i18n']) && is_array($_POST['rs_education_i18n'])
         ? wp_unslash($_POST['rs_education_i18n'])
         : [];
-    $shared = isset($_POST['rs_education_shared']) && is_array($_POST['rs_education_shared'])
-        ? wp_unslash($_POST['rs_education_shared'])
-        : [];
-
-    // Aceita nested (rs_education_shared[…]) ou fallback flat; não zera mídia se o campo sumiu do POST.
-    $image_raw = $shared['hero_image_id'] ?? ($_POST['rs_education_shared_hero_image'] ?? null);
-    $video_raw = $shared['hero_video_id'] ?? ($_POST['rs_education_shared_hero_video'] ?? null);
-    $data['shared'] = [
-        'hero_image_id' => $image_raw !== null
-            ? (int) $image_raw
-            : (int) ($prev_shared['hero_image_id'] ?? 0),
-        'hero_video_id' => $video_raw !== null
-            ? (int) $video_raw
-            : (int) ($prev_shared['hero_video_id'] ?? 0),
-    ];
     foreach (['en', 'pt'] as $locale) {
         $loc = is_array($raw[$locale] ?? null) ? $raw[$locale] : [];
         // Headline: TinyMCE às vezes só preenche o textarea após triggerSave (feito no JS).
@@ -1155,7 +1145,17 @@ add_action('save_post_education', function (int $post_id) {
         ];
     }
 
-    $normalized = rs_education_i18n_normalize($data);
+    $normalized = rs_education_i18n_normalize(
+        rs_section_shared_hero_guard_against_wipe(
+            $data,
+            $previous,
+            'rs_education',
+            $post_id,
+            RS_EDUCATION_HERO_IMAGE_KEY,
+            RS_EDUCATION_HERO_VIDEO_KEY,
+            'education'
+        )
+    );
     if (function_exists('rs_section_i18n_save')) {
         rs_section_i18n_save($post_id, RS_EDUCATION_I18N_KEY, $normalized);
     } else {

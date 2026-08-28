@@ -408,8 +408,16 @@ function rs_about_render_meta_box(WP_Post $post): void {
 
     echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
     echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Mídia compartilhada do hero</strong></legend>';
-    rs_render_media_field('rs_about_shared[hero_image_id]', 'Imagem do hero', (int) $i18n['shared']['hero_image_id'], 'rs_about_shared_hero_image', true, 'image');
-    rs_render_media_field('rs_about_shared[hero_video_id]', 'Vídeo do hero', (int) $i18n['shared']['hero_video_id'], 'rs_about_shared_hero_video', true, 'video');
+    rs_section_shared_hero_render_fields(
+        $canonical,
+        $i18n['shared'],
+        'rs_about',
+        'rs_about_shared',
+        RS_ABOUT_HERO_IMAGE_KEY,
+        RS_ABOUT_HERO_VIDEO_KEY,
+        'rs_about_shared_hero_image',
+        'rs_about_shared_hero_video'
+    );
     echo '</fieldset>';
 
     echo '<div class="rs-metabox-tabs" data-rs-tabs>';
@@ -514,18 +522,11 @@ add_action('save_post_about', function (int $post_id) {
     $post_id = function_exists('rs_section_i18n_resolve_id')
         ? rs_section_i18n_resolve_id($post_id)
         : $post_id;
-    $data = rs_about_i18n_get($post_id);
+    $previous = rs_about_i18n_get($post_id);
+    $data = rs_section_shared_hero_parse_from_request($previous, 'rs_about', 'rs_about_shared');
     $raw = isset($_POST['rs_about_i18n']) && is_array($_POST['rs_about_i18n'])
         ? wp_unslash($_POST['rs_about_i18n'])
         : [];
-    $shared = isset($_POST['rs_about_shared']) && is_array($_POST['rs_about_shared'])
-        ? wp_unslash($_POST['rs_about_shared'])
-        : [];
-
-    $data['shared'] = [
-        'hero_image_id' => (int) ($shared['hero_image_id'] ?? 0),
-        'hero_video_id' => (int) ($shared['hero_video_id'] ?? 0),
-    ];
     foreach (['en', 'pt'] as $locale) {
         $loc = is_array($raw[$locale] ?? null) ? $raw[$locale] : [];
         $data['locales'][$locale] = [
@@ -535,7 +536,17 @@ add_action('save_post_about', function (int $post_id) {
         ];
     }
 
-    $normalized = rs_about_i18n_normalize($data);
+    $normalized = rs_about_i18n_normalize(
+        rs_section_shared_hero_guard_against_wipe(
+            $data,
+            $previous,
+            'rs_about',
+            $post_id,
+            RS_ABOUT_HERO_IMAGE_KEY,
+            RS_ABOUT_HERO_VIDEO_KEY,
+            'about'
+        )
+    );
     if (function_exists('rs_section_i18n_save')) {
         rs_section_i18n_save($post_id, RS_ABOUT_I18N_KEY, $normalized);
     } else {

@@ -85,6 +85,26 @@ function rs_enqueue_admin_media_picker(array $post_types): void {
 
         wp_add_inline_script('jquery', <<<'JS'
 jQuery(function ($) {
+    function rsSyncMediaMirrorForSource(sourceId) {
+        const el = document.getElementById(String(sourceId));
+        if (!el) {
+            return;
+        }
+
+        document.querySelectorAll('[data-rs-mirror-of="' + sourceId + '"]').forEach(function (mirror) {
+            mirror.value = el.value || '0';
+        });
+        document.querySelectorAll('[data-rs-mirror-cleared-of="' + sourceId + '"]').forEach(function (mirror) {
+            mirror.value = el.dataset.rsCleared === '1' ? '1' : '0';
+        });
+    }
+
+    function rsSyncAllMediaMirrors() {
+        document.querySelectorAll('[data-rs-mirror-of]').forEach(function (mirror) {
+            rsSyncMediaMirrorForSource(mirror.getAttribute('data-rs-mirror-of'));
+        });
+    }
+
     function setPreview(target, attachment) {
         const preview = $('.rs-media-preview[data-target="' + target + '"]');
         if (!attachment || !attachment.url) {
@@ -143,6 +163,7 @@ jQuery(function ($) {
             if (clearedPost) {
                 clearedPost.value = '0';
             }
+            rsSyncMediaMirrorForSource(target);
             setPreview(target, attachment);
         });
 
@@ -171,7 +192,13 @@ jQuery(function ($) {
         if (clearedPost) {
             clearedPost.value = '1';
         }
+        rsSyncMediaMirrorForSource(target);
         setPreview(target, null);
+    });
+
+    $('#post').on('submit', rsSyncAllMediaMirrors);
+    $(document).on('click', '#publish, #save-post', function () {
+        window.setTimeout(rsSyncAllMediaMirrors, 0);
     });
 });
 JS

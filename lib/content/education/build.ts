@@ -1,14 +1,22 @@
-import {
-	getDefaultEducationContent,
-	type EducationContent,
-	type EducationGallery,
-	type EducationGalleryLayout,
-	type EducationInstitution,
+import type {
+	EducationContent,
+	EducationGallery,
+	EducationGalleryLayout,
+	EducationInstitution,
 } from './defaults';
 import { wpMediaUrl } from '../../wp/mediaUrl';
 import type { ProjectAccordionSection } from '../../projects/parseContent';
 
 const GALLERY_LAYOUTS: EducationGalleryLayout[] = ['pair', 'triple', 'grid-2x2'];
+
+function hasMeaningfulHtml(html: string | undefined): boolean {
+	if (!html?.trim()) return false;
+
+	return html
+		.replace(/<[^>]*>/g, '')
+		.replace(/&nbsp;/gi, ' ')
+		.trim().length > 0;
+}
 
 function normalizeWpSections(
 	sections: ProjectAccordionSection[] | undefined,
@@ -16,9 +24,9 @@ function normalizeWpSections(
 	if (!sections?.length) return [];
 
 	return sections
-		.filter((section) => section.title?.trim())
+		.filter((section) => section.title?.trim() && hasMeaningfulHtml(section.body))
 		.map((section) => ({
-			title: section.title,
+			title: section.title.trim(),
 			body: section.body ?? '',
 		}));
 }
@@ -58,7 +66,7 @@ function normalizeInstitutions(raw: unknown): EducationInstitution[] {
 		const logoRaw = typeof item.logo === 'string' ? item.logo : '';
 		const logo = logoRaw ? (wpMediaUrl(logoRaw) ?? logoRaw) : undefined;
 		const description =
-			typeof item.description === 'string' && item.description.trim()
+			typeof item.description === 'string' && hasMeaningfulHtml(item.description)
 				? item.description
 				: undefined;
 
@@ -78,33 +86,25 @@ function normalizeInstitutions(raw: unknown): EducationInstitution[] {
 
 export function buildEducationContent(
 	wp: EducationContent | null | undefined,
-	locale: 'en' | 'pt',
+	_locale: 'en' | 'pt',
 ): EducationContent {
-	const defaults = getDefaultEducationContent(locale);
+	const empty: EducationContent = {
+		headline: '',
+		accordionSections: [],
+	};
 
 	if (!wp) {
-		return defaults;
+		return empty;
 	}
 
 	const wpInstitutions = normalizeInstitutions(wp.institutions);
-	const hasWpContent =
-		Boolean(wp.heroImage) ||
-		Boolean(wp.heroVideo) ||
-		Boolean(wp.headline?.trim()) ||
-		(wp.accordionSections?.length ?? 0) > 0 ||
-		wpInstitutions.length > 0;
-
-	if (!hasWpContent) {
-		return defaults;
-	}
-
 	const wpSections = normalizeWpSections(wp.accordionSections);
 
 	return {
-		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : defaults.heroImage,
-		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : defaults.heroVideo,
-		headline: wp.headline?.trim() ? wp.headline : defaults.headline,
-		accordionSections: wpSections.length > 0 ? wpSections : defaults.accordionSections,
-		institutions: wpInstitutions.length > 0 ? wpInstitutions : defaults.institutions,
+		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined,
+		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : undefined,
+		headline: wp.headline?.trim() ?? '',
+		accordionSections: wpSections,
+		institutions: wpInstitutions.length > 0 ? wpInstitutions : undefined,
 	};
 }

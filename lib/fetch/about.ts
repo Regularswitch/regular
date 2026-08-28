@@ -1,6 +1,6 @@
 import { GetApi, GetAboutByLocale } from '../../components/ApiWp';
 import { buildAboutContent } from '../content/about/build';
-import { getDefaultAboutContent, type AboutContent } from '../content/about/defaults';
+import type { AboutContent } from '../content/about/defaults';
 import { excludeProjectTranslationTwins, sortProjectsByDate } from '../projects/sort';
 import type { Projects } from '../../types';
 
@@ -31,9 +31,10 @@ export async function fetchAboutPage(locale: 'en' | 'pt'): Promise<AboutPageData
 		console.error('Error fetching about page', error);
 		return {
 			content: {
-				...getDefaultAboutContent(locale),
-				accordionSections: getDefaultAboutContent(locale).accordionSections,
-			},
+				headline: '',
+				body: '',
+				accordionSections: [],
+			} satisfies AboutContent,
 			latestProjects: [],
 		};
 	});

@@ -34,9 +34,11 @@ export default function EducationPage({
 				</section>
 			) : null}
 
-			<section className="py-10 md:py-14">
-				<ProjectAccordion sections={content.accordionSections} />
-			</section>
+			{content.accordionSections.length > 0 ? (
+				<section className="py-10 md:py-14">
+					<ProjectAccordion sections={content.accordionSections} />
+				</section>
+			) : null}
 
 			{institutions.length > 0 ? (
 				<section

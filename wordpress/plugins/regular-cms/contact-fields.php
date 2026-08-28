@@ -350,10 +350,19 @@ function rs_contact_render_meta_box(WP_Post $post): void {
     $id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
     $data = rs_contact_i18n_get($id);
     echo '<p style="margin-top:0;color:#646970;">Um único post. Hero compartilhado; textos em English e Português. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    $shared = $data['shared'];
     echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Hero compartilhado</strong></legend>';
-    rs_render_media_field('rs_contact_shared[hero_image_id]', 'Imagem', (int) $shared['hero_image_id'], 'rs_contact_hero_image_shared', true, 'image');
-    rs_render_media_field('rs_contact_shared[hero_video_id]', 'Vídeo (mp4) — opcional', (int) $shared['hero_video_id'], 'rs_contact_hero_video_shared', true, 'video');
+    rs_section_shared_hero_render_fields(
+        $id,
+        $data['shared'],
+        'rs_contact',
+        'rs_contact_shared',
+        RS_CONTACT_HERO_IMAGE_KEY,
+        RS_CONTACT_HERO_VIDEO_KEY,
+        'rs_contact_hero_image_shared',
+        'rs_contact_hero_video_shared',
+        'Imagem',
+        'Vídeo (mp4) — opcional'
+    );
     echo '</fieldset>';
     echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
     echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
@@ -372,12 +381,8 @@ add_action('save_post_contact', function (int $post_id) {
         return;
     }
     $post_id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id($post_id) : $post_id;
-    $data = rs_contact_i18n_get($post_id);
-    $shared = isset($_POST['rs_contact_shared']) && is_array($_POST['rs_contact_shared']) ? wp_unslash($_POST['rs_contact_shared']) : [];
-    $data['shared'] = [
-        'hero_image_id' => max(0, (int) ($shared['hero_image_id'] ?? 0)),
-        'hero_video_id' => max(0, (int) ($shared['hero_video_id'] ?? 0)),
-    ];
+    $previous = rs_contact_i18n_get($post_id);
+    $data = rs_section_shared_hero_parse_from_request($previous, 'rs_contact', 'rs_contact_shared');
     $raw = isset($_POST['rs_contact_i18n_input']) && is_array($_POST['rs_contact_i18n_input'])
         ? wp_unslash($_POST['rs_contact_i18n_input'])
         : [];
@@ -396,7 +401,17 @@ add_action('save_post_contact', function (int $post_id) {
             'info' => $clean_info,
         ];
     }
-    $data = rs_contact_i18n_normalize($data);
+    $data = rs_contact_i18n_normalize(
+        rs_section_shared_hero_guard_against_wipe(
+            $data,
+            $previous,
+            'rs_contact',
+            $post_id,
+            RS_CONTACT_HERO_IMAGE_KEY,
+            RS_CONTACT_HERO_VIDEO_KEY,
+            'contact'
+        )
+    );
     if (function_exists('rs_section_i18n_save')) {
         rs_section_i18n_save($post_id, RS_CONTACT_I18N_KEY, $data);
     } else {

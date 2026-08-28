@@ -1,8 +1,4 @@
-import {
-	getDefaultAboutContent,
-	type AboutAccordionSection,
-	type AboutContent,
-} from './defaults';
+import type { AboutAccordionSection, AboutContent } from './defaults';
 import { sanitizeAboutBody, sanitizeAboutHeadline } from '../../wp/sanitizeRichText';
 import { wpMediaUrl } from '../../wp/mediaUrl';
 import type { Projects } from '../../../types';
@@ -16,13 +12,22 @@ function attachSectionImages(sections: AboutAccordionSection[], projects: Projec
 	});
 }
 
+function hasMeaningfulHtml(html: string | undefined): boolean {
+	if (!html?.trim()) return false;
+
+	return html
+		.replace(/<[^>]*>/g, '')
+		.replace(/&nbsp;/gi, ' ')
+		.trim().length > 0;
+}
+
 function normalizeWpSections(sections: AboutAccordionSection[] | undefined): AboutAccordionSection[] {
 	if (!sections?.length) return [];
 
 	return sections
-		.filter((section) => section.title?.trim())
+		.filter((section) => section.title?.trim() && hasMeaningfulHtml(section.body))
 		.map((section) => ({
-			title: section.title,
+			title: section.title.trim(),
 			body: section.body ?? '',
 			image: section.image ? (wpMediaUrl(section.image) ?? section.image) : undefined,
 		}));
@@ -30,46 +35,26 @@ function normalizeWpSections(sections: AboutAccordionSection[] | undefined): Abo
 
 export function buildAboutContent(
 	wp: AboutContent | null | undefined,
-	locale: 'en' | 'pt',
+	_locale: 'en' | 'pt',
 	projects: Projects,
 ): AboutContent {
-	const defaults = getDefaultAboutContent(locale);
-	const defaultSections = attachSectionImages(defaults.accordionSections, projects);
+	const empty: AboutContent = {
+		headline: '',
+		body: '',
+		accordionSections: [],
+	};
 
 	if (!wp) {
-		return {
-			...defaults,
-			heroImage: undefined,
-			heroVideo: undefined,
-			accordionSections: defaultSections,
-		};
-	}
-
-	const hasWpContent =
-		Boolean(wp.heroImage) ||
-		Boolean(wp.heroVideo) ||
-		Boolean(wp.headline?.trim()) ||
-		Boolean(wp.body?.trim()) ||
-		(wp.accordionSections?.length ?? 0) > 0;
-
-	if (!hasWpContent) {
-		return {
-			...defaults,
-			heroImage: undefined,
-			heroVideo: undefined,
-			accordionSections: defaultSections,
-		};
+		return empty;
 	}
 
 	const wpSections = normalizeWpSections(wp.accordionSections);
-	const accordionSections =
-		wpSections.length > 0 ? attachSectionImages(wpSections, projects) : defaultSections;
 
 	return {
 		heroImage: wp.heroImage ? (wpMediaUrl(wp.heroImage) ?? wp.heroImage) : undefined,
 		heroVideo: wp.heroVideo ? (wpMediaUrl(wp.heroVideo) ?? wp.heroVideo) : undefined,
-		headline: wp.headline?.trim() ? sanitizeAboutHeadline(wp.headline) : defaults.headline,
-		body: wp.body?.trim() ? sanitizeAboutBody(wp.body) : defaults.body,
-		accordionSections,
+		headline: wp.headline?.trim() ? sanitizeAboutHeadline(wp.headline) : '',
+		body: wp.body?.trim() ? sanitizeAboutBody(wp.body) : '',
+		accordionSections: attachSectionImages(wpSections, projects),
 	};
 }

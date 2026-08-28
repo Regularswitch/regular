@@ -1,8 +1,4 @@
-import {
-	getDefaultCapabilitiesContent,
-	type CapabilitiesContent,
-	type CapabilitySection,
-} from './defaults';
+import type { CapabilitiesContent, CapabilitySection } from './defaults';
 import type { Projects } from '../../../types';
 
 function attachProjectImages(sections: CapabilitySection[], projects: Projects): CapabilitySection[] {
@@ -14,25 +10,41 @@ function attachProjectImages(sections: CapabilitySection[], projects: Projects):
 	});
 }
 
+function hasMeaningfulHtml(html: string | undefined): boolean {
+	if (!html?.trim()) return false;
+
+	return html
+		.replace(/<[^>]*>/g, '')
+		.replace(/&nbsp;/gi, ' ')
+		.trim().length > 0;
+}
+
+function normalizeWpSections(sections: CapabilitySection[] | undefined): CapabilitySection[] {
+	if (!sections?.length) return [];
+
+	return sections.filter(
+		(section) => section.title?.trim() && hasMeaningfulHtml(section.body),
+	);
+}
+
 export function buildCapabilitiesContent(
 	wp: CapabilitiesContent | null | undefined,
-	locale: 'en' | 'pt',
+	_locale: 'en' | 'pt',
 	projects: Projects,
 ): CapabilitiesContent {
-	const defaults = getDefaultCapabilitiesContent(locale);
+	const empty: CapabilitiesContent = {
+		headline: '',
+		sections: [],
+	};
 
-	if (!wp || (!wp.headline && !wp.sections?.length)) {
-		return {
-			headline: defaults.headline,
-			sections: attachProjectImages(defaults.sections, projects),
-		};
+	if (!wp) {
+		return empty;
 	}
 
-	const sections =
-		wp.sections?.length > 0 ? wp.sections : attachProjectImages(defaults.sections, projects);
+	const sections = normalizeWpSections(wp.sections);
 
 	return {
-		headline: wp.headline || defaults.headline,
-		sections,
+		headline: wp.headline?.trim() ?? '',
+		sections: attachProjectImages(sections, projects),
 	};
 }

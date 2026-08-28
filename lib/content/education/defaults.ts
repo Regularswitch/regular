@@ -106,6 +106,15 @@ export const DEFAULT_EDUCATION_EN: EducationContent = {
 	institutions: EDUCATION_INSTITUTIONS_EN,
 };
 
+export function getEmptyEducationContent(): EducationContent {
+	return {
+		headline: '',
+		accordionSections: [],
+		institutions: [],
+	};
+}
+
+/** Conteúdo de referência (dev/Storybook). O site usa só o que vem do CMS. */
 export function getDefaultEducationContent(locale: 'en' | 'pt'): EducationContent {
 	return locale === 'pt'
 		? {

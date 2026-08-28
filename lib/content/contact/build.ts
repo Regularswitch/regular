@@ -1,37 +1,24 @@
-import { getDefaultContactContent, type ContactContent } from './defaults';
+import type { ContactContent } from './defaults';
 
 export function buildContactContent(
 	wp: ContactContent | null | undefined,
-	locale: 'en' | 'pt',
+	_locale: 'en' | 'pt',
 ): ContactContent {
-	const defaults = getDefaultContactContent(locale);
+	const empty: ContactContent = {
+		headline: '',
+		blocks: [],
+	};
 
-	// Feedback: página Contato sem imagem/vídeo no topo.
 	if (!wp) {
-		return {
-			...defaults,
-			heroImage: undefined,
-			heroVideo: undefined,
-		};
+		return empty;
 	}
 
-	const hasWpContent = Boolean(wp.headline?.trim()) || (wp.blocks?.length ?? 0) > 0;
-
-	if (!hasWpContent) {
-		return {
-			...defaults,
-			heroImage: undefined,
-			heroVideo: undefined,
-		};
-	}
-
-	const wpBlocks = wp.blocks?.filter((block) => block.title?.trim()) ?? [];
-	const blocks = wpBlocks.length > 0 ? wpBlocks : defaults.blocks;
+	const blocks = wp.blocks?.filter((block) => block.title?.trim()) ?? [];
 
 	return {
 		heroImage: undefined,
 		heroVideo: undefined,
-		headline: wp.headline?.trim() ? wp.headline : defaults.headline,
+		headline: wp.headline?.trim() ?? '',
 		blocks,
 	};
 }
