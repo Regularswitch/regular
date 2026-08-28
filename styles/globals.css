@@ -255,25 +255,33 @@ html:not(.dark) .brand-mark {
 	}
 }
 
-/* Listagem /projects: 1 col mobile · ciclo 3+2 no desktop */
+/* Listagem /projects: 1 col mobile · 1ª linha 3 · demais 4 no desktop */
 .projects-listing-grid {
 	display: grid;
 	grid-template-columns: 1fr;
 	gap: 2.5rem 1rem;
 }
 
+.projects-listing-grid .selected-projects-card-image {
+	aspect-ratio: 1 / 1;
+}
+
 @media (min-width: 768px) {
 	.projects-listing-grid {
-		grid-template-columns: repeat(6, 1fr);
+		grid-template-columns: repeat(12, 1fr);
 		gap: 3rem 1.5rem;
 	}
 
 	.projects-listing-grid .selected-projects-item--third {
-		grid-column: span 2;
+		grid-column: span 4;
+	}
+
+	.projects-listing-grid .selected-projects-item--quarter {
+		grid-column: span 3;
 	}
 
 	.projects-listing-grid .selected-projects-item--half {
-		grid-column: span 3;
+		grid-column: span 6;
 	}
 }
 
@@ -1325,11 +1333,13 @@ html:not(.dark) .brand-mark {
 
 .project-gallery {
 	margin-top: 0.5rem;
+	padding: 0;
 }
 
 @media (min-width: 768px) {
 	.project-gallery {
 		margin-top: 1rem;
+		padding: 0 4rem;
 	}
 }
 

@@ -36,7 +36,7 @@ function rs_site_ui_layout_keys(): array {
 function rs_site_ui_default_shared(): array {
     return [
         'homeColumns'          => 2,
-        'projectsInitialCount' => 5,
+        'projectsInitialCount' => 7,
         'latestCount'          => 6,
     ];
 }
@@ -58,7 +58,7 @@ function rs_site_ui_i18n_default(): array {
 
 function rs_site_ui_normalize_layout(array $raw): array {
     $columns = (int) ($raw['homeColumns'] ?? 2);
-    $initial = (int) ($raw['projectsInitialCount'] ?? 5);
+    $initial = (int) ($raw['projectsInitialCount'] ?? 7);
     $latest = (int) ($raw['latestCount'] ?? 6);
     if ($initial < 1) {
         $initial = 5;
@@ -77,7 +77,7 @@ function rs_site_ui_i18n_normalize(array $raw): array {
     $en_raw = is_array($raw['locales']['en'] ?? null) ? $raw['locales']['en'] : [];
     $data['shared'] = rs_site_ui_normalize_layout([
         'homeColumns' => $shared['homeColumns'] ?? $en_raw['homeColumns'] ?? 2,
-        'projectsInitialCount' => $shared['projectsInitialCount'] ?? $en_raw['projectsInitialCount'] ?? 5,
+        'projectsInitialCount' => $shared['projectsInitialCount'] ?? $en_raw['projectsInitialCount'] ?? 7,
         'latestCount' => $shared['latestCount'] ?? $en_raw['latestCount'] ?? 6,
     ]);
 

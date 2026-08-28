@@ -18,12 +18,14 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 	const cardImage = getProjectHeroImage(project);
 	const isFeatured = span === 'featured' || span === 'full';
 	const isThird = span === 'third';
+	const isQuarter = span === 'quarter';
 
 	const itemClass = [
 		'selected-projects-item',
 		isFeatured ? 'selected-projects-item--featured' : '',
 		span === 'full' ? 'selected-projects-item--full' : '',
 		isThird ? 'selected-projects-item--third' : '',
+		isQuarter ? 'selected-projects-item--quarter' : '',
 		span === 'half' ? 'selected-projects-item--half' : '',
 	]
 		.filter(Boolean)
@@ -42,10 +44,12 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 									? '(max-width: 768px) 100vw, 90vw'
 									: isThird
 										? '(max-width: 768px) 100vw, 33vw'
-										: '(max-width: 768px) 100vw, 50vw'
+										: isQuarter
+											? '(max-width: 768px) 100vw, 25vw'
+											: '(max-width: 768px) 100vw, 50vw'
 							}
-							width={isFeatured ? 1600 : 1200}
-							height={isFeatured ? 600 : 900}
+							width={isFeatured ? 1600 : isQuarter ? 800 : 1200}
+							height={isFeatured ? 600 : isQuarter ? 800 : 900}
 							unoptimized={isGifUrl(cardImage)}
 							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
 						/>

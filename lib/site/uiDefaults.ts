@@ -48,7 +48,7 @@ const LABELS_PT: SiteUiLabels = {
 
 export const DEFAULT_SITE_UI_LAYOUT: SiteUiLayout = {
 	homeColumns: 2,
-	projectsInitialCount: 5,
+	projectsInitialCount: 7,
 	latestCount: 6,
 };
 
