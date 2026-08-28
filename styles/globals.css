@@ -1343,7 +1343,7 @@ html:not(.dark) .brand-mark {
 @media (min-width: 768px) {
 	.project-gallery-grid {
 		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
+		gap: 5rem;
 	}
 }
 

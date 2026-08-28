@@ -868,7 +868,7 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
     $name_prefix = 'rs_education_i18n[' . $locale . '][sections][' . $row_index . ']';
     $editor_id = 'rs_education_section_text_' . $locale . '_' . $row_index;
     $display = $is_template ? ' style="display:none;"' : '';
-    $is_open = !$is_template && (int) $index === 0;
+    $is_open = false;
     $head_title = $title !== '' ? $title : 'Seção';
     $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
     $editor_ids = $is_template ? '' : esc_attr($editor_id);
@@ -1179,7 +1179,7 @@ function rs_education_render_combined_institution_row(
         ? $media['bottomGallery']
         : ['layout' => 'grid-2x2', 'image_ids' => ''];
     $display = $is_template ? ' display:none;' : '';
-    $is_open = !$is_template && (int) $index === 0;
+    $is_open = false;
     $en_name = trim((string) ($en['name'] ?? ''));
     $pt_name = trim((string) ($pt['name'] ?? ''));
     $head_title = $en_name !== '' ? $en_name : ($pt_name !== '' ? $pt_name : ('Instituição ' . ($is_template ? '' : (string) ((int) $index + 1))));
@@ -1573,8 +1573,6 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
     );
     echo '</fieldset>';
 
-    rs_education_render_institutions_section($i18n);
-
     echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
     echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
     echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
@@ -1583,6 +1581,8 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
     echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
     rs_education_render_locale_fields('pt', $i18n['locales']['pt']);
     echo '</div></div>';
+
+    rs_education_render_institutions_section($i18n);
 }
 
 function rs_education_render_meta_box(WP_Post $post): void {
