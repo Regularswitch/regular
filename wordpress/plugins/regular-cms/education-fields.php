@@ -237,6 +237,258 @@ function rs_education_normalize_institutions(array $decoded): array {
     return $normalized;
 }
 
+/**
+ * @return array{logo_id: int, midGallery: array{layout: string, image_ids: string}, bottomGallery: array{layout: string, image_ids: string}}
+ */
+function rs_education_default_institution_media(): array {
+    return [
+        'logo_id'       => 0,
+        'midGallery'    => ['layout' => 'triple', 'image_ids' => ''],
+        'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => ''],
+    ];
+}
+
+/**
+ * @return array{name: string, description: string, midGallery: array{caption: string}, bottomGallery: array{caption: string}}
+ */
+function rs_education_default_institution_locale(): array {
+    return [
+        'name'          => '',
+        'description'   => '',
+        'midGallery'    => ['caption' => ''],
+        'bottomGallery' => ['caption' => ''],
+    ];
+}
+
+/**
+ * @param array<string, mixed> $item
+ * @return array<string, mixed>
+ */
+function rs_education_normalize_institution_media(array $item): array {
+    $entry = rs_education_default_institution_media();
+    $entry['logo_id'] = (int) ($item['logo_id'] ?? 0);
+
+    foreach (['midGallery', 'bottomGallery'] as $key) {
+        $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
+        if ($gallery && $gallery['image_ids'] !== '') {
+            $entry[$key] = [
+                'layout'    => $gallery['layout'],
+                'image_ids' => $gallery['image_ids'],
+            ];
+        }
+    }
+
+    if (($entry['midGallery']['image_ids'] ?? '') === '') {
+        $legacy_top = rs_education_normalize_gallery_for_storage($item['topGallery'] ?? null);
+        if ($legacy_top && $legacy_top['image_ids'] !== '') {
+            $entry['midGallery'] = [
+                'layout'    => $legacy_top['layout'] !== '' ? $legacy_top['layout'] : 'triple',
+                'image_ids' => $legacy_top['image_ids'],
+            ];
+        }
+    }
+
+    return $entry;
+}
+
+/**
+ * @param array<string, mixed> $item
+ * @return array<string, mixed>
+ */
+function rs_education_normalize_institution_locale(array $item): array {
+    $entry = rs_education_default_institution_locale();
+    $entry['name'] = trim(wp_strip_all_tags((string) ($item['name'] ?? '')));
+    $entry['description'] = trim((string) ($item['description'] ?? ''));
+
+    foreach (['midGallery', 'bottomGallery'] as $key) {
+        $gallery = rs_education_normalize_gallery_for_storage($item[$key] ?? null);
+        if ($gallery) {
+            $entry[$key] = ['caption' => sanitize_text_field($gallery['caption'])];
+        }
+    }
+
+    return $entry;
+}
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function rs_education_normalize_shared_institutions(array $decoded): array {
+    $normalized = [];
+    foreach ($decoded as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $normalized[] = rs_education_normalize_institution_media($item);
+    }
+
+    return $normalized;
+}
+
+/**
+ * Mantém índices alinhados ao shared — não remove entradas vazias de texto.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function rs_education_normalize_locale_institutions(array $decoded): array {
+    $normalized = [];
+    foreach ($decoded as $item) {
+        if (!is_array($item)) {
+            $normalized[] = rs_education_default_institution_locale();
+            continue;
+        }
+        $normalized[] = rs_education_normalize_institution_locale($item);
+    }
+
+    return $normalized;
+}
+
+/**
+ * @param array<string, mixed> $media
+ * @param array<string, mixed> $locale
+ * @return array<string, mixed>
+ */
+function rs_education_merge_institution_entry(array $media, array $locale): array {
+    $merged = rs_education_normalize_institution_media($media);
+    $loc = rs_education_normalize_institution_locale($locale);
+    $merged['name'] = (string) ($loc['name'] ?? '');
+    $merged['description'] = (string) ($loc['description'] ?? '');
+
+    foreach (['midGallery', 'bottomGallery'] as $key) {
+        $merged[$key]['caption'] = (string) ($loc[$key]['caption'] ?? '');
+    }
+
+    return $merged;
+}
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function rs_education_merge_institutions_by_index(array $shared_institutions, array $locale_institutions): array {
+    $count = max(count($shared_institutions), count($locale_institutions));
+    $merged = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        $media = is_array($shared_institutions[$i] ?? null)
+            ? $shared_institutions[$i]
+            : rs_education_default_institution_media();
+        $locale = is_array($locale_institutions[$i] ?? null)
+            ? $locale_institutions[$i]
+            : rs_education_default_institution_locale();
+        $entry = rs_education_merge_institution_entry($media, $locale);
+
+        if ($entry['name'] === '' && (int) $entry['logo_id'] <= 0 && $entry['description'] === ''
+            && ($entry['midGallery']['image_ids'] ?? '') === ''
+            && ($entry['bottomGallery']['image_ids'] ?? '') === ''
+        ) {
+            continue;
+        }
+
+        $merged[] = $entry;
+    }
+
+    return rs_education_normalize_institutions($merged);
+}
+
+/**
+ * @param array<string, mixed> $data
+ * @return array<string, mixed>
+ */
+function rs_education_migrate_institutions_structure(array $data): array {
+    $shared = is_array($data['shared']['institutions'] ?? null) ? $data['shared']['institutions'] : [];
+    if ($shared !== []) {
+        return $data;
+    }
+
+    $en = rs_education_normalize_institutions(
+        is_array($data['locales']['en']['institutions'] ?? null) ? $data['locales']['en']['institutions'] : []
+    );
+    $pt = rs_education_normalize_institutions(
+        is_array($data['locales']['pt']['institutions'] ?? null) ? $data['locales']['pt']['institutions'] : []
+    );
+    $count = max(count($en), count($pt));
+    if ($count <= 0) {
+        return $data;
+    }
+
+    $shared_out = [];
+    $en_out = [];
+    $pt_out = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        $en_item = is_array($en[$i] ?? null) ? $en[$i] : rs_education_default_institution_media();
+        $pt_item = is_array($pt[$i] ?? null) ? $pt[$i] : rs_education_default_institution_media();
+        $media_source = $en_item;
+        if ((int) ($media_source['logo_id'] ?? 0) <= 0 && (int) ($pt_item['logo_id'] ?? 0) > 0) {
+            $media_source = $pt_item;
+        }
+        foreach (['midGallery', 'bottomGallery'] as $key) {
+            $en_ids = (string) ($en_item[$key]['image_ids'] ?? '');
+            $pt_ids = (string) ($pt_item[$key]['image_ids'] ?? '');
+            if ($en_ids === '' && $pt_ids !== '') {
+                $media_source[$key] = $pt_item[$key];
+            }
+        }
+
+        $shared_out[] = rs_education_normalize_institution_media($media_source);
+        $en_out[] = rs_education_normalize_institution_locale($en_item);
+        $pt_out[] = rs_education_normalize_institution_locale($pt_item);
+    }
+
+    $data['shared']['institutions'] = $shared_out;
+    $data['locales']['en']['institutions'] = $en_out;
+    $data['locales']['pt']['institutions'] = $pt_out;
+
+    return $data;
+}
+
+/**
+ * @param array<string, mixed> $data
+ * @return array<string, mixed>
+ */
+function rs_education_align_institution_locale_counts(array $data): array {
+    $shared = is_array($data['shared']['institutions'] ?? null)
+        ? $data['shared']['institutions']
+        : [];
+    $count = count($shared);
+
+    foreach (['en', 'pt'] as $locale) {
+        $items = rs_education_normalize_locale_institutions(
+            is_array($data['locales'][$locale]['institutions'] ?? null)
+                ? $data['locales'][$locale]['institutions']
+                : []
+        );
+        $count = max($count, count($items));
+    }
+
+    foreach (['en', 'pt'] as $locale) {
+        $items = rs_education_normalize_locale_institutions(
+            is_array($data['locales'][$locale]['institutions'] ?? null)
+                ? $data['locales'][$locale]['institutions']
+                : []
+        );
+        if (count($items) < $count) {
+            for ($i = count($items); $i < $count; $i++) {
+                $items[] = rs_education_default_institution_locale();
+            }
+        } elseif (count($items) > $count) {
+            $items = array_slice($items, 0, $count);
+        }
+        $data['locales'][$locale]['institutions'] = $items;
+    }
+
+    if (count($shared) < $count) {
+        for ($i = count($shared); $i < $count; $i++) {
+            $shared[] = rs_education_default_institution_media();
+        }
+    } elseif (count($shared) > $count) {
+        $shared = array_slice($shared, 0, $count);
+    }
+    $data['shared']['institutions'] = $shared;
+
+    return $data;
+}
+
 function rs_education_get_legacy_institutions_raw(int $post_id): array {
     $decoded = function_exists('rs_meta_get_array')
         ? rs_meta_get_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY)
@@ -252,7 +504,11 @@ function rs_education_default_locale(): array {
 function rs_education_i18n_default(): array {
     return [
         'v' => 1,
-        'shared' => ['hero_image_id' => 0, 'hero_video_id' => 0],
+        'shared' => [
+            'hero_image_id' => 0,
+            'hero_video_id' => 0,
+            'institutions'  => [],
+        ],
         'locales' => [
             'en' => rs_education_default_locale(),
             'pt' => rs_education_default_locale(),
@@ -266,6 +522,9 @@ function rs_education_i18n_normalize(array $raw): array {
     $data['shared'] = [
         'hero_image_id' => (int) ($shared['hero_image_id'] ?? 0),
         'hero_video_id' => (int) ($shared['hero_video_id'] ?? 0),
+        'institutions'  => rs_education_normalize_shared_institutions(
+            is_array($shared['institutions'] ?? null) ? $shared['institutions'] : []
+        ),
     ];
 
     foreach (['en', 'pt'] as $locale) {
@@ -275,13 +534,19 @@ function rs_education_i18n_normalize(array $raw): array {
             'sections' => rs_education_normalize_sections(
                 is_array($loc['sections'] ?? null) ? $loc['sections'] : []
             ),
-            'institutions' => rs_education_normalize_institutions(
+            'institutions' => rs_education_normalize_locale_institutions(
                 is_array($loc['institutions'] ?? null) ? $loc['institutions'] : []
             ),
         ];
     }
 
-    return $data;
+    $data = rs_education_migrate_institutions_structure($data);
+
+    $data['shared']['institutions'] = rs_education_normalize_shared_institutions(
+        is_array($data['shared']['institutions'] ?? null) ? $data['shared']['institutions'] : []
+    );
+
+    return rs_education_align_institution_locale_counts($data);
 }
 
 function rs_education_locale_from_legacy_post(int $post_id): array {
@@ -338,11 +603,16 @@ function rs_education_get_institutions_raw(int $post_id, string $locale = 'en'):
         ? rs_section_i18n_normalize_locale($locale)
         : (strtolower($locale) === 'pt' ? 'pt' : 'en');
     $data = rs_education_i18n_get($post_id);
-    return rs_education_normalize_institutions(
+    $shared = rs_education_normalize_shared_institutions(
+        is_array($data['shared']['institutions'] ?? null) ? $data['shared']['institutions'] : []
+    );
+    $locale = rs_education_normalize_locale_institutions(
         is_array($data['locales'][$locale]['institutions'] ?? null)
             ? $data['locales'][$locale]['institutions']
             : []
     );
+
+    return rs_education_merge_institutions_by_index($shared, $locale);
 }
 
 /**
@@ -357,22 +627,31 @@ function rs_education_institutions_to_payload(array $institutions): array {
         }
 
         $name = trim(wp_strip_all_tags((string) ($item['name'] ?? '')));
-        if ($name === '') {
+        $logo_id = (int) ($item['logo_id'] ?? 0);
+        $description = trim((string) ($item['description'] ?? ''));
+        $has_gallery = false;
+        foreach (['topGallery', 'midGallery', 'bottomGallery'] as $key) {
+            $gallery = rs_education_gallery_to_payload($item[$key] ?? null);
+            if ($gallery) {
+                $has_gallery = true;
+                break;
+            }
+        }
+
+        if ($name === '' && $logo_id <= 0 && $description === '' && !$has_gallery) {
             continue;
         }
 
-        $logo_id = (int) ($item['logo_id'] ?? 0);
         $logo_url = $logo_id > 0 ? (string) wp_get_attachment_url($logo_id) : '';
         if ($logo_url === '' && !empty($item['logo']) && is_string($item['logo'])) {
             $logo_url = $item['logo'];
         }
 
-        $entry = ['name' => $name];
+        $entry = ['name' => $name !== '' ? $name : 'Instituição'];
         if ($logo_url !== '') {
             $entry['logo'] = $logo_url;
         }
 
-        $description = trim((string) ($item['description'] ?? ''));
         if ($description !== '') {
             $entry['description'] = $description;
         }
@@ -405,16 +684,18 @@ function rs_education_meta_to_payload(int $post_id, string $locale = 'en'): arra
         : $post_id;
     $data = rs_education_i18n_get($post_id);
     $loc = $data['locales'][$locale] ?? rs_education_default_locale();
-    // Sem fallback EN→PT no headline: front usa defaults PT quando vazio.
     if ($locale === 'pt') {
         $en = $data['locales']['en'] ?? rs_education_default_locale();
         if (empty($loc['sections'])) {
             $loc['sections'] = $en['sections'] ?? [];
         }
-        if (empty($loc['institutions'])) {
-            $loc['institutions'] = $en['institutions'] ?? [];
-        }
     }
+    $shared_institutions = rs_education_normalize_shared_institutions(
+        is_array($data['shared']['institutions'] ?? null) ? $data['shared']['institutions'] : []
+    );
+    $locale_institutions = rs_education_normalize_locale_institutions(
+        is_array($loc['institutions'] ?? null) ? $loc['institutions'] : []
+    );
     $image_id = (int) ($data['shared']['hero_image_id'] ?? 0);
     $video_id = (int) ($data['shared']['hero_video_id'] ?? 0);
     if ($image_id <= 0) {
@@ -442,7 +723,7 @@ function rs_education_meta_to_payload(int $post_id, string $locale = 'en'): arra
             rs_education_normalize_sections(is_array($loc['sections'] ?? null) ? $loc['sections'] : [])
         ),
         'institutions' => rs_education_institutions_to_payload(
-            rs_education_normalize_institutions(is_array($loc['institutions'] ?? null) ? $loc['institutions'] : [])
+            rs_education_merge_institutions_by_index($shared_institutions, $locale_institutions)
         ),
     ];
 }
@@ -463,7 +744,14 @@ function rs_education_sync_legacy_meta(int $post_id, array $data): void {
     update_post_meta($post_id, RS_EDUCATION_HERO_VIDEO_KEY, $video_id);
     update_post_meta($post_id, RS_EDUCATION_HEADLINE_KEY, (string) ($en['headline'] ?? ''));
     $sections = rs_education_normalize_sections(is_array($en['sections'] ?? null) ? $en['sections'] : []);
-    $institutions = rs_education_normalize_institutions(is_array($en['institutions'] ?? null) ? $en['institutions'] : []);
+    $institutions = rs_education_merge_institutions_by_index(
+        rs_education_normalize_shared_institutions(
+            is_array($data['shared']['institutions'] ?? null) ? $data['shared']['institutions'] : []
+        ),
+        rs_education_normalize_locale_institutions(
+            is_array($data['locales']['en']['institutions'] ?? null) ? $data['locales']['en']['institutions'] : []
+        )
+    );
     if (function_exists('rs_meta_update_array')) {
         rs_meta_update_array($post_id, RS_EDUCATION_SECTIONS_KEY, $sections);
         rs_meta_update_array($post_id, RS_EDUCATION_INSTITUTIONS_KEY, $institutions);
@@ -633,7 +921,14 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
 /**
  * @param array<string, mixed> $gallery
  */
-function rs_education_render_gallery_fields(string $name_prefix, string $label, array $gallery, string $field_suffix, bool $include_name): void {
+function rs_education_render_gallery_fields(
+    string $name_prefix,
+    string $label,
+    array $gallery,
+    string $field_suffix,
+    bool $include_name,
+    bool $include_caption = true
+): void {
     $layout = (string) ($gallery['layout'] ?? 'pair');
     $image_ids = (string) ($gallery['image_ids'] ?? '');
     $caption = (string) ($gallery['caption'] ?? '');
@@ -704,6 +999,7 @@ function rs_education_render_gallery_fields(string $name_prefix, string $label, 
             <button type="button" class="button button-secondary rs-education-add-gallery-images" data-gallery="<?php echo esc_attr($field_suffix); ?>">+ Adicionar imagens</button>
         </p>
 
+        <?php if ($include_caption) : ?>
         <p style="margin:0;">
             <label style="display:block;font-weight:500;margin-bottom:4px;">Legenda (opcional)</label>
             <input
@@ -715,7 +1011,410 @@ function rs_education_render_gallery_fields(string $name_prefix, string $label, 
                 value="<?php echo esc_attr($caption); ?>"
             />
         </p>
+        <?php endif; ?>
     </div>
+    <?php
+}
+
+function rs_education_render_gallery_caption_fields(
+    string $name_prefix,
+    string $label,
+    array $gallery,
+    string $field_suffix,
+    bool $include_name
+): void {
+    $caption = (string) ($gallery['caption'] ?? '');
+    ?>
+    <div class="rs-education-gallery-caption-block" style="margin:0 0 14px;padding:10px 12px;border:1px solid #e0e0e0;border-radius:4px;background:#fff;">
+        <p style="margin:0 0 8px;font-weight:600;"><?php echo esc_html($label); ?></p>
+        <input
+            type="text"
+            class="rs-education-gallery-caption"
+            data-gallery="<?php echo esc_attr($field_suffix); ?>"
+            style="width:100%;"
+            <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][caption]'); ?>"<?php endif; ?>
+            value="<?php echo esc_attr($caption); ?>"
+            placeholder="Legenda traduzível (opcional)"
+        />
+    </div>
+    <?php
+}
+
+function rs_education_render_institution_locale_fields(
+    string $row_index,
+    array $institution,
+    string $locale,
+    bool $include_name = true
+): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $name = (string) ($institution['name'] ?? '');
+    $description = (string) ($institution['description'] ?? '');
+    $name_prefix = 'rs_education_i18n[' . $locale . '][institutions][' . $row_index . ']';
+    $mid = is_array($institution['midGallery'] ?? null)
+        ? $institution['midGallery']
+        : ['caption' => ''];
+    $bottom = is_array($institution['bottomGallery'] ?? null)
+        ? $institution['bottomGallery']
+        : ['caption' => ''];
+    ?>
+    <p style="margin:0 0 12px;">
+        <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
+        <input
+            type="text"
+            class="rs-education-institution-name"
+            style="width:100%;"
+            data-locale="<?php echo esc_attr($locale); ?>"
+            <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
+            value="<?php echo esc_attr($name); ?>"
+            placeholder="Mackenzie University (Brazil)"
+        />
+    </p>
+    <p style="margin:0 0 12px;">
+        <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+        <textarea
+            class="rs-education-institution-description large-text"
+            style="width:100%;min-height:110px;"
+            data-locale="<?php echo esc_attr($locale); ?>"
+            <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
+            placeholder="Descrição da parceria…"
+        ><?php echo esc_textarea($description); ?></textarea>
+    </p>
+    <?php
+    rs_education_render_gallery_caption_fields(
+        $name_prefix,
+        'Legenda — galeria de fotos',
+        $mid,
+        'midGallery',
+        $include_name
+    );
+    rs_education_render_gallery_caption_fields(
+        $name_prefix,
+        'Legenda — galeria após o texto',
+        $bottom,
+        'bottomGallery',
+        $include_name
+    );
+}
+
+/**
+ * @return array<int, array{media: array<string, mixed>, en: array<string, mixed>, pt: array<string, mixed>}>
+ */
+function rs_education_prepare_institution_rows(array $i18n): array {
+    $shared = rs_education_normalize_shared_institutions(
+        is_array($i18n['shared']['institutions'] ?? null) ? $i18n['shared']['institutions'] : []
+    );
+    $en = rs_education_normalize_locale_institutions(
+        is_array($i18n['locales']['en']['institutions'] ?? null) ? $i18n['locales']['en']['institutions'] : []
+    );
+    $pt = rs_education_normalize_locale_institutions(
+        is_array($i18n['locales']['pt']['institutions'] ?? null) ? $i18n['locales']['pt']['institutions'] : []
+    );
+    $count = max(count($shared), count($en), count($pt), 1);
+    $rows = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        $rows[] = [
+            'media' => is_array($shared[$i] ?? null)
+                ? $shared[$i]
+                : rs_education_default_institution_media(),
+            'en'    => is_array($en[$i] ?? null)
+                ? $en[$i]
+                : rs_education_default_institution_locale(),
+            'pt'    => is_array($pt[$i] ?? null)
+                ? $pt[$i]
+                : rs_education_default_institution_locale(),
+        ];
+    }
+
+    return $rows;
+}
+
+function rs_education_render_institutions_section(array $i18n): void {
+    $rows = rs_education_prepare_institution_rows($i18n);
+
+    echo '<div id="rs-education-institutions-accordion" data-rs-accordion>';
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições</strong></legend>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Logo e galerias no topo; nome, texto e legendas nas abas <strong>English</strong> / <strong>Português</strong> dentro de cada instituição.</p>';
+    echo '<div id="rs-education-institutions-list" data-rs-accordion-list>';
+    foreach ($rows as $index => $row) {
+        rs_education_render_combined_institution_row((int) $index, $row['media'], $row['en'], $row['pt']);
+    }
+    echo '</div>';
+    echo '<div id="rs-education-institution-template" hidden>';
+    rs_education_render_combined_institution_row(
+        0,
+        rs_education_default_institution_media(),
+        rs_education_default_institution_locale(),
+        rs_education_default_institution_locale(),
+        true
+    );
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
+    echo '<input type="hidden" id="rs-education-shared-institutions-json" name="rs_education_shared_institutions_json" value="" />';
+    echo '<input type="hidden" id="rs-education-institutions-en-json" name="rs_education_institutions_en_json" value="" />';
+    echo '<input type="hidden" id="rs-education-institutions-pt-json" name="rs_education_institutions_pt_json" value="" />';
+    echo '</fieldset></div>';
+}
+
+/**
+ * @param array<string, mixed> $media
+ * @param array<string, mixed> $en
+ * @param array<string, mixed> $pt
+ */
+function rs_education_render_combined_institution_row(
+    int $index,
+    array $media,
+    array $en,
+    array $pt,
+    bool $is_template = false
+): void {
+    $logo_id = (int) ($media['logo_id'] ?? 0);
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $shared_prefix = 'rs_education_shared[institutions][' . $row_index . ']';
+    $logo_field_id = 'rs_education_shared_inst_logo_' . $row_index;
+    $mid = is_array($media['midGallery'] ?? null)
+        ? $media['midGallery']
+        : ['layout' => 'triple', 'image_ids' => ''];
+    $bottom = is_array($media['bottomGallery'] ?? null)
+        ? $media['bottomGallery']
+        : ['layout' => 'grid-2x2', 'image_ids' => ''];
+    $display = $is_template ? ' display:none;' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $en_name = trim((string) ($en['name'] ?? ''));
+    $pt_name = trim((string) ($pt['name'] ?? ''));
+    $head_title = $en_name !== '' ? $en_name : ($pt_name !== '' ? $pt_name : ('Instituição ' . ($is_template ? '' : (string) ((int) $index + 1))));
+    $row_class = 'rs-metabox-accordion-item rs-education-institution-combined' . ($is_open ? ' is-open' : '');
+    $logo_thumb = '';
+    if (!$is_template && $logo_id > 0) {
+        $logo_url = wp_get_attachment_image_url($logo_id, 'thumbnail');
+        if ($logo_url) {
+            $logo_thumb = '<span class="rs-metabox-accordion-head-thumb"><img src="' . esc_url($logo_url) . '" alt="" /></span>';
+        }
+    }
+    ?>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <?php echo $logo_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <span class="rs-metabox-accordion-head-title rs-education-institution-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-institution">Remover</button>
+        </div>
+        <div class="rs-metabox-accordion-panel">
+        <div class="rs-education-institution-media" style="margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid #e0e0e0;">
+        <?php
+        rs_render_media_field(
+            $shared_prefix . '[logo_id]',
+            'Logo',
+            $logo_id,
+            $logo_field_id,
+            !$is_template,
+            'image'
+        );
+        rs_education_render_gallery_fields(
+            $shared_prefix,
+            'Galeria de fotos (opcional)',
+            $mid,
+            'midGallery',
+            !$is_template,
+            false
+        );
+        rs_education_render_gallery_fields(
+            $shared_prefix,
+            'Galeria após o texto (opcional)',
+            $bottom,
+            'bottomGallery',
+            !$is_template,
+            false
+        );
+        ?>
+        </div>
+        <div class="rs-education-institution-texts">
+            <div class="rs-metabox-tabs rs-education-institution-locale-tabs" data-rs-tabs>
+                <div class="rs-metabox-tablist" role="tablist">
+                    <button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>
+                    <button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>
+                </div>
+                <div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">
+                    <?php rs_education_render_institution_locale_fields($row_index, $en, 'en', !$is_template); ?>
+                </div>
+                <div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>
+                    <?php rs_education_render_institution_locale_fields($row_index, $pt, 'pt', !$is_template); ?>
+                </div>
+            </div>
+        </div>
+        </div>
+    </fieldset>
+    <?php
+}
+
+function rs_education_render_shared_institutions_section(array $shared_institutions): void {
+    $institutions = rs_education_normalize_shared_institutions($shared_institutions);
+    if (!$institutions) {
+        $institutions = [rs_education_default_institution_media()];
+    }
+
+    echo '<div id="rs-education-shared-institutions-accordion" data-rs-accordion>';
+    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições (mídia compartilhada)</strong></legend>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Logo e galerias são únicos para EN e PT. Traduza nome, texto e legendas nas abas de idioma.</p>';
+    echo '<div id="rs-education-shared-institutions-list" data-rs-accordion-list>';
+    foreach ($institutions as $index => $media) {
+        rs_education_render_shared_institution_row((int) $index, $media);
+    }
+    echo '</div>';
+    echo '<div id="rs-education-shared-institution-template" hidden>';
+    rs_education_render_shared_institution_row(0, rs_education_default_institution_media(), true);
+    echo '</div>';
+    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-shared-institution">+ Adicionar instituição</button></p>';
+    echo '<input type="hidden" id="rs-education-shared-institutions-json" name="rs_education_shared_institutions_json" value="" />';
+    echo '</fieldset></div>';
+}
+
+function rs_education_render_shared_institution_row(int $index, array $media, bool $is_template = false): void {
+    $logo_id = (int) ($media['logo_id'] ?? 0);
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $name_prefix = 'rs_education_shared[institutions][' . $row_index . ']';
+    $logo_field_id = 'rs_education_shared_inst_logo_' . $row_index;
+    $mid = is_array($media['midGallery'] ?? null)
+        ? $media['midGallery']
+        : ['layout' => 'triple', 'image_ids' => ''];
+    $bottom = is_array($media['bottomGallery'] ?? null)
+        ? $media['bottomGallery']
+        : ['layout' => 'grid-2x2', 'image_ids' => ''];
+    $display = $is_template ? ' display:none;' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = 'Instituição ' . ($is_template ? '' : (string) ((int) $index + 1));
+    $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
+    $logo_thumb = '';
+    if (!$is_template && $logo_id > 0) {
+        $logo_url = wp_get_attachment_image_url($logo_id, 'thumbnail');
+        if ($logo_url) {
+            $logo_thumb = '<span class="rs-metabox-accordion-head-thumb"><img src="' . esc_url($logo_url) . '" alt="" /></span>';
+        }
+    }
+    ?>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?> rs-education-shared-institution"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <?php echo $logo_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <span class="rs-metabox-accordion-head-title rs-education-shared-institution-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-shared-institution">Remover</button>
+        </div>
+        <div class="rs-metabox-accordion-panel">
+        <?php
+        rs_render_media_field(
+            $name_prefix . '[logo_id]',
+            'Logo',
+            $logo_id,
+            $logo_field_id,
+            !$is_template,
+            'image'
+        );
+        rs_education_render_gallery_fields(
+            $name_prefix,
+            'Galeria de fotos (opcional)',
+            $mid,
+            'midGallery',
+            !$is_template,
+            false
+        );
+        rs_education_render_gallery_fields(
+            $name_prefix,
+            'Galeria após o texto (opcional)',
+            $bottom,
+            'bottomGallery',
+            !$is_template,
+            false
+        );
+        ?>
+        </div>
+    </fieldset>
+    <?php
+}
+
+function rs_education_render_institution_locale_row(
+    int $index,
+    array $institution,
+    bool $is_template = false,
+    string $locale = 'en'
+): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $name = (string) ($institution['name'] ?? '');
+    $description = (string) ($institution['description'] ?? '');
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $name_prefix = 'rs_education_i18n[' . $locale . '][institutions][' . $row_index . ']';
+    $mid = is_array($institution['midGallery'] ?? null)
+        ? $institution['midGallery']
+        : ['caption' => ''];
+    $bottom = is_array($institution['bottomGallery'] ?? null)
+        ? $institution['bottomGallery']
+        : ['caption' => ''];
+    $display = $is_template ? ' display:none;' : '';
+    $is_open = !$is_template && (int) $index === 0;
+    $head_title = $name !== '' ? $name : ('Instituição ' . ($is_template ? '' : (string) ((int) $index + 1)));
+    $row_class = 'rs-metabox-accordion-item rs-education-institution-locale' . ($is_open ? ' is-open' : '');
+    ?>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        data-locale="<?php echo esc_attr($locale); ?>"
+        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+    >
+        <div class="rs-metabox-accordion-head">
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <span class="rs-metabox-accordion-head-title rs-education-institution-head-title"><?php echo esc_html($head_title); ?></span>
+            </button>
+        </div>
+        <div class="rs-metabox-accordion-panel">
+        <p style="margin:0 0 12px;">
+            <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
+            <input
+                type="text"
+                class="rs-education-institution-name"
+                style="width:100%;"
+                <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
+                value="<?php echo esc_attr($name); ?>"
+                placeholder="Mackenzie University (Brazil)"
+            />
+        </p>
+        <p style="margin:0 0 12px;">
+            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+            <textarea
+                class="rs-education-institution-description large-text"
+                style="width:100%;min-height:110px;"
+                <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
+                placeholder="Descrição da parceria…"
+            ><?php echo esc_textarea($description); ?></textarea>
+        </p>
+        <?php
+        rs_education_render_gallery_caption_fields(
+            $name_prefix,
+            'Legenda — galeria de fotos',
+            $mid,
+            'midGallery',
+            !$is_template
+        );
+        rs_education_render_gallery_caption_fields(
+            $name_prefix,
+            'Legenda — galeria após o texto',
+            $bottom,
+            'bottomGallery',
+            !$is_template
+        );
+        ?>
+        </div>
+    </fieldset>
     <?php
 }
 
@@ -827,18 +1526,8 @@ function rs_education_render_institution_row(int $index, array $institution, boo
 function rs_education_render_locale_fields(string $locale, array $loc): void {
     $locale = $locale === 'pt' ? 'pt' : 'en';
     $sections = rs_education_normalize_sections(is_array($loc['sections'] ?? null) ? $loc['sections'] : []);
-    $institutions = rs_education_normalize_institutions(is_array($loc['institutions'] ?? null) ? $loc['institutions'] : []);
     if (!$sections) {
         $sections = [['title' => '', 'body' => '']];
-    }
-    if (!$institutions) {
-        $institutions = [[
-            'name' => '',
-            'logo_id' => 0,
-            'description' => '',
-            'midGallery' => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
-            'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
-        ]];
     }
 
     echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Headline</strong></legend>';
@@ -860,24 +1549,6 @@ function rs_education_render_locale_fields(string $locale, array $loc): void {
     rs_education_render_section_row(0, ['title' => '', 'body' => ''], true, $locale);
     echo '</div><p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-education-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-education-sections-' . esc_attr($locale) . '-json" name="rs_education_sections_' . esc_attr($locale) . '_json" value="" />';
-    echo '</fieldset></div>';
-
-    echo '<div id="rs-education-institutions-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições</strong></legend>';
-    echo '<div id="rs-education-institutions-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
-    foreach ($institutions as $index => $institution) {
-        rs_education_render_institution_row((int) $index, $institution, false, $locale);
-    }
-    echo '</div><div id="rs-education-institution-template-' . esc_attr($locale) . '" hidden>';
-    rs_education_render_institution_row(0, [
-        'name' => '',
-        'logo_id' => 0,
-        'description' => '',
-        'midGallery' => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
-        'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
-    ], true, $locale);
-    echo '</div><p style="margin:12px 0 0;"><button type="button" class="button button-primary rs-education-add-institution" data-locale="' . esc_attr($locale) . '">+ Adicionar instituição</button></p>';
-    echo '<input type="hidden" id="rs-education-institutions-' . esc_attr($locale) . '-json" name="rs_education_institutions_' . esc_attr($locale) . '_json" value="" />';
     echo '</fieldset></div>';
 }
 
@@ -901,6 +1572,8 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
         'rs_education_shared_hero_video'
     );
     echo '</fieldset>';
+
+    rs_education_render_institutions_section($i18n);
 
     echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
     echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
@@ -1067,6 +1740,126 @@ function rs_education_parse_institutions_from_request(string $locale = 'en'): ar
     return $items;
 }
 
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function rs_education_parse_shared_institutions_from_request(): array {
+    if (!empty($_POST['rs_education_shared_institutions_json'])) {
+        $decoded = json_decode(wp_unslash((string) $_POST['rs_education_shared_institutions_json']), true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+    }
+
+    $raw_shared = isset($_POST['rs_education_shared']) && is_array($_POST['rs_education_shared'])
+        ? wp_unslash($_POST['rs_education_shared'])
+        : [];
+    if (!isset($raw_shared['institutions']) || !is_array($raw_shared['institutions'])) {
+        return [];
+    }
+
+    $items = [];
+    foreach ($raw_shared['institutions'] as $key => $row) {
+        if ($key === '__INDEX__' || !is_array($row)) {
+            continue;
+        }
+        $items[] = $row;
+    }
+
+    return $items;
+}
+
+function rs_education_institution_media_has_content(array $media): bool {
+    $media = rs_education_normalize_institution_media($media);
+    return (int) ($media['logo_id'] ?? 0) > 0
+        || ($media['midGallery']['image_ids'] ?? '') !== ''
+        || ($media['bottomGallery']['image_ids'] ?? '') !== '';
+}
+
+function rs_education_institution_locale_has_content(array $locale): bool {
+    $locale = rs_education_normalize_institution_locale($locale);
+    return ($locale['name'] ?? '') !== ''
+        || ($locale['description'] ?? '') !== ''
+        || ($locale['midGallery']['caption'] ?? '') !== ''
+        || ($locale['bottomGallery']['caption'] ?? '') !== '';
+}
+
+function rs_education_sanitize_shared_institutions(array $institutions): array {
+    $clean = [];
+    foreach ($institutions as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $clean[] = rs_education_normalize_institution_media($item);
+    }
+
+    return $clean;
+}
+
+function rs_education_sanitize_locale_institutions(array $institutions): array {
+    $clean = [];
+    foreach ($institutions as $item) {
+        if (!is_array($item)) {
+            $clean[] = rs_education_default_institution_locale();
+            continue;
+        }
+        $clean[] = [
+            'name' => trim(wp_strip_all_tags((string) ($item['name'] ?? ''))),
+            'description' => wp_kses_post((string) ($item['description'] ?? '')),
+            'midGallery' => [
+                'caption' => sanitize_text_field((string) ($item['midGallery']['caption'] ?? '')),
+            ],
+            'bottomGallery' => [
+                'caption' => sanitize_text_field((string) ($item['bottomGallery']['caption'] ?? '')),
+            ],
+        ];
+    }
+
+    return rs_education_normalize_locale_institutions($clean);
+}
+
+/**
+ * @param array<int, array<string, mixed>> $shared
+ * @param array<int, array<string, mixed>> $en
+ * @param array<int, array<string, mixed>> $pt
+ * @return array{shared: array<int, array<string, mixed>>, en: array<int, array<string, mixed>>, pt: array<int, array<string, mixed>>}
+ */
+function rs_education_filter_institutions_on_save(array $shared, array $en, array $pt): array {
+    $count = max(count($shared), count($en), count($pt));
+    $shared_out = [];
+    $en_out = [];
+    $pt_out = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        $media = is_array($shared[$i] ?? null)
+            ? rs_education_normalize_institution_media($shared[$i])
+            : rs_education_default_institution_media();
+        $en_item = is_array($en[$i] ?? null)
+            ? rs_education_normalize_institution_locale($en[$i])
+            : rs_education_default_institution_locale();
+        $pt_item = is_array($pt[$i] ?? null)
+            ? rs_education_normalize_institution_locale($pt[$i])
+            : rs_education_default_institution_locale();
+
+        if (!rs_education_institution_media_has_content($media)
+            && !rs_education_institution_locale_has_content($en_item)
+            && !rs_education_institution_locale_has_content($pt_item)
+        ) {
+            continue;
+        }
+
+        $shared_out[] = $media;
+        $en_out[] = $en_item;
+        $pt_out[] = $pt_item;
+    }
+
+    return [
+        'shared' => $shared_out,
+        'en'     => $en_out,
+        'pt'     => $pt_out,
+    ];
+}
+
 function rs_education_sanitize_institutions(array $institutions): array {
     $clean = [];
     foreach ($institutions as $item) {
@@ -1126,6 +1919,18 @@ add_action('save_post_education', function (int $post_id) {
         : $post_id;
     $previous = rs_education_i18n_get($post_id);
     $data = rs_section_shared_hero_parse_from_request($previous, 'rs_education', 'rs_education_shared');
+    $shared_raw = rs_education_sanitize_shared_institutions(
+        rs_education_parse_shared_institutions_from_request()
+    );
+    $en_inst_raw = rs_education_sanitize_locale_institutions(
+        rs_education_parse_institutions_from_request('en')
+    );
+    $pt_inst_raw = rs_education_sanitize_locale_institutions(
+        rs_education_parse_institutions_from_request('pt')
+    );
+    $filtered = rs_education_filter_institutions_on_save($shared_raw, $en_inst_raw, $pt_inst_raw);
+    $data['shared']['institutions'] = $filtered['shared'];
+
     $raw = isset($_POST['rs_education_i18n']) && is_array($_POST['rs_education_i18n'])
         ? wp_unslash($_POST['rs_education_i18n'])
         : [];
@@ -1136,12 +1941,11 @@ add_action('save_post_education', function (int $post_id) {
         if ($headline === '' && isset($_POST['rs_education_headline_' . $locale])) {
             $headline = (string) wp_unslash($_POST['rs_education_headline_' . $locale]);
         }
+        $locale_institutions = $locale === 'en' ? $filtered['en'] : $filtered['pt'];
         $data['locales'][$locale] = [
             'headline' => wp_kses_post($headline),
             'sections' => rs_education_parse_sections_from_request($locale),
-            'institutions' => rs_education_sanitize_institutions(
-                rs_education_parse_institutions_from_request($locale)
-            ),
+            'institutions' => $locale_institutions,
         ];
     }
 
@@ -1712,12 +2516,12 @@ function rs_education_i18n_admin_footer_script(): void {
         const locales = ['en', 'pt'];
         const paragraphEditorSettings = <?php echo wp_json_encode(rs_rich_text_js_settings('paragraph')); ?>;
         const nextSection = {};
-        const nextInstitution = {};
+        let nextInstitutionIndex = 0;
         const sectionApis = {};
-        const institutionApis = {};
+        let institutionsAccordionApi = null;
 
         function sectionsList(locale) { return $('#rs-education-sections-list-' + locale); }
-        function institutionsList(locale) { return $('#rs-education-institutions-list-' + locale); }
+        function institutionsList() { return $('#rs-education-institutions-list'); }
 
         function saveEditors() {
             if (typeof tinymce !== 'undefined') tinymce.triggerSave();
@@ -1738,7 +2542,7 @@ function rs_education_i18n_admin_footer_script(): void {
             return editor && !editor.isHidden() ? editor.getContent() : ($textarea.val() || '');
         }
 
-        function gallery($block) {
+        function sharedGallery($block) {
             const ids = [];
             $block.find('.rs-education-gallery-item').each(function () {
                 const id = parseInt($(this).attr('data-id'), 10) || 0;
@@ -1747,9 +2551,48 @@ function rs_education_i18n_admin_footer_script(): void {
             $block.find('.rs-education-gallery-ids').val(ids.join(','));
             return {
                 layout: $block.find('.rs-education-gallery-layout').val() || 'triple',
-                image_ids: ids.join(','),
-                caption: ($block.find('.rs-education-gallery-caption').val() || '').trim()
+                image_ids: ids.join(',')
             };
+        }
+
+        function localePanel($row, locale) {
+            return $row.find('.rs-metabox-tabpanel[data-tab="' + locale + '"]');
+        }
+
+        function localeGalleryCaption($panel, key) {
+            return ($panel.find('.rs-education-gallery-caption[data-gallery="' + key + '"]').val() || '').trim();
+        }
+
+        function collectShared() {
+            const institutions = [];
+            institutionsList().find('.rs-education-institution-combined').each(function () {
+                const $row = $(this);
+                const galleries = {};
+                $row.find('.rs-education-institution-media .rs-education-gallery-block').each(function () {
+                    const key = $(this).find('.rs-education-gallery-layout').data('gallery');
+                    if (key) galleries[key] = sharedGallery($(this));
+                });
+                institutions.push({
+                    logo_id: parseInt($row.find('.rs-education-institution-media input[data-rs-cap-image]').val(), 10) || 0,
+                    midGallery: galleries.midGallery || { layout: 'triple', image_ids: '' },
+                    bottomGallery: galleries.bottomGallery || { layout: 'grid-2x2', image_ids: '' }
+                });
+            });
+            $('#rs-education-shared-institutions-json').val(JSON.stringify(institutions));
+        }
+
+        function collectLocale(locale) {
+            const institutions = [];
+            institutionsList().find('.rs-education-institution-combined').each(function () {
+                const $panel = localePanel($(this), locale);
+                institutions.push({
+                    name: ($panel.find('.rs-education-institution-name').val() || '').trim(),
+                    description: ($panel.find('.rs-education-institution-description').val() || '').trim(),
+                    midGallery: { caption: localeGalleryCaption($panel, 'midGallery') },
+                    bottomGallery: { caption: localeGalleryCaption($panel, 'bottomGallery') }
+                });
+            });
+            $('#rs-education-institutions-' + locale + '-json').val(JSON.stringify(institutions));
         }
 
         function collect(locale) {
@@ -1761,38 +2604,38 @@ function rs_education_i18n_admin_footer_script(): void {
                 if (title || body) sections.push({ title: title || 'Seção', body: body });
             });
             $('#rs-education-sections-' + locale + '-json').val(JSON.stringify(sections));
-
-            const institutions = [];
-            institutionsList(locale).find('.rs-metabox-accordion-item').each(function () {
-                const $row = $(this);
-                const galleries = {};
-                $row.find('.rs-education-gallery-block').each(function () {
-                    const key = $(this).find('.rs-education-gallery-layout').data('gallery');
-                    if (key) galleries[key] = gallery($(this));
-                });
-                const item = {
-                    name: ($row.find('.rs-education-institution-name').val() || '').trim(),
-                    logo_id: parseInt($row.find('input[data-rs-cap-image]').val(), 10) || 0,
-                    description: ($row.find('.rs-education-institution-description').val() || '').trim(),
-                    midGallery: galleries.midGallery || { layout: 'triple', image_ids: '', caption: '' },
-                    bottomGallery: galleries.bottomGallery || { layout: 'grid-2x2', image_ids: '', caption: '' }
-                };
-                if (item.name || item.logo_id || item.description || item.midGallery.image_ids || item.bottomGallery.image_ids) {
-                    institutions.push(item);
-                }
-            });
-            $('#rs-education-institutions-' + locale + '-json').val(JSON.stringify(institutions));
         }
 
         function collectAll() {
             saveEditors();
-            locales.forEach(collect);
+            $('.rs-education-gallery-block').each(function () {
+                const $block = $(this);
+                const ids = [];
+                $block.find('.rs-education-gallery-item').each(function () {
+                    const id = parseInt($(this).attr('data-id'), 10) || 0;
+                    if (id > 0) ids.push(id);
+                });
+                $block.find('.rs-education-gallery-ids').val(ids.join(','));
+            });
+            collectShared();
+            locales.forEach(function (locale) {
+                collect(locale);
+                collectLocale(locale);
+            });
         }
 
         function initEditor(id) {
             if (!id || id.indexOf('__INDEX__') !== -1 || typeof wp === 'undefined' || !wp.editor) return;
             if (typeof tinymce !== 'undefined' && tinymce.get(id)) return;
             wp.editor.initialize(id, paragraphEditorSettings);
+        }
+
+        function initInstitutionTabs($row) {
+            $row.find('.rs-education-institution-locale-tabs').each(function () {
+                if (window.RsMetaboxUi && !$(this).data('rsTabsInit')) {
+                    window.RsMetaboxUi.initTabs(this);
+                }
+            });
         }
 
         function replaceIndexes($row, index) {
@@ -1817,22 +2660,49 @@ function rs_education_i18n_admin_footer_script(): void {
             }
         }
 
-        function assignInstitutionNames($row, locale, index) {
-            const prefix = 'rs_education_i18n[' + locale + '][institutions][' + index + ']';
-            $row.find('.rs-education-institution-name').attr('name', prefix + '[name]');
-            $row.find('.rs-education-institution-description').attr('name', prefix + '[description]');
-            $row.find('input[data-rs-cap-image]').attr('name', prefix + '[logo_id]');
-            $row.find('.rs-education-gallery-block').each(function () {
+        function assignInstitutionRowNames($row, index) {
+            const sharedPrefix = 'rs_education_shared[institutions][' + index + ']';
+            $row.attr('data-index', String(index));
+            $row.find('.rs-education-institution-media input[data-rs-cap-image]').attr('name', sharedPrefix + '[logo_id]');
+            $row.find('.rs-education-institution-media .rs-education-gallery-block').each(function () {
                 const key = $(this).find('.rs-education-gallery-layout').data('gallery');
                 if (!key) return;
-                $(this).find('.rs-education-gallery-layout').attr('name', prefix + '[' + key + '][layout]');
-                $(this).find('.rs-education-gallery-ids').attr('name', prefix + '[' + key + '][image_ids]');
-                $(this).find('.rs-education-gallery-caption').attr('name', prefix + '[' + key + '][caption]');
+                $(this).find('.rs-education-gallery-layout').attr('name', sharedPrefix + '[' + key + '][layout]');
+                $(this).find('.rs-education-gallery-ids').attr('name', sharedPrefix + '[' + key + '][image_ids]');
             });
+            locales.forEach(function (locale) {
+                const prefix = 'rs_education_i18n[' + locale + '][institutions][' + index + ']';
+                const $panel = localePanel($row, locale);
+                $panel.find('.rs-education-institution-name').attr('name', prefix + '[name]');
+                $panel.find('.rs-education-institution-description').attr('name', prefix + '[description]');
+                $panel.find('.rs-education-gallery-caption').each(function () {
+                    const key = $(this).data('gallery');
+                    if (!key) return;
+                    $(this).attr('name', prefix + '[' + key + '][caption]');
+                });
+            });
+            syncInstitutionHeadTitle($row);
+        }
+
+        function syncInstitutionHeadTitle($row) {
+            const enName = (localePanel($row, 'en').find('.rs-education-institution-name').val() || '').trim();
+            const ptName = (localePanel($row, 'pt').find('.rs-education-institution-name').val() || '').trim();
+            const index = parseInt($row.attr('data-index'), 10);
+            const fallback = Number.isFinite(index) ? ('Instituição ' + (index + 1)) : 'Instituição';
+            $row.find('.rs-education-institution-head-title').text(enName || ptName || fallback);
+        }
+
+        function syncInstitutionHeadThumb($row) {
+            const logoId = parseInt($row.find('.rs-education-institution-media input[data-rs-cap-image]').val(), 10) || 0;
+            const $toggle = $row.find('.rs-metabox-accordion-toggle').first();
+            $row.find('.rs-metabox-accordion-head-thumb').remove();
+            if (logoId <= 0) return;
+            const $preview = $row.find('.rs-education-institution-media .rs-media-preview img').first();
+            if (!$preview.length) return;
+            $toggle.prepend('<span class="rs-metabox-accordion-head-thumb"><img src="' + $preview.attr('src') + '" alt="" /></span>');
         }
 
         function reindexSections(locale) {
-            // Só name= — ids do TinyMCE ficam estáveis ao arrastar.
             sectionsList(locale).find('.rs-metabox-accordion-item').each(function (index) {
                 const $row = $(this);
                 $row.attr('data-index', String(index));
@@ -1849,18 +2719,44 @@ function rs_education_i18n_admin_footer_script(): void {
             );
         }
 
-        function reindexInstitutions(locale) {
-            institutionsList(locale).find('.rs-metabox-accordion-item').each(function (index) {
-                assignInstitutionNames($(this), locale, index);
+        function reindexInstitutions() {
+            institutionsList().find('.rs-education-institution-combined').each(function (index) {
+                assignInstitutionRowNames($(this), index);
             });
-            nextInstitution[locale] = institutionsList(locale).find('.rs-metabox-accordion-item').length;
+            nextInstitutionIndex = institutionsList().find('.rs-education-institution-combined').length;
+        }
+
+        function appendInstitutionRow(index) {
+            const $row = $('#rs-education-institution-template .rs-education-institution-combined').first().clone();
+            $row.removeAttr('style').removeClass('is-open');
+            $row.find('input, textarea').val('');
+            $row.find('input[data-rs-cap-image]').val('0');
+            $row.find('.rs-media-preview, .rs-education-gallery-grid').empty();
+            $row.find('.rs-education-gallery-ids').val('');
+            $row.find('.rs-education-gallery-empty').show();
+            $row.find('.rs-education-gallery-layout').each(function () {
+                const key = $(this).data('gallery');
+                $(this).val(key === 'bottomGallery' ? 'grid-2x2' : 'triple');
+            });
+            $row.find('.rs-metabox-accordion-head-thumb').remove();
+            $row.find('.rs-metabox-accordion-head-title').text('Instituição ' + (index + 1));
+            $row.find('.rs-metabox-accordion-toggle').attr('aria-expanded', 'false');
+            $row.find('.rs-metabox-tab').removeClass('is-active').attr('aria-selected', 'false').first().addClass('is-active').attr('aria-selected', 'true');
+            $row.find('.rs-metabox-tabpanel').removeClass('is-active').prop('hidden', true).first().addClass('is-active').prop('hidden', false);
+            replaceIndexes($row, index);
+            assignInstitutionRowNames($row, index);
+            institutionsList().append($row);
+            initInstitutionTabs($row);
+            $row.find('.rs-education-gallery-grid').removeClass('ui-sortable').sortable({
+                items: '.rs-education-gallery-item',
+                handle: '.rs-education-gallery-handle, .rs-education-gallery-tile'
+            });
+            if (institutionsAccordionApi) institutionsAccordionApi.openItem($row);
         }
 
         locales.forEach(function (locale) {
             nextSection[locale] = sectionsList(locale).find('.rs-metabox-accordion-item').length;
-            nextInstitution[locale] = institutionsList(locale).find('.rs-metabox-accordion-item').length;
             const sectionsRoot = document.querySelector('#rs-education-sections-accordion-' + locale);
-            const institutionsRoot = document.querySelector('#rs-education-institutions-accordion-' + locale);
             if (sectionsRoot && window.RsMetaboxUi) {
                 sectionApis[locale] = window.RsMetaboxUi.initAccordion(sectionsRoot, {
                     onExpand: function (_$item, ids) { window.RsMetaboxUi.resizeEditors(ids); },
@@ -1873,20 +2769,28 @@ function rs_education_i18n_admin_footer_script(): void {
                     onSortUpdate: function () { reindexSections(locale); }
                 });
             }
-            if (institutionsRoot && window.RsMetaboxUi) {
-                institutionApis[locale] = window.RsMetaboxUi.initAccordion(institutionsRoot, {
-                    titleInputSelector: '.rs-education-institution-name',
-                    headTitleSelector: '.rs-education-institution-head-title',
-                    defaultTitle: 'Instituição',
-                    onRemove: function (event, $row) {
-                        event.preventDefault();
-                        $row.remove();
-                        reindexInstitutions(locale);
-                    },
-                    onSortUpdate: function () { reindexInstitutions(locale); }
-                });
-            }
         });
+
+        institutionsList().find('.rs-education-institution-combined').each(function () {
+            initInstitutionTabs($(this));
+        });
+
+        nextInstitutionIndex = institutionsList().find('.rs-education-institution-combined').length;
+        const institutionsRoot = document.querySelector('#rs-education-institutions-accordion');
+        if (institutionsRoot && window.RsMetaboxUi) {
+            institutionsAccordionApi = window.RsMetaboxUi.initAccordion(institutionsRoot, {
+                titleInputSelector: '.rs-education-institution-name',
+                headTitleSelector: '.rs-education-institution-head-title',
+                defaultTitle: 'Instituição',
+                onRemove: function (event, $row) {
+                    event.preventDefault();
+                    $row.remove();
+                    reindexInstitutions();
+                },
+                onSortUpdate: function () { reindexInstitutions(); }
+            });
+        }
+        reindexInstitutions();
 
         $('.rs-education-add-section').on('click', function (event) {
             event.preventDefault();
@@ -1904,30 +2808,26 @@ function rs_education_i18n_admin_footer_script(): void {
             nextSection[locale] += 1;
         });
 
-        $('.rs-education-add-institution').on('click', function (event) {
+        $('#rs-education-add-institution').on('click', function (event) {
             event.preventDefault();
-            const locale = $(this).data('locale') === 'pt' ? 'pt' : 'en';
-            const index = nextInstitution[locale];
-            const $row = $('#rs-education-institution-template-' + locale + ' .rs-metabox-accordion-item').first().clone();
-            $row.removeAttr('style').removeClass('is-open').attr('data-index', String(index));
-            $row.find('input, textarea').val('');
-            $row.find('.rs-media-preview, .rs-education-gallery-grid').empty();
-            $row.find('.rs-metabox-accordion-head-title').text('Instituição');
-            replaceIndexes($row, index);
-            assignInstitutionNames($row, locale, index);
-            institutionsList(locale).append($row);
-            $row.find('.rs-education-gallery-grid').removeClass('ui-sortable').sortable({
-                items: '.rs-education-gallery-item',
-                handle: '.rs-education-gallery-handle, .rs-education-gallery-tile'
-            });
-            if (institutionApis[locale]) institutionApis[locale].openItem($row);
-            nextInstitution[locale] += 1;
+            appendInstitutionRow(nextInstitutionIndex);
+            nextInstitutionIndex += 1;
+        });
+
+        $(document).on('input', '.rs-education-institution-name', function () {
+            syncInstitutionHeadTitle($(this).closest('.rs-education-institution-combined'));
+        });
+
+        $(document).on('click', '#rs-education-institutions-list .rs-media-pick, #rs-education-institutions-list .rs-media-clear', function () {
+            const $row = $(this).closest('.rs-education-institution-combined');
+            if (!$row.length) return;
+            window.setTimeout(function () { syncInstitutionHeadThumb($row); }, 120);
         });
 
         $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, locale) {
             if (locale !== 'en' && locale !== 'pt') return;
             window.setTimeout(function () {
-                $('[data-locale="' + locale + '"] .rs-metabox-accordion-item.is-open').each(function () {
+                $('[data-tab="' + locale + '"].rs-metabox-tabpanel.is-active .rs-metabox-accordion-item.is-open').each(function () {
                     window.RsMetaboxUi.resizeEditors(window.RsMetaboxUi.parseEditorIds($(this)));
                 });
             }, 0);
