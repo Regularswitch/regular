@@ -1339,7 +1339,7 @@ html:not(.dark) .brand-mark {
 @media (min-width: 768px) {
 	.project-gallery {
 		margin-top: 1rem;
-		padding: 0 4rem;
+		padding: 0 6rem;
 	}
 }
 
