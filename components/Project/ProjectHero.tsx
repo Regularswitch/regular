@@ -60,7 +60,7 @@ export default function ProjectHero({
 					/>
 				)}
 
-				<div className="absolute inset-0 bg-black/20" />
+				<div className="absolute inset-0" />
 
 				{showVignette ? (
 					logoSrc ? (
