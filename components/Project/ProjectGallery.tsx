@@ -272,7 +272,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 									onClick={() => openLightbox(index)}
 									aria-label={`${openLabel} ${index + 1}`}
 								>
-									<div className="project-gallery-image overflow-hidden rounded-[5px] bg-(--surface)">
+									<div className="project-gallery-image overflow-hidden rounded-[5px]">
 										<GalleryMedia
 											item={item}
 											alt={`${title} — mídia ${index + 1}`}
