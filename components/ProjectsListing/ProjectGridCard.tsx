@@ -1,9 +1,12 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
+import { getVisibleCategoryTags } from '../../lib/projects/categories';
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
-import { getVisibleCategoryTags } from '../../lib/projects/categories';
 import type { GridSpan } from './constants';
 
 type ProjectGridCardProps = {
@@ -16,6 +19,7 @@ type ProjectGridCardProps = {
 export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
+	const [imageLoaded, setImageLoaded] = useState(false);
 	const isFeatured = span === 'featured' || span === 'full';
 	const isThird = span === 'third';
 	const isQuarter = span === 'quarter';
@@ -34,7 +38,12 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 	return (
 		<article className={itemClass}>
 			<Link href={href} className="group block">
-				<div className="selected-projects-card-image relative overflow-hidden bg-(--surface)">
+				<div
+					className={`selected-projects-card-image relative overflow-hidden${
+						!cardImage || imageLoaded ? ' is-loaded' : ' is-loading'
+					}`}
+				>
+					<span className="selected-projects-card-shimmer" aria-hidden />
 					{cardImage ? (
 						<Image
 							src={cardImage}
@@ -51,9 +60,14 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 							width={isFeatured ? 1600 : isQuarter ? 800 : 1200}
 							height={isFeatured ? 600 : isQuarter ? 800 : 900}
 							unoptimized={isGifUrl(cardImage)}
-							className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+							onLoadingComplete={() => setImageLoaded(true)}
+							className={`selected-projects-card-media h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]${
+								imageLoaded ? ' is-visible' : ''
+							}`}
 						/>
-					) : null}
+					) : (
+						<span className="selected-projects-card-empty" aria-hidden />
+					)}
 				</div>
 
 				<h3 className="selected-projects-card-title mt-4 font-hk text-lg font-medium uppercase tracking-tight text-(--fg) md:mt-5 md:text-xl">
