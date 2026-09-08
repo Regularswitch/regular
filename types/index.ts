@@ -146,6 +146,8 @@ export type SiteUiContent = {
 };
 
 export type BlobVisual = {
+  /** Exibe o LiquidBlob3D no topo da home. */
+  enabled?: boolean;
   color1: string;
   color2: string;
   palette: string[];

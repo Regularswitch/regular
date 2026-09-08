@@ -1,6 +1,7 @@
 import type { BlobVisual } from '../../types';
 
 export const DEFAULT_BLOB_VISUAL: BlobVisual = {
+	enabled: false,
 	color1: '#fe4857',
 	color2: '#4af117',
 	palette: ['#7B00FF', '#D400FF', '#FF5FAF', '#304FFE', '#FFD500', '#4af117', '#fe4857'],
@@ -16,6 +17,7 @@ export function resolveBlobVisual(fromWp: BlobVisual | null | undefined): BlobVi
 		: [];
 
 	return {
+		enabled: Boolean(fromWp.enabled),
 		color1: /^#[0-9a-fA-F]{3,6}$/.test(fromWp.color1) ? fromWp.color1 : DEFAULT_BLOB_VISUAL.color1,
 		color2: /^#[0-9a-fA-F]{3,6}$/.test(fromWp.color2) ? fromWp.color2 : DEFAULT_BLOB_VISUAL.color2,
 		palette: palette.length >= 2 ? palette : DEFAULT_BLOB_VISUAL.palette,

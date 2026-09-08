@@ -65,14 +65,16 @@ export default async function PtHomePage() {
 
 	return (
 		<>
-			{/* <LiquidBlob3D
-				className="rounded-[5px] relative h-[50svh] min-h-[420px] md:h-[85vh] grid place-items-center overflow-hidden bg-black"
-				intensity={0.5}
-				blobRadius={1.45}
-				color1={blob.color1}
-				color2={blob.color2}
-				palette={blob.palette}
-			/> */}
+			{blob.enabled ? (
+				<LiquidBlob3D
+					className="rounded-[5px] relative h-[50svh] min-h-[420px] md:h-[85vh] grid place-items-center overflow-hidden bg-black"
+					intensity={0.5}
+					blobRadius={1.45}
+					color1={blob.color1}
+					color2={blob.color2}
+					palette={blob.palette}
+				/>
+			) : null}
 			<IntroSection intro={intro} locale="pt" />
 
 			<BrandsMarquee brands={brands} locale="pt" />

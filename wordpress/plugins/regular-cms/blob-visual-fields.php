@@ -17,6 +17,7 @@ const RS_BLOB_MAX_COLORS = 8;
 const RS_BLOB_META_COLOR1 = 'rs_blob_color1';
 const RS_BLOB_META_COLOR2 = 'rs_blob_color2';
 const RS_BLOB_META_PALETTE = 'rs_blob_palette';
+const RS_BLOB_META_ENABLED = 'rs_blob_enabled';
 
 function rs_blob_default_palette(): array {
     return array_map('trim', explode(',', RS_BLOB_DEFAULT_PALETTE));
@@ -85,7 +86,22 @@ function rs_blob_visual_get_meta(int $post_id): array {
         RS_BLOB_META_COLOR1  => (string) get_post_meta($post_id, RS_BLOB_META_COLOR1, true),
         RS_BLOB_META_COLOR2  => (string) get_post_meta($post_id, RS_BLOB_META_COLOR2, true),
         RS_BLOB_META_PALETTE => (string) get_post_meta($post_id, RS_BLOB_META_PALETTE, true),
+        RS_BLOB_META_ENABLED => (string) get_post_meta($post_id, RS_BLOB_META_ENABLED, true),
     ];
+}
+
+function rs_blob_visual_is_enabled(int $post_id): bool {
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    $raw = get_post_meta($post_id, RS_BLOB_META_ENABLED, true);
+    // Meta ausente: desligado (site atual sem blob até ativar no admin).
+    if ($raw === '' || $raw === false || $raw === null) {
+        return false;
+    }
+
+    return (string) $raw === '1' || $raw === 1 || $raw === true;
 }
 
 function rs_blob_visual_payload(?int $post_id = null): array {
@@ -94,6 +110,7 @@ function rs_blob_visual_payload(?int $post_id = null): array {
 
     if ($post_id <= 0) {
         return [
+            'enabled' => false,
             'color1'  => RS_BLOB_DEFAULT_COLOR1,
             'color2'  => RS_BLOB_DEFAULT_COLOR2,
             'palette' => $defaults_palette,
@@ -104,6 +121,7 @@ function rs_blob_visual_payload(?int $post_id = null): array {
     $palette = rs_blob_parse_palette($meta[RS_BLOB_META_PALETTE], $defaults_palette);
 
     return [
+        'enabled' => rs_blob_visual_is_enabled($post_id),
         'color1'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR1], $palette, RS_BLOB_DEFAULT_COLOR1),
         'color2'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR2], $palette, RS_BLOB_DEFAULT_COLOR2),
         'palette' => $palette,
@@ -132,6 +150,7 @@ function rs_blob_visual_ensure_post(): void {
         update_post_meta($post_id, RS_BLOB_META_COLOR1, RS_BLOB_DEFAULT_COLOR1);
         update_post_meta($post_id, RS_BLOB_META_COLOR2, RS_BLOB_DEFAULT_COLOR2);
         update_post_meta($post_id, RS_BLOB_META_PALETTE, RS_BLOB_DEFAULT_PALETTE);
+        update_post_meta($post_id, RS_BLOB_META_ENABLED, '0');
     }
 
     update_option('rs_blob_visual_post_ensured_v1', 1);
@@ -148,6 +167,15 @@ add_action('init', function () {
             },
         ]);
     }
+
+    register_post_meta('home-visual', RS_BLOB_META_ENABLED, [
+        'single'        => true,
+        'type'          => 'boolean',
+        'show_in_rest'  => false,
+        'auth_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+    ]);
 }, 20);
 
 add_action('init', 'rs_blob_visual_ensure_post', 25);
@@ -221,6 +249,15 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
     echo 'Principal e secundária são escolhidas a partir dela. ';
     echo rs_plugin_version_markup();
+    echo '</p>';
+
+    $enabled = rs_blob_visual_is_enabled((int) $post->ID);
+    echo '<p class="rs-blob-field" style="margin:0 0 18px;">';
+    echo '<label style="display:inline-flex;align-items:center;gap:8px;font-weight:600;">';
+    echo '<input type="checkbox" name="' . esc_attr(RS_BLOB_META_ENABLED) . '" value="1"' . checked($enabled, true, false) . ' />';
+    echo 'Exibir Liquid Blob 3D na home';
+    echo '</label>';
+    echo '<span style="display:block;margin-top:6px;color:#646970;font-size:12px;font-weight:400;">Quando desligado, a home começa direto no Intro. Cores da paleta continuam valendo para menu e cursor.</span>';
     echo '</p>';
 
     echo '<div class="rs-blob-field" data-rs-blob-palette>';
@@ -665,4 +702,5 @@ add_action('save_post_home-visual', function (int $post_id) {
     update_post_meta($post_id, RS_BLOB_META_COLOR1, $color1);
     update_post_meta($post_id, RS_BLOB_META_COLOR2, $color2);
     update_post_meta($post_id, RS_BLOB_META_PALETTE, implode(',', $palette));
+    update_post_meta($post_id, RS_BLOB_META_ENABLED, !empty($_POST[RS_BLOB_META_ENABLED]) ? '1' : '0');
 });

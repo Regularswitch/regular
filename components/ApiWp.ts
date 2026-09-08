@@ -900,7 +900,12 @@ function isBlobVisual(value: unknown): value is BlobVisual {
 }
 
 export function porterBlobVisual(value: unknown): BlobVisual | null {
-    return isBlobVisual(value) ? value : null;
+    if (!isBlobVisual(value)) return null;
+    const item = value as Record<string, unknown>;
+    return {
+        ...value,
+        enabled: Boolean(item.enabled),
+    };
 }
 
 export async function GetBlobVisualApi(): Promise<BlobVisual | null> {
