@@ -255,7 +255,7 @@ html:not(.dark) .brand-mark {
 	}
 }
 
-/* Listagem /projects: 1 col mobile · 1ª linha 3 · demais 4 no desktop */
+/* Listagem /projects: 1 col mobile · 4 por linha no desktop */
 .projects-listing-grid {
 	display: grid;
 	grid-template-columns: 1fr;

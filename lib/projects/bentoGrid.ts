@@ -1,11 +1,11 @@
 export type GridSpan = 'half' | 'third' | 'quarter' | 'featured' | 'full';
 
 /**
- * Listagem /projects: 1ª linha 3 cards (1/3) · demais 4 cards (1/4).
- * Desktop usa grid de 12 colunas (third=span 4, quarter=span 3).
+ * Listagem /projects: todas as linhas com 4 cards (1/4).
+ * Desktop usa grid de 12 colunas (quarter = span 3).
  */
-export function getGridSpan(index: number): GridSpan {
-	return index < 3 ? 'third' : 'quarter';
+export function getGridSpan(_index: number): GridSpan {
+	return 'quarter';
 }
 
 /**
@@ -24,8 +24,8 @@ export function getHomeGridSpan(
 	return 'half';
 }
 
-/** Listagem /projects: 1ª linha (3) + 2ª linha (4). */
-export const INITIAL_BENTO_COUNT = 7;
+/** Listagem /projects: 8 linhas × 4 cards ao abrir. */
+export const INITIAL_BENTO_COUNT = 32;
 
 /** Lotes da listagem /projects: +1 linha de 4 projetos. */
 export const BENTO_BATCH_SIZE = 4;

@@ -36,7 +36,7 @@ function rs_site_ui_layout_keys(): array {
 function rs_site_ui_default_shared(): array {
     return [
         'homeColumns'          => 2,
-        'projectsInitialCount' => 7,
+        'projectsInitialCount' => 32,
         'latestCount'          => 6,
     ];
 }
@@ -58,10 +58,14 @@ function rs_site_ui_i18n_default(): array {
 
 function rs_site_ui_normalize_layout(array $raw): array {
     $columns = (int) ($raw['homeColumns'] ?? 2);
-    $initial = (int) ($raw['projectsInitialCount'] ?? 7);
+    $initial = (int) ($raw['projectsInitialCount'] ?? 32);
     $latest = (int) ($raw['latestCount'] ?? 6);
     if ($initial < 1) {
-        $initial = 5;
+        $initial = 32;
+    }
+    // Migração do padrão antigo (7 = 3+4) → 32 (8 linhas × 4).
+    if ($initial === 7) {
+        $initial = 32;
     }
 
     return [
@@ -77,7 +81,7 @@ function rs_site_ui_i18n_normalize(array $raw): array {
     $en_raw = is_array($raw['locales']['en'] ?? null) ? $raw['locales']['en'] : [];
     $data['shared'] = rs_site_ui_normalize_layout([
         'homeColumns' => $shared['homeColumns'] ?? $en_raw['homeColumns'] ?? 2,
-        'projectsInitialCount' => $shared['projectsInitialCount'] ?? $en_raw['projectsInitialCount'] ?? 7,
+        'projectsInitialCount' => $shared['projectsInitialCount'] ?? $en_raw['projectsInitialCount'] ?? 32,
         'latestCount' => $shared['latestCount'] ?? $en_raw['latestCount'] ?? 6,
     ]);
 
@@ -304,7 +308,8 @@ function rs_site_ui_render_meta_box(WP_Post $post): void {
     }
     echo '</select></p>';
     echo '<p style="margin:0 0 12px;"><label for="rs_site_ui_projects_initial_shared" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
-    echo '<input type="number" min="1" max="100" style="width:100px;" id="rs_site_ui_projects_initial_shared" name="rs_site_ui_shared[projectsInitialCount]" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" /></p>';
+    echo '<input type="number" min="1" max="100" style="width:100px;" id="rs_site_ui_projects_initial_shared" name="rs_site_ui_shared[projectsInitialCount]" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" />';
+    echo '<span style="margin-left:8px;color:#646970;font-size:12px;">Padrão: 32 (8 linhas × 4)</span></p>';
     echo '<p style="margin:0;"><label for="rs_site_ui_latest_count_shared" style="display:block;font-weight:500;margin-bottom:4px;">Itens no carrossel “The Latest”</label>';
     echo '<select id="rs_site_ui_latest_count_shared" name="rs_site_ui_shared[latestCount]">';
     foreach ([4, 6, 8, 12] as $n) {

@@ -48,7 +48,7 @@ const LABELS_PT: SiteUiLabels = {
 
 export const DEFAULT_SITE_UI_LAYOUT: SiteUiLayout = {
 	homeColumns: 2,
-	projectsInitialCount: 7,
+	projectsInitialCount: 32,
 	latestCount: 6,
 };
 
@@ -67,8 +67,13 @@ export function getDefaultSiteUiContent(): SiteUiContent {
 
 export function normalizeSiteUiLayout(raw?: Partial<SiteUiLayout> | null): SiteUiLayout {
 	const homeColumns = Number(raw?.homeColumns);
-	const projectsInitialCount = Number(raw?.projectsInitialCount);
+	let projectsInitialCount = Number(raw?.projectsInitialCount);
 	const latestCount = Number(raw?.latestCount);
+
+	// Migração do padrão antigo (7 = 3+4) → 32 (8 linhas × 4).
+	if (projectsInitialCount === 7) {
+		projectsInitialCount = DEFAULT_SITE_UI_LAYOUT.projectsInitialCount;
+	}
 
 	return {
 		homeColumns: homeColumns === 1 || homeColumns === 3 ? homeColumns : 2,
