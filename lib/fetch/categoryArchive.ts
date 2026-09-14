@@ -5,6 +5,7 @@ import {
 	GetSiteUiApi,
 } from '../../components/ApiWp';
 import { HOME_PROJECTS_CATEGORY_SLUG } from '../projects/categories';
+import { DEFAULT_SITE_UI_LAYOUT } from '../site/uiDefaults';
 import { buildSiteUiContent } from '../site/resolveSiteUi';
 import type { Category, Projects } from '../../types';
 
@@ -44,6 +45,6 @@ export async function fetchCategoryArchivePage(
 		category,
 		projects,
 		categories: allCategories,
-		initialCount: layout.projectsInitialCount,
+		initialCount: layout?.projectsInitialCount ?? DEFAULT_SITE_UI_LAYOUT.projectsInitialCount,
 	};
 }
