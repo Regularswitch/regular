@@ -11,11 +11,13 @@ import JsonLd from '../components/Seo/JsonLd';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient, resolveBlobVisual } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
+import { getBaseUrl } from '../lib/config/getBaseUrl';
 import { fetchSeoOrgSchema, resolveOrgJsonLd } from '../lib/seo/schema';
 import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
 
 export const metadata = {
+	metadataBase: new URL(getBaseUrl()),
 	title: {
 		default: 'RegularSwitch',
 		template: '%s',

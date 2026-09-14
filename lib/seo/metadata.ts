@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import type { SeoContent } from '../../types';
+import { localePathPair } from './localePaths';
 
 export const DEFAULT_SITE_NAME = 'RegularSwitch';
 
@@ -40,16 +41,31 @@ export function buildPageMetadata(
 	const description = seo?.description?.trim() || options.fallbackDescription?.trim() || undefined;
 	const locale = options.locale ?? 'en';
 
+	const pathPair = options.path ? localePathPair(options.path) : null;
+	const canonical = pathPair ? (locale === 'pt' ? pathPair.pt : pathPair.en) : undefined;
+
 	const metadata: Metadata = {
 		title,
 		...(description ? { description } : {}),
+		...(pathPair && canonical
+			? {
+					alternates: {
+						canonical,
+						languages: {
+							en: pathPair.en,
+							'pt-BR': pathPair.pt,
+							'x-default': pathPair.en,
+						},
+					},
+				}
+			: {}),
 		openGraph: {
 			title,
 			...(description ? { description } : {}),
 			locale: locale === 'pt' ? 'pt_BR' : 'en_US',
 			siteName: DEFAULT_SITE_NAME,
 			type: 'website',
-			...(options.path ? { url: options.path } : {}),
+			...(canonical ? { url: canonical } : {}),
 		},
 		twitter: {
 			card: 'summary_large_image',
