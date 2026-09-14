@@ -213,6 +213,12 @@ html:not(.dark) .brand-mark {
 	font-weight: 500;
 }
 
+.capabilities-faq-answer {
+	font-size: 1.25rem;
+	font-weight: 300;
+	line-height: 1.65;
+}
+
 .intro-body p {
 	margin: 0;
 }

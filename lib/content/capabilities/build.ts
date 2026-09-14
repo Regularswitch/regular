@@ -35,6 +35,7 @@ export function buildCapabilitiesContent(
 	const empty: CapabilitiesContent = {
 		headline: '',
 		sections: [],
+		faq: [],
 	};
 
 	if (!wp) {
@@ -42,9 +43,12 @@ export function buildCapabilitiesContent(
 	}
 
 	const sections = normalizeWpSections(wp.sections);
+	const faq = (wp.faq ?? []).filter((item) => item.question?.trim() && item.answer?.trim());
 
 	return {
 		headline: wp.headline?.trim() ?? '',
 		sections: attachProjectImages(sections, projects),
+		faqTitle: wp.faqTitle?.trim() || undefined,
+		faq: faq.length ? faq : undefined,
 	};
 }

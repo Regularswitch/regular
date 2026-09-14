@@ -112,12 +112,37 @@ function rs_capabilities_sections_to_payload(array $sections): array {
 }
 
 /**
- * @return array{headline: string, sections: array<int, array{title: string, text: string, image_id: int}>}
+ * @param array<int, mixed> $items
+ * @return array<int, array{question: string, answer: string}>
+ */
+function rs_capabilities_normalize_faq(array $items): array {
+    $normalized = [];
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $question = trim(wp_strip_all_tags((string) ($item['question'] ?? '')));
+        $answer = trim((string) ($item['answer'] ?? ''));
+        if ($question === '' && $answer === '') {
+            continue;
+        }
+        $normalized[] = [
+            'question' => $question !== '' ? $question : 'Pergunta',
+            'answer'   => wp_kses_post($answer),
+        ];
+    }
+    return $normalized;
+}
+
+/**
+ * @return array{headline: string, sections: array, faqTitle: string, faq: array}
  */
 function rs_capabilities_default_locale(): array {
     return [
-        'headline' => '',
-        'sections' => [],
+        'headline'  => '',
+        'sections'  => [],
+        'faqTitle'  => '',
+        'faq'       => [],
     ];
 }
 
@@ -145,10 +170,13 @@ function rs_capabilities_i18n_normalize(array $raw): array {
     foreach (['en', 'pt'] as $locale) {
         $loc = is_array($raw['locales'][$locale] ?? null) ? $raw['locales'][$locale] : [];
         $sections = is_array($loc['sections'] ?? null) ? $loc['sections'] : [];
+        $faq = is_array($loc['faq'] ?? null) ? $loc['faq'] : [];
 
         $data['locales'][$locale] = [
             'headline' => trim((string) ($loc['headline'] ?? '')),
             'sections' => rs_capabilities_normalize_sections($sections),
+            'faqTitle' => trim(wp_strip_all_tags((string) ($loc['faqTitle'] ?? ''))),
+            'faq'      => rs_capabilities_normalize_faq($faq),
         ];
     }
 
@@ -176,6 +204,8 @@ function rs_capabilities_locale_from_legacy_post(int $post_id): array {
     return [
         'headline' => trim((string) get_post_meta($post_id, RS_CAPABILITIES_HEADLINE_KEY, true)),
         'sections' => rs_capabilities_normalize_sections($sections),
+        'faqTitle' => '',
+        'faq'      => [],
     ];
 }
 
@@ -248,6 +278,12 @@ function rs_capabilities_meta_to_payload(int $post_id, string $locale = 'en'): a
         if (empty($loc['sections'])) {
             $loc['sections'] = $en['sections'] ?? [];
         }
+        if (empty($loc['faq'])) {
+            $loc['faq'] = $en['faq'] ?? [];
+            if (trim((string) ($loc['faqTitle'] ?? '')) === '') {
+                $loc['faqTitle'] = $en['faqTitle'] ?? '';
+            }
+        }
     }
 
     return [
@@ -256,6 +292,10 @@ function rs_capabilities_meta_to_payload(int $post_id, string $locale = 'en'): a
             rs_capabilities_normalize_sections(
                 is_array($loc['sections'] ?? null) ? $loc['sections'] : []
             )
+        ),
+        'faqTitle' => trim((string) ($loc['faqTitle'] ?? '')),
+        'faq'      => rs_capabilities_normalize_faq(
+            is_array($loc['faq'] ?? null) ? $loc['faq'] : []
         ),
     ];
 }
@@ -478,6 +518,43 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
     echo '<input type="hidden" id="rs-cap-sections-' . esc_attr($locale) . '-json" name="rs_cap_sections_' . esc_attr($locale) . '_json" value="" />';
     echo '</fieldset>';
     echo '</div>';
+
+    $faq_title = (string) ($loc['faqTitle'] ?? '');
+    $faq_items = rs_capabilities_normalize_faq(is_array($loc['faq'] ?? null) ? $loc['faq'] : []);
+    if (!$faq_items) {
+        $faq_items = [['question' => '', 'answer' => '']];
+    }
+
+    echo '<fieldset class="rs-metabox-fieldset" style="margin-top:16px;">';
+    echo '<legend><strong>Perguntas frequentes (FAQ · AEO)</strong></legend>';
+    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Gera a seção na página e o schema <code>FAQPage</code>.</p>';
+    echo '<p style="margin:0 0 12px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Título da seção</label>';
+    echo '<input type="text" class="large-text" name="rs_cap_i18n[' . esc_attr($locale) . '][faqTitle]" value="' . esc_attr($faq_title) . '" placeholder="Perguntas frequentes" /></p>';
+
+    echo '<div id="rs-cap-faq-list-' . esc_attr($locale) . '">';
+    foreach ($faq_items as $fi => $faq) {
+        $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $fi . ']';
+        echo '<div class="rs-cap-faq-row" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin:0 0 10px;background:#fff;">';
+        echo '<p style="margin:0 0 8px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Pergunta</label>';
+        echo '<input type="text" class="large-text" name="' . esc_attr($prefix) . '[question]" value="' . esc_attr((string) ($faq['question'] ?? '')) . '" /></p>';
+        echo '<p style="margin:0;"><label style="display:block;font-weight:500;margin-bottom:4px;">Resposta</label>';
+        echo '<textarea class="large-text" rows="3" name="' . esc_attr($prefix) . '[answer]">' . esc_textarea((string) ($faq['answer'] ?? '')) . '</textarea></p>';
+        echo '</div>';
+    }
+    echo '</div>';
+    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Para adicionar mais itens, salve e reabra — ou duplique uma linha vazia no próximo save com campos extras (até 12). Preencha só o que for usar.</p>';
+
+    // Slots extras vazios para novas perguntas sem JS.
+    for ($extra = count($faq_items); $extra < max(count($faq_items) + 2, 3) && $extra < 12; $extra++) {
+        $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $extra . ']';
+        echo '<div class="rs-cap-faq-row" style="border:1px dashed #c3c4c7;border-radius:4px;padding:12px;margin:0 0 10px;background:#f6f7f7;">';
+        echo '<p style="margin:0 0 8px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Pergunta (nova)</label>';
+        echo '<input type="text" class="large-text" name="' . esc_attr($prefix) . '[question]" value="" /></p>';
+        echo '<p style="margin:0;"><label style="display:block;font-weight:500;margin-bottom:4px;">Resposta</label>';
+        echo '<textarea class="large-text" rows="2" name="' . esc_attr($prefix) . '[answer]"></textarea></p>';
+        echo '</div>';
+    }
+    echo '</fieldset>';
 }
 
 function rs_capabilities_render_meta_box(WP_Post $post): void {
@@ -578,9 +655,12 @@ add_action('save_post_capabilities', function (int $post_id) {
 
     foreach (['en', 'pt'] as $locale) {
         $loc = is_array($raw[$locale] ?? null) ? $raw[$locale] : [];
+        $faq_raw = is_array($loc['faq'] ?? null) ? $loc['faq'] : [];
         $data['locales'][$locale] = [
             'headline' => wp_kses_post((string) ($loc['headline'] ?? '')),
             'sections' => rs_capabilities_parse_sections_from_request($locale),
+            'faqTitle' => sanitize_text_field((string) ($loc['faqTitle'] ?? '')),
+            'faq'      => rs_capabilities_normalize_faq($faq_raw),
         ];
     }
 

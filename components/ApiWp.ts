@@ -1,17 +1,17 @@
-import { tipoLinguagens } from "./Language"
-import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectMeta, type ProjectStructuredData, type Projects, type SeoContent, type SiteUiContent } from '../types';
 import type { AboutContent } from '../lib/content/about/defaults';
 import type { ContactContent } from '../lib/content/contact/defaults';
 import type { EducationContent } from '../lib/content/education/defaults';
-import type { LegalContent } from '../lib/content/legal/defaults';
 import { buildLegalContent } from '../lib/content/legal/build';
+import type { LegalContent } from '../lib/content/legal/defaults';
 import type { ProjectsPageContent } from '../lib/content/projects-page/defaults';
-import { wpLangSlug, type WpLocale } from '../lib/wp/localeSlug';
 import { normalizeGalleryItems } from '../lib/projects/gallery';
 import { normalizeProjectData, structuredImageUrl } from '../lib/projects/images';
 import { excludeProjectTranslationTwins } from '../lib/projects/sort';
-import { wpMediaUrl } from '../lib/wp/mediaUrl';
 import type { HeaderNavContent } from '../lib/site/resolveSiteUi';
+import { type WpLocale } from '../lib/wp/localeSlug';
+import { wpMediaUrl } from '../lib/wp/mediaUrl';
+import { type BlobVisual, type Brand, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectMeta, type ProjectStructuredData, type Projects, type SeoContent, type SiteUiContent } from '../types';
+import { tipoLinguagens } from "./Language";
 
 export type data = {
     translate?: tipoLinguagens | string
@@ -462,12 +462,23 @@ function isCapabilitySection(value: unknown): value is CapabilitiesContent['sect
     return typeof item.title === 'string' && typeof item.body === 'string';
 }
 
+function isCapabilitiesFaqItem(value: unknown): boolean {
+    if (!value || typeof value !== 'object') return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.question === 'string' && typeof item.answer === 'string';
+}
+
 function isCapabilitiesContent(value: unknown): value is CapabilitiesContent {
     if (!value || typeof value !== 'object') return false;
     const item = value as Record<string, unknown>;
     if (typeof item.headline !== 'string') return false;
     if (!Array.isArray(item.sections)) return false;
-    return item.sections.every(isCapabilitySection);
+    if (!item.sections.every(isCapabilitySection)) return false;
+    if (item.faq !== undefined) {
+        if (!Array.isArray(item.faq) || !item.faq.every(isCapabilitiesFaqItem)) return false;
+    }
+    if (item.faqTitle !== undefined && typeof item.faqTitle !== 'string') return false;
+    return true;
 }
 
 export function porterCapabilities(payloadWp: listResponseWp): CapabilitiesContent | null {
@@ -476,10 +487,15 @@ export function porterCapabilities(payloadWp: listResponseWp): CapabilitiesConte
 
     if (item.capabilities_data && isCapabilitiesContent(item.capabilities_data)) {
         const sections = item.capabilities_data.sections.filter((section) => section.title);
-        if (item.capabilities_data.headline || sections.length > 0) {
+        const faq = Array.isArray(item.capabilities_data.faq)
+            ? item.capabilities_data.faq.filter((entry) => entry.question?.trim() && entry.answer?.trim())
+            : [];
+        if (item.capabilities_data.headline || sections.length > 0 || faq.length > 0) {
             return {
                 headline: item.capabilities_data.headline,
                 sections,
+                faqTitle: item.capabilities_data.faqTitle?.trim() || undefined,
+                faq: faq.length ? faq : undefined,
             };
         }
     }

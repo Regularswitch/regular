@@ -103,9 +103,16 @@ export type CapabilitySection = {
   imageProjectSlug?: string;
 };
 
+export type CapabilitiesFaqItem = {
+  question: string;
+  answer: string;
+};
+
 export type CapabilitiesContent = {
   headline: string;
   sections: CapabilitySection[];
+  faqTitle?: string;
+  faq?: CapabilitiesFaqItem[];
 };
 
 export type SiteUiLabels = {
