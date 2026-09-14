@@ -27,7 +27,7 @@ export default function EducationPage({
 
 			{content.headline?.trim() ? (
 				<section className="education-intro py-10 md:py-14">
-					<div
+					<h1
 						className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
 						dangerouslySetInnerHTML={{ __html: content.headline }}
 					/>

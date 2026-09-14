@@ -4,6 +4,7 @@ import Image from 'next/image';
 
 import { isProjectMediaVideo, resolveProjectMediaType } from '../../lib/projects/gallery';
 import { isGifUrl } from '../../lib/projects/images';
+import { resolveMediaAlt } from '../../lib/projects/altText';
 import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 import type { ProjectStructuredImage } from '../../types';
 
@@ -14,6 +15,7 @@ type ProjectHeroProps = {
 	logo?: string;
 	title: string;
 	showVignette?: boolean;
+	locale?: 'en' | 'pt';
 };
 
 export default function ProjectHero({
@@ -22,6 +24,7 @@ export default function ProjectHero({
 	logo,
 	title,
 	showVignette = true,
+	locale = 'en',
 }: ProjectHeroProps) {
 	const mediaUrl =
 		(media?.url && typeof media.url === 'string' ? (wpMediaUrl(media.url) ?? media.url) : undefined) ||
@@ -35,6 +38,7 @@ export default function ProjectHero({
 	const isVideo = mediaType === 'video' || isProjectMediaVideo({ url: mediaUrl, type: mediaType });
 	const isGif = mediaType === 'gif';
 	const logoSrc = logo ? (wpMediaUrl(logo) ?? logo) : undefined;
+	const imageAlt = resolveMediaAlt(media?.alt, title, locale);
 
 	return (
 		<section className="project-hero" aria-label={title}>
@@ -51,7 +55,7 @@ export default function ProjectHero({
 				) : (
 					<Image
 						src={mediaUrl}
-						alt={title}
+						alt={imageAlt}
 						fill
 						priority
 						unoptimized={isGif}

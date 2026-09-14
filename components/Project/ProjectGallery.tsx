@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { isGalleryWide, normalizeGalleryItems } from '../../lib/projects/gallery';
+import { resolveMediaAlt } from '../../lib/projects/altText';
 import type { ProjectGalleryImage } from '../../types';
 import { NavChevronLeft, NavChevronRight } from '../SiteIcons';
 
@@ -242,7 +243,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 					<img
 						key={lightboxIndex}
 						src={lightboxItem.url}
-						alt={`${title} — mídia ${(lightboxIndex ?? 0) + 1}`}
+						alt={resolveMediaAlt(lightboxItem.alt, title, locale)}
 						className={`project-gallery-lightbox-image${
 							isClosing
 								? ' project-gallery-lightbox-image--close'
@@ -260,6 +261,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 				<div className="project-gallery-grid">
 					{items.map((item, index) => {
 						const wide = isGalleryWide(item);
+						const alt = resolveMediaAlt(item.alt, title, locale);
 
 						return (
 							<div
@@ -273,11 +275,7 @@ export default function ProjectGallery({ images, title, locale = 'en' }: Project
 									aria-label={`${openLabel} ${index + 1}`}
 								>
 									<div className="project-gallery-image overflow-hidden rounded-[5px]">
-										<GalleryMedia
-											item={item}
-											alt={`${title} — mídia ${index + 1}`}
-											wide={wide}
-										/>
+										<GalleryMedia item={item} alt={alt} wide={wide} />
 									</div>
 								</button>
 							</div>

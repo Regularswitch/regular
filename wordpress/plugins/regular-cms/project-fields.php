@@ -270,12 +270,15 @@ function rs_project_attachment_info(int $attachment_id): ?array {
         $type = 'gif';
     }
 
+    $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+
     return [
         'url'    => $url,
         'width'  => (int) ($meta['width'] ?? 0),
         'height' => (int) ($meta['height'] ?? 0),
         'mime'   => $mime,
         'type'   => $type,
+        'alt'    => $alt,
     ];
 }
 

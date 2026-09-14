@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 
-import { GetApi, GetMeta } from '../../../../components/ApiWp';
+import { GetApi, GetCategoriesApi, GetMeta } from '../../../../components/ApiWp';
 import ProjectPage from '../../../../components/Project/ProjectPage';
 import JsonLd from '../../../../components/Seo/JsonLd';
 import { excludeProjectTranslationTwins } from '../../../../lib/projects/sort';
 import { fetchProjectSeo } from '../../../../lib/seo/fetch';
 import { buildPageMetadata, DEFAULT_SITE_NAME } from '../../../../lib/seo/metadata';
 import { buildCreativeWorkJsonLd } from '../../../../lib/seo/schema';
-import type { ProjectMeta, Projects } from '../../../../types';
+import type { Category, ProjectMeta, Projects } from '../../../../types';
 
 export const revalidate = 10;
 export const dynamicParams = true;
@@ -35,17 +35,19 @@ export default async function PtProjectSlugPage({ params }: PageProps) {
 	const { slug } = await params;
 	const canonicalSlug = slug.replace(/-pt$/i, '');
 
-	const [allPosts, allMetas, latestProjects, seo] = await Promise.all([
+	const [allPosts, allMetas, latestProjects, categories, seo] = await Promise.all([
 		GetApi('/project/', { slug: canonicalSlug, _embed: '', translate: 'PT', meta: '1' }),
 		GetMeta(),
 		GetApi('/project/', { _embed: '', per_page: 100, translate: 'PT' }),
+		GetCategoriesApi('/project-category', { per_page: 100, translate: 'PT' }),
 		fetchProjectSeo(canonicalSlug, 'pt'),
 	]).catch((error) => {
 		console.error('Error fetching PT project', error);
-		return [[], [], [], {}] as [
+		return [[], [], [], [], {}] as [
 			Projects,
 			ProjectMeta[],
 			Projects,
+			Category[],
 			Awaited<ReturnType<typeof fetchProjectSeo>>,
 		];
 	});
@@ -69,6 +71,7 @@ export default async function PtProjectSlugPage({ params }: PageProps) {
 				project={project}
 				meta={meta}
 				latestProjects={excludeProjectTranslationTwins(latestProjects)}
+				categories={categories}
 				locale="pt"
 			/>
 		</>

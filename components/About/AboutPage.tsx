@@ -27,7 +27,7 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 			<AboutHero image={content.heroImage} video={content.heroVideo} />
 
 			<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
-				<div
+				<h1
 					className="intro-headline min-w-0 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>

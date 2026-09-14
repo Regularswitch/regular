@@ -1,13 +1,22 @@
 import { getDefaultSiteUiContent, normalizeSiteUiLayout } from './uiDefaults';
 import type { SiteUiContent, SiteUiLabels, SiteUiLocale, SiteUiNavLink } from '../../types';
 
+function sanitizeLabel(key: keyof SiteUiLabels, value: string): string {
+	if (key === 'selectedProjects') {
+		return value
+			.replace(/Selecionadosss+/gi, 'Selecionados')
+			.replace(/Selected\s+Projectsss+/gi, 'Selected Projects');
+	}
+	return value;
+}
+
 function mergeLabels(defaults: SiteUiLabels, fromWp?: Partial<SiteUiLabels>): SiteUiLabels {
 	const merged = { ...defaults };
 	if (!fromWp) return merged;
 
 	for (const key of Object.keys(defaults) as Array<keyof SiteUiLabels>) {
-		const value = fromWp[key]?.trim();
-		if (value) merged[key] = value;
+		const raw = fromWp[key]?.trim();
+		if (raw) merged[key] = sanitizeLabel(key, raw);
 	}
 
 	return merged;

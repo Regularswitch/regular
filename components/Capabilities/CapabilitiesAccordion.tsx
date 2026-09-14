@@ -1,21 +1,27 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
 import type { CapabilitySection } from '../../lib/content/capabilities/defaults';
+import { categoryArchivePath } from '../../lib/projects/categories';
+import { projectImageAltFallback } from '../../lib/projects/altText';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import { wpMediaUrl } from '../../lib/wp/mediaUrl';
 
 type CapabilitiesAccordionProps = {
 	sections: CapabilitySection[];
 	defaultOpenIndex?: number;
+	locale?: 'en' | 'pt';
 };
 
 export default function CapabilitiesAccordion({
 	sections,
 	defaultOpenIndex = -1,
+	locale = 'en',
 }: CapabilitiesAccordionProps) {
 	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
 
@@ -27,6 +33,30 @@ export default function CapabilitiesAccordion({
 			{sections.map((section, index) => {
 				const isOpen = openIndex === index;
 				const imageSrc = section.image ? (wpMediaUrl(section.image) ?? section.image) : undefined;
+				const projectHref = section.imageProjectSlug
+					? withLocalePrefix(`/project/${section.imageProjectSlug}`, locale)
+					: null;
+				const categoryHref = section.relatedCategorySlug
+					? categoryArchivePath(section.relatedCategorySlug, locale)
+					: null;
+				const imageAlt = projectImageAltFallback(
+					section.imageProjectSlug?.replace(/-/g, ' ') || section.title.replace(/<[^>]+>/g, ''),
+					locale,
+				);
+				const seeProjectLabel = locale === 'pt' ? 'Ver projeto' : 'See project';
+				const seeCategoryLabel = locale === 'pt' ? 'Ver projetos relacionados' : 'See related projects';
+
+				const imageEl = imageSrc ? (
+					<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface)">
+						<Image
+							src={imageSrc}
+							alt={imageAlt}
+							fill
+							sizes="(max-width: 768px) 100vw, 45vw"
+							className="object-cover object-center"
+						/>
+					</div>
+				) : null;
 
 				return (
 					<div key={section.title}>
@@ -52,17 +82,13 @@ export default function CapabilitiesAccordion({
 							<div className="accordion-panel-inner">
 								<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
 									<div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
-										{imageSrc ? (
-											<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface)">
-												<Image
-													src={imageSrc}
-													alt=""
-													fill
-													sizes="(max-width: 768px) 100vw, 45vw"
-													className="object-cover object-center"
-												/>
-											</div>
-										) : null}
+										{imageEl && projectHref ? (
+											<Link href={projectHref} className="block">
+												{imageEl}
+											</Link>
+										) : (
+											imageEl
+										)}
 
 										<div
 											className={`capabilities-accordion-content font-hk${imageSrc ? '' : ' md:col-span-2'}`}
@@ -94,6 +120,27 @@ export default function CapabilitiesAccordion({
 													</ul>
 												</div>
 											) : null}
+
+											{(projectHref || categoryHref) && (
+												<div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 md:mt-8">
+													{projectHref ? (
+														<Link
+															href={projectHref}
+															className="font-hk text-sm text-(--fg) underline underline-offset-4 md:text-base"
+														>
+															{seeProjectLabel}
+														</Link>
+													) : null}
+													{categoryHref ? (
+														<Link
+															href={categoryHref}
+															className="font-hk text-sm text-(--fg) underline underline-offset-4 md:text-base"
+														>
+															{seeCategoryLabel}
+														</Link>
+													) : null}
+												</div>
+											)}
 										</div>
 									</div>
 								</div>

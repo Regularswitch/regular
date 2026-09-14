@@ -111,7 +111,10 @@ export type CapabilitySection = {
   lead?: string;
   servicesTitle?: string;
   services?: string[];
+  /** Projeto relacionado (link da imagem / CTA). */
   imageProjectSlug?: string;
+  /** Arquivo de categoria relacionado (ex.: branding). */
+  relatedCategorySlug?: string;
 };
 
 export type CapabilitiesFaqItem = {
@@ -185,6 +188,8 @@ export type ProjectStructuredImage = {
   height?: number;
   mime?: string;
   type?: ProjectMediaType;
+  /** Texto alternativo da mídia (WP `_wp_attachment_image_alt`). */
+  alt?: string;
 };
 
 export type ProjectGalleryImage = {
@@ -193,6 +198,8 @@ export type ProjectGalleryImage = {
   height?: number;
   mime?: string;
   type?: ProjectMediaType;
+  /** Texto alternativo da mídia (WP `_wp_attachment_image_alt`). */
+  alt?: string;
   /** Ocupa as duas colunas no desktop. */
   featured?: boolean;
 };

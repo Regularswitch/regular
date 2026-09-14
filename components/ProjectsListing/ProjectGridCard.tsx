@@ -8,6 +8,7 @@ import {
 	categoryArchivePath,
 	getVisibleCategoryTags,
 } from '../../lib/projects/categories';
+import { resolveProjectCardAlt } from '../../lib/projects/altText';
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
 import type { GridSpan } from './constants';
@@ -29,6 +30,7 @@ export default function ProjectGridCard({
 }: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
+	const imageAlt = resolveProjectCardAlt(project, locale);
 	const [imageLoaded, setImageLoaded] = useState(false);
 	const isFeatured = span === 'featured' || span === 'full';
 	const isThird = span === 'third';
@@ -57,7 +59,7 @@ export default function ProjectGridCard({
 					{cardImage ? (
 						<Image
 							src={cardImage}
-							alt={project.title ?? project.slug}
+							alt={imageAlt}
 							sizes={
 								isFeatured
 									? '(max-width: 768px) 100vw, 90vw'

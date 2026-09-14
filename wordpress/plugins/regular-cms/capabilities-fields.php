@@ -15,7 +15,7 @@ const RS_CAPABILITIES_LEGACY_SECTION_COUNT = 8;
 
 /**
  * @param array<int, mixed> $sections
- * @return array<int, array{title: string, text: string, image_id: int}>
+ * @return array<int, array{title: string, text: string, image_id: int, related_project_slug: string, related_category_slug: string}>
  */
 function rs_capabilities_normalize_sections(array $sections): array {
     $normalized = [];
@@ -28,15 +28,19 @@ function rs_capabilities_normalize_sections(array $sections): array {
         $title = trim((string) ($section['title'] ?? ''));
         $text = trim((string) ($section['text'] ?? ''));
         $image_id = (int) ($section['image_id'] ?? 0);
+        $related_project = sanitize_title((string) ($section['related_project_slug'] ?? ''));
+        $related_category = sanitize_title((string) ($section['related_category_slug'] ?? ''));
 
-        if ($title === '' && $text === '' && $image_id <= 0) {
+        if ($title === '' && $text === '' && $image_id <= 0 && $related_project === '' && $related_category === '') {
             continue;
         }
 
         $normalized[] = [
-            'title'    => $title !== '' ? $title : 'Seção',
-            'text'     => $text,
-            'image_id' => $image_id,
+            'title'                  => $title !== '' ? $title : 'Seção',
+            'text'                   => $text,
+            'image_id'               => $image_id,
+            'related_project_slug'   => $related_project,
+            'related_category_slug'  => $related_category,
         ];
     }
 
@@ -91,8 +95,8 @@ function rs_capabilities_migrate_legacy_sections(int $post_id): array {
 }
 
 /**
- * @param array<int, array{title: string, text: string, image_id: int}> $sections
- * @return array<int, array{title: string, body: string, image: string}>
+ * @param array<int, array{title: string, text: string, image_id: int, related_project_slug?: string, related_category_slug?: string}> $sections
+ * @return array<int, array{title: string, body: string, image: string, imageProjectSlug?: string, relatedCategorySlug?: string}>
  */
 function rs_capabilities_sections_to_payload(array $sections): array {
     $payload = [];
@@ -100,12 +104,23 @@ function rs_capabilities_sections_to_payload(array $sections): array {
     foreach ($sections as $section) {
         $image_id = (int) ($section['image_id'] ?? 0);
         $image_url = $image_id > 0 ? (string) wp_get_attachment_url($image_id) : '';
+        $project_slug = sanitize_title((string) ($section['related_project_slug'] ?? ''));
+        $category_slug = sanitize_title((string) ($section['related_category_slug'] ?? ''));
 
-        $payload[] = [
+        $row = [
             'title' => trim((string) ($section['title'] ?? '')),
             'body'  => (string) ($section['text'] ?? ''),
             'image' => $image_url,
         ];
+
+        if ($project_slug !== '') {
+            $row['imageProjectSlug'] = $project_slug;
+        }
+        if ($category_slug !== '') {
+            $row['relatedCategorySlug'] = $category_slug;
+        }
+
+        $payload[] = $row;
     }
 
     return $payload;
@@ -408,6 +423,8 @@ function rs_capabilities_render_section_row(
     $title = (string) ($section['title'] ?? '');
     $text = (string) ($section['text'] ?? '');
     $image_id = (int) ($section['image_id'] ?? 0);
+    $related_project = (string) ($section['related_project_slug'] ?? '');
+    $related_category = (string) ($section['related_category_slug'] ?? '');
     $row_index = $is_template ? '__INDEX__' : (string) $index;
     $name_prefix = 'rs_cap_i18n[' . $locale . '][sections][' . $row_index . ']';
     $image_field_id = 'rs_cap_image_' . $locale . '_' . $row_index;
@@ -468,6 +485,35 @@ function rs_capabilities_render_section_row(
                 !$is_template,
             );
             ?>
+
+            <div style="margin:12px 0 0;display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+                <div>
+                    <label style="display:block;font-weight:500;margin-bottom:4px;">Slug do projeto (link)</label>
+                    <input
+                        type="text"
+                        style="width:100%;"
+                        <?php if (!$is_template) : ?>
+                            name="<?php echo esc_attr($name_prefix); ?>[related_project_slug]"
+                            value="<?php echo esc_attr($related_project); ?>"
+                        <?php endif; ?>
+                        placeholder="ex: cine-joia"
+                    />
+                    <p style="margin:4px 0 0;color:#646970;font-size:12px;">Liga a imagem ao projeto.</p>
+                </div>
+                <div>
+                    <label style="display:block;font-weight:500;margin-bottom:4px;">Slug da categoria (arquivo)</label>
+                    <input
+                        type="text"
+                        style="width:100%;"
+                        <?php if (!$is_template) : ?>
+                            name="<?php echo esc_attr($name_prefix); ?>[related_category_slug]"
+                            value="<?php echo esc_attr($related_category); ?>"
+                        <?php endif; ?>
+                        placeholder="ex: identidade-visual"
+                    />
+                    <p style="margin:4px 0 0;color:#646970;font-size:12px;">Link “ver projetos” da tag.</p>
+                </div>
+            </div>
         </div>
     </fieldset>
     <?php

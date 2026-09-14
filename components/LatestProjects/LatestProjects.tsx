@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 
 import { sortProjectsByDate } from '../../lib/projects/sort';
+import { resolveProjectCardAlt } from '../../lib/projects/altText';
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Project, Projects } from '../../types';
 import { NavChevronLeft, NavChevronRight, SectionHeadingArrow } from '../SiteIcons';
@@ -94,6 +95,7 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 						key={project.id}
 						project={project}
 						href={projectHref(project.slug, locale)}
+						locale={locale}
 					/>
 				))}
 			</div>
@@ -101,8 +103,17 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 	);
 }
 
-function LatestProjectCard({ project, href }: { project: Project; href: string }) {
+function LatestProjectCard({
+	project,
+	href,
+	locale,
+}: {
+	project: Project;
+	href: string;
+	locale: 'en' | 'pt';
+}) {
 	const cardImage = getProjectHeroImage(project);
+	const imageAlt = resolveProjectCardAlt(project, locale);
 
 	return (
 		<Link href={href} data-latest-card className="latest-projects-card group block shrink-0">
@@ -110,7 +121,7 @@ function LatestProjectCard({ project, href }: { project: Project; href: string }
 				{cardImage ? (
 					<Image
 						src={cardImage}
-						alt={project.title ?? project.slug}
+						alt={imageAlt}
 						width={640}
 						height={640}
 						sizes="(max-width: 768px) 70vw, 25vw"

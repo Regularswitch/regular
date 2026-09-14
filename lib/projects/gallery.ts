@@ -56,6 +56,7 @@ export function normalizeGalleryItems(
 		const height = typeof item.height === 'number' && item.height > 0 ? item.height : undefined;
 		const mime = typeof item.mime === 'string' ? item.mime : undefined;
 		const type = resolveProjectMediaType(url, mime, item.type);
+		const alt = typeof item.alt === 'string' ? item.alt.trim() : '';
 
 		items.push({
 			url,
@@ -64,6 +65,7 @@ export function normalizeGalleryItems(
 			mime,
 			type,
 			featured: Boolean(item.featured),
+			...(alt ? { alt } : {}),
 		});
 	}
 

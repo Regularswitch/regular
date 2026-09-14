@@ -8,12 +8,12 @@ type ProjectsListingHeroProps = {
 export default function ProjectsListingHero({ content }: ProjectsListingHeroProps) {
 	return (
 		<section className="projects-listing-hero py-10 md:py-16" aria-label={content.title}>
-			<h1 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+			<p className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
 				{content.title}
 				<SectionHeadingArrow />
-			</h1>
+			</p>
 
-			<div
+			<h1
 				className="intro-headline mt-6 max-w-5xl font-hk text-[clamp(1.5rem,4.2vw,2.75rem)] font-medium leading-[1.08] tracking-[-0.02em] md:mt-8"
 				dangerouslySetInnerHTML={{ __html: content.headline }}
 			/>

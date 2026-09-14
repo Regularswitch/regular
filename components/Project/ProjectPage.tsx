@@ -7,7 +7,11 @@ import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
 import { PROJECTS_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
-import type { Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
+import {
+	categoryArchivePath,
+	getVisibleCategoryTags,
+} from '../../lib/projects/categories';
+import type { Category, Project, ProjectMeta, Projects, ProjectStructuredData } from '../../types';
 import { normalizeGalleryItems } from '../../lib/projects/gallery';
 import { getProjectHeroMedia, structuredImageUrl } from '../../lib/projects/images';
 import { normalizeYoutubeVideos } from '../../lib/projects/youtube';
@@ -24,6 +28,7 @@ type ProjectPageProps = {
 	project: Project;
 	meta: ProjectMeta | null;
 	latestProjects: Projects;
+	categories?: Category[];
 	locale?: 'en' | 'pt';
 };
 
@@ -56,10 +61,17 @@ function structuredAccordion(structured: ProjectStructuredData | null | undefine
 		.filter((section) => section.body.trim());
 }
 
-export default function ProjectPage({ project, meta, latestProjects, locale = 'en' }: ProjectPageProps) {
+export default function ProjectPage({
+	project,
+	meta,
+	latestProjects,
+	categories = [],
+	locale = 'en',
+}: ProjectPageProps) {
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const siteUi = useSiteUiLocale(locale);
 	const cta = siteUi.labels.seeMoreProjects;
+	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 
 	const structured = project.project_data ?? meta?.project_data ?? null;
 
@@ -105,17 +117,32 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 				logo={showLogo ? logoImage : undefined}
 				title={project.title ?? project.slug}
 				showVignette={showVignette}
+				locale={locale}
 			/>
 
 			<div className="project-page-content space-y-10 py-8 md:space-y-20 md:py-14">
 				{(project.title || summary || accordionSections.length > 0) && (
 					<section className="project-intro grid gap-8 md:grid-cols-2 md:items-start md:gap-16 lg:gap-20">
-						{project.title || summary ? (
+						{project.title || summary || tags.length > 0 ? (
 							<div className="project-intro-copy min-w-0">
 								{project.title ? (
 									<h1 className="project-title intro-headline font-hk text-[clamp(1.35rem,4.5vw,2.5rem)] font-medium leading-[1.08] tracking-[-0.02em] text-(--fg)">
 										{project.title}
 									</h1>
+								) : null}
+								{tags.length > 0 ? (
+									<ul className="selected-projects-tags mt-4 flex flex-wrap gap-2 md:mt-5">
+										{tags.map((tag) => (
+											<li key={tag.id}>
+												<Link
+													href={categoryArchivePath(tag.slug, locale)}
+													className="selected-projects-tag"
+												>
+													{tag.title}
+												</Link>
+											</li>
+										))}
+									</ul>
 								) : null}
 								{summary ? (
 									<div

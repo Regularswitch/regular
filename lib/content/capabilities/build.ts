@@ -22,9 +22,13 @@ function hasMeaningfulHtml(html: string | undefined): boolean {
 function normalizeWpSections(sections: CapabilitySection[] | undefined): CapabilitySection[] {
 	if (!sections?.length) return [];
 
-	return sections.filter(
-		(section) => section.title?.trim() && hasMeaningfulHtml(section.body),
-	);
+	return sections
+		.filter((section) => section.title?.trim() && hasMeaningfulHtml(section.body))
+		.map((section) => ({
+			...section,
+			imageProjectSlug: section.imageProjectSlug?.trim() || undefined,
+			relatedCategorySlug: section.relatedCategorySlug?.trim() || undefined,
+		}));
 }
 
 export function buildCapabilitiesContent(
