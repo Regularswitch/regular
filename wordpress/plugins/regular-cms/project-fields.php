@@ -662,10 +662,13 @@ function rs_project_render_meta_box(WP_Post $post): void {
     $excerpt_pt = (string) ($pt['excerpt'] ?? '');
     $slug = (string) $post->post_name;
     $media_count = ($hero_id > 0 ? 1 : 0) + ($logo_id > 0 ? 1 : 0) + count($en_youtube) + count($gallery_ids);
+    $fs = 'rs-project-fieldset';
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post por projeto. Edite <strong>English</strong> e <strong>Português</strong> nas abas abaixo; mídia (hero, logo, galeria) é compartilhada. URL: <code>/project/{slug}</code> — o front usa o idioma do visitante. ' . rs_plugin_version_markup() . '</p>';
+    echo '<div class="rs-ds-editor rs-project-editor">';
+    rs_ds_alert('Um único post por projeto. Edite English e Português nas abas; mídia (hero, logo, galeria) é compartilhada. URL: /project/{slug}.', 'info');
 
-    echo '<div class="rs-metabox-tabs rs-project-tabs" data-rs-tabs>';
+    // Classes rs-project-* preservadas — project-admin.js depende delas.
+    echo '<div class="rs-metabox-tabs rs-project-tabs rs-ds-project-tabs" data-rs-tabs>';
     echo '<input type="hidden" name="rs_project_active_tab" id="rs_project_active_tab" value="general" />';
     // Espelhos cedo no POST (antes do acordeão) — Hostinger corta max_input_vars no fim do formulário.
     echo '<input type="hidden" name="rs_project_hero_id" id="rs_project_hero_id_post" value="' . esc_attr((string) $hero_id) . '" />';
@@ -686,35 +689,32 @@ function rs_project_render_meta_box(WP_Post $post): void {
     }, $pt_youtube)), JSON_UNESCAPED_SLASHES) ?: '[]') . '</textarea>';
     echo '<textarea id="rs-project-gallery-json" name="rs_project_gallery_json" hidden>' . esc_textarea(wp_json_encode($gallery_ids) ?: '[]') . '</textarea>';
     echo '<textarea id="rs-project-gallery-featured-json" name="rs_project_gallery_featured_json" hidden>' . esc_textarea(wp_json_encode(array_keys($gallery_featured_ids)) ?: '[]') . '</textarea>';
-    echo '<div class="rs-metabox-tablist rs-project-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab rs-project-tab is-active" role="tab" aria-selected="true" data-tab="general">Geral</button>';
-    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="en">English (' . count($en_accordion) . ')</button>';
-    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="pt">Português (' . count($pt_accordion) . ')</button>';
-    echo '<button type="button" class="rs-metabox-tab rs-project-tab" role="tab" aria-selected="false" data-tab="media">Mídia (' . (int) $media_count . ')</button>';
+
+    echo '<div class="rs-metabox-tablist rs-project-tablist rs-ds-project-tablist" role="tablist" aria-label="Seções do projeto">';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab rs-ds-project-tab is-active" role="tab" aria-selected="true" data-tab="general">Geral</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab rs-ds-project-tab" role="tab" aria-selected="false" data-tab="en"><span class="rs-ds-locale__flag" aria-hidden="true">🇬🇧</span>English (' . count($en_accordion) . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab rs-ds-project-tab" role="tab" aria-selected="false" data-tab="pt"><span class="rs-ds-locale__flag" aria-hidden="true">🇧🇷</span>Português (' . count($pt_accordion) . ')</button>';
+    echo '<button type="button" class="rs-metabox-tab rs-project-tab rs-ds-project-tab" role="tab" aria-selected="false" data-tab="media">Mídia (' . (int) $media_count . ')</button>';
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel is-active" data-tab="general" role="tabpanel">';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Slug</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">URL do projeto: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code> — preenchido automaticamente a partir do <strong>Título</strong> (EN); edite aqui se precisar de um slug diferente.</p>';
+    rs_ds_fieldset_open('Slug', $fs);
+    echo '<p class="rs-ds-help">URL: <code>/project/<span id="rs-project-slug-preview">' . esc_html($slug !== '' ? $slug : '…') . '</span></code> — preenchido a partir do Título (EN); edite se precisar de outro slug.</p>';
     echo '<label class="screen-reader-text" for="post_name">Slug</label>';
-    echo '<input type="text" name="post_name" id="post_name" value="' . esc_attr($slug) . '" class="regular-text" style="width:100%;max-width:420px;" autocomplete="off" spellcheck="false" />';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Home</strong></legend>';
-    echo '<p style="margin:0;"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas <strong>um</strong> projeto — ao salvar, os outros são desmarcados)</label></p>';
-    echo '<p style="margin:8px 0 0;"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
-    echo '</fieldset>';
+    echo '<input type="text" name="post_name" id="post_name" value="' . esc_attr($slug) . '" class="rs-ds-input" style="max-width:420px;" autocomplete="off" spellcheck="false" />';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('Home', $fs);
+    echo '<p class="rs-ds-check"><label><input type="checkbox" name="rs_project_featured_home" value="1"' . checked($featured, true, false) . ' /> Destaque na home (apenas um projeto — ao salvar, os outros são desmarcados)</label></p>';
+    echo '<p class="rs-ds-check"><label><input type="checkbox" name="rs_project_show_vignette" value="1"' . checked($show_vignette, true, false) . ' /> Exibir vignette (logo) no canto inferior esquerdo</label></p>';
+    rs_ds_fieldset_close();
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="en" role="tabpanel" hidden>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Resumo (EN)</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">Coluna esquerda da página — título EN vem do campo <strong>Título</strong> acima do meta box.</p>';
-    echo '<textarea rows="4" cols="40" name="excerpt" id="excerpt" class="large-text" style="width:100%;">' . esc_textarea($excerpt_en) . '</textarea>';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Acordeão (EN)</strong></legend>';
+    rs_ds_fieldset_open('Resumo (EN)', $fs);
+    rs_ds_help('Coluna esquerda da página — título EN vem do campo Título acima do meta box.');
+    echo '<textarea rows="4" cols="40" name="excerpt" id="excerpt" class="rs-ds-textarea">' . esc_textarea($excerpt_en) . '</textarea>';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('Acordeão (EN)', $fs);
     echo '<div id="rs-project-accordion-list-en" data-rs-locale="en">';
     foreach ($en_accordion as $index => $section) {
         rs_project_render_accordion_row((int) $index, $section, false, 'en');
@@ -723,10 +723,9 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-accordion-template-en" hidden>';
     rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'en');
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="en">+ Adicionar seção</button></p>';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>YouTube (EN)</strong></legend>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="en">+ Adicionar seção</button></p>';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('YouTube (EN)', $fs);
     echo '<div id="rs-project-youtube-list-en" data-rs-locale="en">';
     foreach ($en_youtube as $index => $video) {
         rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''), false, 'en');
@@ -735,21 +734,18 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-youtube-template-en" hidden>';
     rs_project_render_youtube_row(0, '', true, 'en');
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="en">+ Adicionar vídeo</button></p>';
-    echo '</fieldset>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="en">+ Adicionar vídeo</button></p>';
+    rs_ds_fieldset_close();
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="pt" role="tabpanel" hidden>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Título (PT)</strong></legend>';
-    echo '<input type="text" class="large-text" id="rs_project_pt_title_ui" value="' . esc_attr($title_pt) . '" style="width:100%;" placeholder="Título em português (opcional — usa EN se vazio no front)" autocomplete="off" />';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Resumo (PT)</strong></legend>';
-    echo '<textarea rows="4" id="rs_project_pt_excerpt_ui" class="large-text" style="width:100%;">' . esc_textarea($excerpt_pt) . '</textarea>';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>Acordeão (PT)</strong></legend>';
+    rs_ds_fieldset_open('Título (PT)', $fs);
+    echo '<input type="text" class="rs-ds-input" id="rs_project_pt_title_ui" value="' . esc_attr($title_pt) . '" placeholder="Título em português (opcional — usa EN se vazio no front)" autocomplete="off" />';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('Resumo (PT)', $fs);
+    echo '<textarea rows="4" id="rs_project_pt_excerpt_ui" class="rs-ds-textarea">' . esc_textarea($excerpt_pt) . '</textarea>';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('Acordeão (PT)', $fs);
     echo '<div id="rs-project-accordion-list-pt" data-rs-locale="pt">';
     foreach ($pt_accordion as $index => $section) {
         rs_project_render_accordion_row((int) $index, $section, false, 'pt');
@@ -758,11 +754,10 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-accordion-template-pt" hidden>';
     rs_project_render_accordion_row(0, ['title' => '', 'body' => ''], true, 'pt');
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="pt">+ Adicionar seção</button></p>';
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset rs-project-fieldset">';
-    echo '<legend><strong>YouTube (PT)</strong></legend>';
-    echo '<p class="description" style="margin-top:0;">Opcional — se vazio, o site usa os vídeos EN.</p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-project-add-accordion" data-locale="pt">+ Adicionar seção</button></p>';
+    rs_ds_fieldset_close();
+    rs_ds_fieldset_open('YouTube (PT)', $fs);
+    rs_ds_help('Opcional — se vazio, o site usa os vídeos EN.');
     echo '<div id="rs-project-youtube-list-pt" data-rs-locale="pt">';
     foreach ($pt_youtube as $index => $video) {
         rs_project_render_youtube_row((int) $index, (string) ($video['url'] ?? ''), false, 'pt');
@@ -771,24 +766,22 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-youtube-template-pt" hidden>';
     rs_project_render_youtube_row(0, '', true, 'pt');
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="pt">+ Adicionar vídeo</button></p>';
-    echo '</fieldset>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-project-add-youtube" data-locale="pt">+ Adicionar vídeo</button></p>';
+    rs_ds_fieldset_close();
     echo '</div>';
 
     echo '<div class="rs-metabox-tabpanel rs-project-tabpanel" data-tab="media" role="tabpanel" hidden>';
-    echo '<p class="description" style="margin:0 0 14px;">Cards da <strong>home</strong> e da listagem usam a <em>Imagem destacada</em> da barra lateral. Abaixo: mídia só da página do projeto.</p>';
+    rs_ds_help('Cards da home e da listagem usam a Imagem destacada da barra lateral. Abaixo: mídia só da página do projeto.');
 
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Hero e vignette (só na página do projeto)</strong></legend>';
+    rs_ds_fieldset_open('Hero e vignette (só na página do projeto)', $fs);
     rs_render_media_field('rs_project_hero_id', 'Hero / fundo (imagem, GIF ou vídeo mp4) — 1:1 no mobile, 16:9 no desktop', $hero_id, 'rs_project_hero_id', false, 'media');
     rs_render_media_field('rs_project_logo_id', 'Vignette / logo — canto inferior esquerdo sobre o hero (desktop)', $logo_id, 'rs_project_logo_id', false);
-    echo '<p class="description" style="margin:0 0 10px;">A opção de exibir a vignette fica na aba <strong>Geral</strong>.</p>';
-    echo '</fieldset>';
+    rs_ds_help('A opção de exibir a vignette fica na aba Geral.');
+    rs_ds_fieldset_close();
 
-    echo '<fieldset class="rs-project-fieldset">';
-    echo '<legend><strong>Galeria</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagens, GIFs e vídeos (mp4). Use <strong>+ Adicionar mídias</strong> para selecionar vários arquivos. <strong>Arraste</strong> para definir a ordem. Pré-visualização no <strong>mesmo layout do site</strong> (2 colunas; estrela = largura total). Proporção real da mídia, sem crop.</p>';
-    echo '<p id="rs-project-gallery-empty" class="description"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
+    rs_ds_fieldset_open('Galeria', $fs);
+    rs_ds_help('Imagens, GIFs e vídeos (mp4). Use + Adicionar mídias para vários arquivos. Arraste para ordenar. Estrela = largura total. Sem crop.');
+    echo '<p id="rs-project-gallery-empty" class="rs-ds-help"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
     echo '<div id="rs-project-gallery-list" class="rs-project-gallery-grid">';
     foreach ($gallery_ids as $index => $attachment_id) {
         rs_project_render_gallery_row((int) $index, (int) $attachment_id, false, isset($gallery_featured_ids[(int) $attachment_id]));
@@ -797,13 +790,14 @@ function rs_project_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-project-gallery-template" hidden>';
     rs_project_render_gallery_row(0, 0, true);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;display:flex;flex-wrap:wrap;gap:8px;">';
+    echo '<p class="rs-ds-actions rs-ds-actions--row">';
     echo '<button type="button" class="button button-primary" id="rs-project-add-gallery">+ Adicionar mídias</button>';
-    echo '<span style="align-self:center;color:#646970;font-size:12px;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
+    echo '<span class="rs-ds-help" style="margin:0;">Pode marcar vários itens na biblioteca (Ctrl/Cmd + clique).</span>';
     echo '</p>';
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
     echo '</div>';
 
+    echo '</div>';
     echo '</div>';
 }
 
@@ -1329,8 +1323,11 @@ function rs_project_render_admin_footer_script(): void {
                 sections.push({ title: title || 'Seção', body });
             });
             $('#rs-project-accordion-' + locale + '-json').val(JSON.stringify(sections));
-            $('.rs-metabox-tab[data-tab="' + locale + '"]').text(
-                (locale === 'en' ? 'English' : 'Português') + ' (' + sections.length + ')'
+            const flag = locale === 'en' ? '🇬🇧' : '🇧🇷';
+            const label = locale === 'en' ? 'English' : 'Português';
+            $('.rs-metabox-tab[data-tab="' + locale + '"]').html(
+                '<span class="rs-ds-locale__flag" aria-hidden="true">' + flag + '</span>' +
+                label + ' (' + sections.length + ')'
             );
         }
 

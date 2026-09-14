@@ -200,21 +200,20 @@ function rs_projects_page_render_locale_fields(string $locale, array $loc): void
     $headline_name = 'rs_pp_i18n[' . $locale . '][headline]';
     $empty_name = 'rs_pp_i18n[' . $locale . '][emptyMessage]';
 
-    echo '<p class="rs-admin-text-field" style="margin:0 0 12px;">';
-    echo '<label style="display:block;font-weight:500;margin-bottom:4px;">Título da seção</label>';
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label">Título da seção</label>';
     rs_render_rich_text_field('rs_pp_title' . $suffix, $title_name, (string) ($loc['title'] ?? ''), 'compact');
-    echo '</p>';
+    echo '</div>';
 
-    echo '<fieldset class="rs-metabox-fieldset" style="margin:0 0 16px;">';
-    echo '<legend><strong>Headline</strong></legend>';
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field('rs_pp_headline' . $suffix, $headline_name, (string) ($loc['headline'] ?? ''), 'compact');
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
-    echo '</fieldset>';
+    rs_ds_help('Use o botão B para destacar palavras.');
+    rs_ds_fieldset_close();
 
-    echo '<p class="rs-admin-text-field" style="margin:0;">';
-    echo '<label style="display:block;font-weight:500;margin-bottom:4px;">Mensagem quando não há projetos</label>';
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label">Mensagem quando não há projetos</label>';
     rs_render_rich_text_field('rs_pp_empty' . $suffix, $empty_name, (string) ($loc['emptyMessage'] ?? ''), 'compact');
-    echo '</p>';
+    echo '</div>';
 }
 
 function rs_projects_page_render_meta_box(WP_Post $post): void {
@@ -227,21 +226,20 @@ function rs_projects_page_render_meta_box(WP_Post $post): void {
     $en = $i18n['locales']['en'];
     $pt = $i18n['locales']['pt'];
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
+    echo '<div class="rs-ds-editor rs-pp-editor">';
+    rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
-    echo '<div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
-    echo '</div>';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
 
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_panel_open('en', true);
     rs_projects_page_render_locale_fields('en', $en);
-    echo '</div>';
+    rs_ds_locale_panel_close();
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_open('pt', false);
     rs_projects_page_render_locale_fields('pt', $pt);
-    echo '</div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
     echo '</div>';
 }
 

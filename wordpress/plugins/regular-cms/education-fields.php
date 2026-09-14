@@ -888,12 +888,11 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
             <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-section">Remover</button>
         </div>
         <div class="rs-metabox-accordion-panel">
-            <div style="margin:0 0 12px;">
-                <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
+            <div class="rs-ds-field">
+                <label class="rs-ds-label">Título</label>
                 <input
                     type="text"
-                    style="width:100%;"
-                    class="rs-metabox-accordion-title rs-education-section-title"
+                    class="rs-ds-input rs-metabox-accordion-title rs-education-section-title"
                     <?php if (!$is_template) : ?>
                         name="<?php echo esc_attr($name_prefix); ?>[title]"
                         value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
@@ -901,12 +900,12 @@ function rs_education_render_section_row(int $index, array $section, bool $is_te
                 />
             </div>
 
-            <div style="margin:0 0 12px;">
-                <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+            <div class="rs-ds-field">
+                <label class="rs-ds-label">Texto</label>
                 <?php if ($is_template) : ?>
                     <textarea
-                        class="rs-education-section-text large-text"
-                        style="width:100%;min-height:120px;"
+                        class="rs-education-section-text large-text rs-ds-textarea"
+                        rows="5"
                         id="<?php echo esc_attr($editor_id); ?>"
                     ></textarea>
                 <?php else : ?>
@@ -934,13 +933,13 @@ function rs_education_render_gallery_fields(
     $caption = (string) ($gallery['caption'] ?? '');
     $ids = rs_education_parse_ids_csv($image_ids);
     ?>
-    <div class="rs-education-gallery-block" style="margin:0 0 14px;padding:12px;border:1px dashed #c3c4c7;border-radius:4px;background:#fcfcfc;">
-        <p style="margin:0 0 10px;font-weight:600;"><?php echo esc_html($label); ?></p>
+    <div class="rs-education-gallery-block rs-ds-panel">
+        <p class="rs-ds-label"><?php echo esc_html($label); ?></p>
 
-        <p style="margin:0 0 10px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Layout</label>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Layout</label>
             <select
-                class="rs-education-gallery-layout"
+                class="rs-education-gallery-layout rs-ds-select"
                 data-gallery="<?php echo esc_attr($field_suffix); ?>"
                 <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][layout]'); ?>"<?php endif; ?>
             >
@@ -948,7 +947,7 @@ function rs_education_render_gallery_fields(
                 <option value="triple" <?php selected($layout, 'triple'); ?>>3 imagens verticais</option>
                 <option value="grid-2x2" <?php selected($layout, 'grid-2x2'); ?>>Grade 2×2</option>
             </select>
-        </p>
+        </div>
 
         <input
             type="hidden"
@@ -958,10 +957,10 @@ function rs_education_render_gallery_fields(
             value="<?php echo esc_attr($image_ids); ?>"
         />
 
-        <p style="margin:0 0 8px;color:#646970;font-size:12px;">
+        <p class="rs-ds-help">
             Opcional. Arraste as miniaturas para definir a ordem. Use <strong>+ Adicionar imagens</strong> para incluir várias de uma vez.
         </p>
-        <p class="rs-education-gallery-empty description" data-gallery="<?php echo esc_attr($field_suffix); ?>"<?php echo $ids ? ' style="display:none;"' : ''; ?>>
+        <p class="rs-education-gallery-empty rs-ds-help" data-gallery="<?php echo esc_attr($field_suffix); ?>"<?php echo $ids ? ' style="display:none;"' : ''; ?>>
             Nenhuma imagem na galeria.
         </p>
         <div class="rs-education-gallery-grid" data-gallery="<?php echo esc_attr($field_suffix); ?>">
@@ -995,22 +994,21 @@ function rs_education_render_gallery_fields(
                 </div>
             <?php endforeach; ?>
         </div>
-        <p style="margin:10px 0 12px;">
+        <p class="rs-ds-actions">
             <button type="button" class="button button-secondary rs-education-add-gallery-images" data-gallery="<?php echo esc_attr($field_suffix); ?>">+ Adicionar imagens</button>
         </p>
 
         <?php if ($include_caption) : ?>
-        <p style="margin:0;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Legenda (opcional)</label>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Legenda (opcional)</label>
             <input
                 type="text"
-                class="rs-education-gallery-caption"
+                class="rs-education-gallery-caption rs-ds-input"
                 data-gallery="<?php echo esc_attr($field_suffix); ?>"
-                style="width:100%;"
                 <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][caption]'); ?>"<?php endif; ?>
                 value="<?php echo esc_attr($caption); ?>"
             />
-        </p>
+        </div>
         <?php endif; ?>
     </div>
     <?php
@@ -1025,13 +1023,12 @@ function rs_education_render_gallery_caption_fields(
 ): void {
     $caption = (string) ($gallery['caption'] ?? '');
     ?>
-    <div class="rs-education-gallery-caption-block" style="margin:0 0 14px;padding:10px 12px;border:1px solid #e0e0e0;border-radius:4px;background:#fff;">
-        <p style="margin:0 0 8px;font-weight:600;"><?php echo esc_html($label); ?></p>
+    <div class="rs-education-gallery-caption-block rs-ds-panel">
+        <label class="rs-ds-label"><?php echo esc_html($label); ?></label>
         <input
             type="text"
-            class="rs-education-gallery-caption"
+            class="rs-education-gallery-caption rs-ds-input"
             data-gallery="<?php echo esc_attr($field_suffix); ?>"
-            style="width:100%;"
             <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix . '[' . $field_suffix . '][caption]'); ?>"<?php endif; ?>
             value="<?php echo esc_attr($caption); ?>"
             placeholder="Legenda traduzível (opcional)"
@@ -1057,28 +1054,27 @@ function rs_education_render_institution_locale_fields(
         ? $institution['bottomGallery']
         : ['caption' => ''];
     ?>
-    <p style="margin:0 0 12px;">
-        <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
+    <div class="rs-ds-field">
+        <label class="rs-ds-label">Nome</label>
         <input
             type="text"
-            class="rs-education-institution-name"
-            style="width:100%;"
+            class="rs-education-institution-name rs-ds-input"
             data-locale="<?php echo esc_attr($locale); ?>"
             <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
             value="<?php echo esc_attr($name); ?>"
             placeholder="Mackenzie University (Brazil)"
         />
-    </p>
-    <p style="margin:0 0 12px;">
-        <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+    </div>
+    <div class="rs-ds-field">
+        <label class="rs-ds-label">Texto</label>
         <textarea
-            class="rs-education-institution-description large-text"
-            style="width:100%;min-height:110px;"
+            class="rs-education-institution-description large-text rs-ds-textarea"
+            rows="5"
             data-locale="<?php echo esc_attr($locale); ?>"
             <?php if ($include_name) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
             placeholder="Descrição da parceria…"
         ><?php echo esc_textarea($description); ?></textarea>
-    </p>
+    </div>
     <?php
     rs_education_render_gallery_caption_fields(
         $name_prefix,
@@ -1133,8 +1129,8 @@ function rs_education_render_institutions_section(array $i18n): void {
     $rows = rs_education_prepare_institution_rows($i18n);
 
     echo '<div id="rs-education-institutions-accordion" data-rs-accordion>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Logo e galerias no topo; nome, texto e legendas nas abas <strong>English</strong> / <strong>Português</strong> dentro de cada instituição.</p>';
+    rs_ds_fieldset_open('Instituições');
+    rs_ds_help('Logo e galerias no topo; nome, texto e legendas nas abas English / Português dentro de cada instituição.');
     echo '<div id="rs-education-institutions-list" data-rs-accordion-list>';
     foreach ($rows as $index => $row) {
         rs_education_render_combined_institution_row((int) $index, $row['media'], $row['en'], $row['pt']);
@@ -1149,11 +1145,12 @@ function rs_education_render_institutions_section(array $i18n): void {
         true
     );
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
     echo '<input type="hidden" id="rs-education-shared-institutions-json" name="rs_education_shared_institutions_json" value="" />';
     echo '<input type="hidden" id="rs-education-institutions-en-json" name="rs_education_institutions_en_json" value="" />';
     echo '<input type="hidden" id="rs-education-institutions-pt-json" name="rs_education_institutions_pt_json" value="" />';
-    echo '</fieldset></div>';
+    rs_ds_fieldset_close();
+    echo '</div>';
 }
 
 /**
@@ -1178,7 +1175,7 @@ function rs_education_render_combined_institution_row(
     $bottom = is_array($media['bottomGallery'] ?? null)
         ? $media['bottomGallery']
         : ['layout' => 'grid-2x2', 'image_ids' => ''];
-    $display = $is_template ? ' display:none;' : '';
+    $display = $is_template ? ' style="display:none;"' : '';
     $is_open = false;
     $en_name = trim((string) ($en['name'] ?? ''));
     $pt_name = trim((string) ($pt['name'] ?? ''));
@@ -1195,7 +1192,7 @@ function rs_education_render_combined_institution_row(
     <fieldset
         class="<?php echo esc_attr($row_class); ?>"
         data-index="<?php echo esc_attr($row_index); ?>"
-        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+        <?php echo $display; ?>
     >
         <div class="rs-metabox-accordion-head">
             <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
@@ -1206,7 +1203,7 @@ function rs_education_render_combined_institution_row(
             <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-institution">Remover</button>
         </div>
         <div class="rs-metabox-accordion-panel">
-        <div class="rs-education-institution-media" style="margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid #e0e0e0;">
+        <div class="rs-education-institution-media">
         <?php
         rs_render_media_field(
             $shared_prefix . '[logo_id]',
@@ -1235,10 +1232,10 @@ function rs_education_render_combined_institution_row(
         ?>
         </div>
         <div class="rs-education-institution-texts">
-            <div class="rs-metabox-tabs rs-education-institution-locale-tabs" data-rs-tabs>
-                <div class="rs-metabox-tablist" role="tablist">
-                    <button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>
-                    <button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>
+            <div class="rs-metabox-tabs rs-education-institution-locale-tabs rs-ds-locale-tabs" data-rs-tabs>
+                <div class="rs-metabox-tablist rs-ds-locale" role="tablist" aria-label="Idioma">
+                    <button type="button" class="rs-metabox-tab rs-ds-locale__btn is-active" role="tab" aria-selected="true" data-tab="en"><span class="rs-ds-locale__flag" aria-hidden="true">🇬🇧</span>English</button>
+                    <button type="button" class="rs-metabox-tab rs-ds-locale__btn" role="tab" aria-selected="false" data-tab="pt"><span class="rs-ds-locale__flag" aria-hidden="true">🇧🇷</span>Português</button>
                 </div>
                 <div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">
                     <?php rs_education_render_institution_locale_fields($row_index, $en, 'en', !$is_template); ?>
@@ -1260,8 +1257,8 @@ function rs_education_render_shared_institutions_section(array $shared_instituti
     }
 
     echo '<div id="rs-education-shared-institutions-accordion" data-rs-accordion>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Instituições (mídia compartilhada)</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Logo e galerias são únicos para EN e PT. Traduza nome, texto e legendas nas abas de idioma.</p>';
+    rs_ds_fieldset_open('Instituições (mídia compartilhada)');
+    rs_ds_help('Logo e galerias são únicos para EN e PT. Traduza nome, texto e legendas nas abas de idioma.');
     echo '<div id="rs-education-shared-institutions-list" data-rs-accordion-list>';
     foreach ($institutions as $index => $media) {
         rs_education_render_shared_institution_row((int) $index, $media);
@@ -1270,9 +1267,10 @@ function rs_education_render_shared_institutions_section(array $shared_instituti
     echo '<div id="rs-education-shared-institution-template" hidden>';
     rs_education_render_shared_institution_row(0, rs_education_default_institution_media(), true);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-shared-institution">+ Adicionar instituição</button></p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-primary" id="rs-education-add-shared-institution">+ Adicionar instituição</button></p>';
     echo '<input type="hidden" id="rs-education-shared-institutions-json" name="rs_education_shared_institutions_json" value="" />';
-    echo '</fieldset></div>';
+    rs_ds_fieldset_close();
+    echo '</div>';
 }
 
 function rs_education_render_shared_institution_row(int $index, array $media, bool $is_template = false): void {
@@ -1286,7 +1284,7 @@ function rs_education_render_shared_institution_row(int $index, array $media, bo
     $bottom = is_array($media['bottomGallery'] ?? null)
         ? $media['bottomGallery']
         : ['layout' => 'grid-2x2', 'image_ids' => ''];
-    $display = $is_template ? ' display:none;' : '';
+    $display = $is_template ? ' style="display:none;"' : '';
     $is_open = !$is_template && (int) $index === 0;
     $head_title = 'Instituição ' . ($is_template ? '' : (string) ((int) $index + 1));
     $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
@@ -1301,7 +1299,7 @@ function rs_education_render_shared_institution_row(int $index, array $media, bo
     <fieldset
         class="<?php echo esc_attr($row_class); ?> rs-education-shared-institution"
         data-index="<?php echo esc_attr($row_index); ?>"
-        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+        <?php echo $display; ?>
     >
         <div class="rs-metabox-accordion-head">
             <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
@@ -1360,7 +1358,7 @@ function rs_education_render_institution_locale_row(
     $bottom = is_array($institution['bottomGallery'] ?? null)
         ? $institution['bottomGallery']
         : ['caption' => ''];
-    $display = $is_template ? ' display:none;' : '';
+    $display = $is_template ? ' style="display:none;"' : '';
     $is_open = !$is_template && (int) $index === 0;
     $head_title = $name !== '' ? $name : ('Instituição ' . ($is_template ? '' : (string) ((int) $index + 1)));
     $row_class = 'rs-metabox-accordion-item rs-education-institution-locale' . ($is_open ? ' is-open' : '');
@@ -1369,7 +1367,7 @@ function rs_education_render_institution_locale_row(
         class="<?php echo esc_attr($row_class); ?>"
         data-index="<?php echo esc_attr($row_index); ?>"
         data-locale="<?php echo esc_attr($locale); ?>"
-        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+        <?php echo $display; ?>
     >
         <div class="rs-metabox-accordion-head">
             <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
@@ -1377,26 +1375,25 @@ function rs_education_render_institution_locale_row(
             </button>
         </div>
         <div class="rs-metabox-accordion-panel">
-        <p style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Nome</label>
             <input
                 type="text"
-                class="rs-education-institution-name"
-                style="width:100%;"
+                class="rs-education-institution-name rs-ds-input"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
                 value="<?php echo esc_attr($name); ?>"
                 placeholder="Mackenzie University (Brazil)"
             />
-        </p>
-        <p style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+        </div>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Texto</label>
             <textarea
-                class="rs-education-institution-description large-text"
-                style="width:100%;min-height:110px;"
+                class="rs-education-institution-description large-text rs-ds-textarea"
+                rows="5"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
                 placeholder="Descrição da parceria…"
             ><?php echo esc_textarea($description); ?></textarea>
-        </p>
+        </div>
         <?php
         rs_education_render_gallery_caption_fields(
             $name_prefix,
@@ -1439,7 +1436,7 @@ function rs_education_render_institution_row(int $index, array $institution, boo
     $bottom = is_array($institution['bottomGallery'] ?? null)
         ? $institution['bottomGallery']
         : ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''];
-    $display = $is_template ? ' display:none;' : '';
+    $display = $is_template ? ' style="display:none;"' : '';
     $is_open = !$is_template && (int) $index === 0;
     $head_title = $name !== '' ? $name : 'Instituição';
     $row_class = 'rs-metabox-accordion-item' . ($is_open ? ' is-open' : '');
@@ -1455,7 +1452,7 @@ function rs_education_render_institution_row(int $index, array $institution, boo
         class="<?php echo esc_attr($row_class); ?>"
         data-index="<?php echo esc_attr($row_index); ?>"
         data-locale="<?php echo esc_attr($locale); ?>"
-        style="margin:0 0 10px;<?php echo esc_attr($display); ?>"
+        <?php echo $display; ?>
     >
         <div class="rs-metabox-accordion-head">
             <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
@@ -1466,17 +1463,16 @@ function rs_education_render_institution_row(int $index, array $institution, boo
             <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-education-remove-institution">Remover</button>
         </div>
         <div class="rs-metabox-accordion-panel">
-        <p style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Nome</label>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Nome</label>
             <input
                 type="text"
-                class="rs-education-institution-name"
-                style="width:100%;"
+                class="rs-education-institution-name rs-ds-input"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[name]"<?php endif; ?>
                 value="<?php echo esc_attr($name); ?>"
                 placeholder="Mackenzie University (Brazil)"
             />
-        </p>
+        </div>
 
         <?php
         rs_render_media_field(
@@ -1499,15 +1495,15 @@ function rs_education_render_institution_row(int $index, array $institution, boo
         );
         ?>
 
-        <p style="margin:0 0 12px;">
-            <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+        <div class="rs-ds-field">
+            <label class="rs-ds-label">Texto</label>
             <textarea
-                class="rs-education-institution-description large-text"
-                style="width:100%;min-height:110px;"
+                class="rs-education-institution-description large-text rs-ds-textarea"
+                rows="5"
                 <?php if (!$is_template) : ?>name="<?php echo esc_attr($name_prefix); ?>[description]"<?php endif; ?>
                 placeholder="Descrição da parceria…"
             ><?php echo esc_textarea($description); ?></textarea>
-        </p>
+        </div>
 
         <?php
         rs_education_render_gallery_fields(
@@ -1530,26 +1526,29 @@ function rs_education_render_locale_fields(string $locale, array $loc): void {
         $sections = [['title' => '', 'body' => '']];
     }
 
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Headline</strong></legend>';
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field(
         'rs_education_headline_' . $locale,
         'rs_education_i18n[' . $locale . '][headline]',
         (string) ($loc['headline'] ?? ''),
         'inline'
     );
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p></fieldset>';
+    rs_ds_help('Use o botão B para destacar palavras.');
+    rs_ds_fieldset_close();
 
     echo '<div id="rs-education-sections-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Seções do acordeão</strong></legend>';
+    rs_ds_fieldset_open('Seções do acordeão');
     echo '<div id="rs-education-sections-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_education_render_section_row((int) $index, $section, false, $locale);
     }
     echo '</div><div id="rs-education-section-template-' . esc_attr($locale) . '" hidden>';
     rs_education_render_section_row(0, ['title' => '', 'body' => ''], true, $locale);
-    echo '</div><p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-education-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
+    echo '</div>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-education-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-education-sections-' . esc_attr($locale) . '-json" name="rs_education_sections_' . esc_attr($locale) . '_json" value="" />';
-    echo '</fieldset></div>';
+    rs_ds_fieldset_close();
+    echo '</div>';
 }
 
 function rs_education_render_i18n_meta_box(WP_Post $post): void {
@@ -1559,8 +1558,10 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
         : (int) $post->ID;
     $i18n = rs_education_i18n_get($canonical);
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Mídia compartilhada do hero</strong></legend>';
+    echo '<div class="rs-ds-editor rs-education-editor">';
+    rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
+
+    rs_ds_fieldset_open('Mídia compartilhada do hero');
     rs_section_shared_hero_render_fields(
         $canonical,
         $i18n['shared'],
@@ -1571,18 +1572,22 @@ function rs_education_render_i18n_meta_box(WP_Post $post): void {
         'rs_education_shared_hero_image',
         'rs_education_shared_hero_video'
     );
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
-    echo '</div><div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_education_render_locale_fields('en', $i18n['locales']['en']);
-    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
     rs_education_render_locale_fields('pt', $i18n['locales']['pt']);
-    echo '</div></div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
 
     rs_education_render_institutions_section($i18n);
+    echo '</div>';
 }
 
 function rs_education_render_meta_box(WP_Post $post): void {
@@ -1606,30 +1611,28 @@ function rs_education_render_meta_box(WP_Post $post): void {
         ]];
     }
 
-    echo '<p style="margin-top:0;color:#646970;">Um post por idioma (slug <code>en</code> / <code>pt</code>). Tudo abaixo alimenta a página <code>/education</code>. ' . rs_plugin_version_markup() . '</p>';
+    echo '<div class="rs-ds-editor rs-education-editor">';
+    rs_ds_alert('Um post por idioma (slug en / pt). Tudo abaixo alimenta a página /education.', 'info');
     $section_count = count($sections);
     $institution_count = count($institutions);
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
-    echo '<div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="base">Conteúdo Base</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="accordion">Acordeão (' . (int) $section_count . ')</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="institutions">Instituições (' . (int) $institution_count . ')</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="media">Mídia</button>';
-    echo '</div>';
+    rs_ds_locale_tabs_open([
+        'base' => 'Conteúdo Base',
+        'accordion' => 'Acordeão (' . (int) $section_count . ')',
+        'institutions' => 'Instituições (' . (int) $institution_count . ')',
+        'media' => 'Mídia',
+    ], 'base', 'Seções');
 
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="base" role="tabpanel">';
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Headline</strong></legend>';
+    rs_ds_locale_panel_open('base', true);
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field(RS_EDUCATION_HEADLINE_KEY, RS_EDUCATION_HEADLINE_KEY, $headline, 'inline');
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
-    echo '</fieldset>';
-    echo '</div>';
+    rs_ds_help('Use o botão B para destacar palavras.');
+    rs_ds_fieldset_close();
+    rs_ds_locale_panel_close();
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="accordion" role="tabpanel" hidden>';
+    rs_ds_locale_panel_open('accordion', false);
     echo '<div id="rs-education-sections-accordion" data-rs-accordion>';
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Seções do acordeão</strong></legend>';
+    rs_ds_fieldset_open('Seções do acordeão');
     echo '<div id="rs-education-sections-list" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_education_render_section_row((int) $index, $section);
@@ -1638,17 +1641,16 @@ function rs_education_render_meta_box(WP_Post $post): void {
     echo '<div id="rs-education-section-template" hidden>';
     rs_education_render_section_row(0, ['title' => '', 'body' => ''], true);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary" id="rs-education-add-section">+ Adicionar seção</button></p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary" id="rs-education-add-section">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-education-sections-json" name="rs_education_sections_json" value="" />';
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
     echo '</div>';
-    echo '</div>';
+    rs_ds_locale_panel_close();
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="institutions" role="tabpanel" hidden>';
+    rs_ds_locale_panel_open('institutions', false);
     echo '<div id="rs-education-institutions-accordion" data-rs-accordion>';
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Instituições</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Ordem no site: <strong>logo + nome</strong> → <strong>galeria</strong> (opcional) → <strong>texto</strong> → <strong>galeria após o texto</strong> (opcional).</p>';
+    rs_ds_fieldset_open('Instituições');
+    rs_ds_help('Ordem no site: logo + nome → galeria (opcional) → texto → galeria após o texto (opcional).');
     echo '<div id="rs-education-institutions-list" data-rs-accordion-list>';
     foreach ($institutions as $index => $institution) {
         rs_education_render_institution_row((int) $index, $institution);
@@ -1663,21 +1665,19 @@ function rs_education_render_meta_box(WP_Post $post): void {
         'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
     ], true);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-primary" id="rs-education-add-institution">+ Adicionar instituição</button></p>';
     echo '<input type="hidden" id="rs-education-institutions-json" name="rs_education_institutions_json" value="" />';
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
     echo '</div>';
-    echo '</div>';
+    rs_ds_locale_panel_close();
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="media" role="tabpanel" hidden>';
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Hero</strong></legend>';
+    rs_ds_locale_panel_open('media', false);
     if (function_exists('rs_section_render_hero_fields')) {
         rs_section_render_hero_fields($post->ID, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
     }
-    echo '</fieldset>';
-    echo '</div>';
+    rs_ds_locale_panel_close();
 
+    rs_ds_locale_tabs_close();
     echo '</div>';
 }
 

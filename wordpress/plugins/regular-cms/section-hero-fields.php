@@ -310,12 +310,11 @@ function rs_section_render_hero_fields(int $post_id, string $image_key, string $
     $image_id = (int) get_post_meta($post_id, $image_key, true);
     $video_id = (int) get_post_meta($post_id, $video_key, true);
 
-    echo '<fieldset style="margin:0 0 20px;padding:12px 14px;border:1px solid #dcdcde;border-radius:4px;">';
-    echo '<legend style="font-weight:600;padding:0 6px;"><strong>Hero</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Imagem e/ou vídeo. Se houver vídeo, ele tem prioridade no site (a imagem vira poster).</p>';
+    rs_ds_fieldset_open('Hero');
+    rs_ds_help('Imagem e/ou vídeo. Se houver vídeo, ele tem prioridade no site (a imagem vira poster).');
     rs_render_media_field($image_key, 'Imagem', $image_id, $image_key, true, 'image');
     rs_render_media_field($video_key, 'Vídeo (mp4) — opcional', $video_id, $video_key, true, 'video');
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 }
 
 function rs_section_copy_hero_media(int $from_id, int $to_id, string $image_key, string $video_key): void {

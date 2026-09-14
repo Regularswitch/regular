@@ -84,23 +84,23 @@ add_action('rest_api_init', function () {
 
 add_action('project-category_add_form_fields', function () {
     ?>
-    <div class="form-field">
-        <label for="rs_cat_h1">H1 do arquivo</label>
-        <input type="text" name="rs_cat_h1" id="rs_cat_h1" value="" />
-        <p class="description">Ex.: Projetos de identidade visual. Se vazio, usa o nome da tag.</p>
+    <div class="form-field rs-ds-term-field">
+        <label class="rs-ds-label" for="rs_cat_h1">H1 do arquivo</label>
+        <input type="text" class="rs-ds-input" name="rs_cat_h1" id="rs_cat_h1" value="" />
+        <p class="rs-ds-help">Ex.: Projetos de identidade visual. Se vazio, usa o nome da tag.</p>
     </div>
-    <div class="form-field">
-        <label for="rs_cat_intro">Introdução (parágrafo)</label>
-        <textarea name="rs_cat_intro" id="rs_cat_intro" rows="4"></textarea>
-        <p class="description">Texto curto com o termo + definição (AEO/GEO).</p>
+    <div class="form-field rs-ds-term-field">
+        <label class="rs-ds-label" for="rs_cat_intro">Introdução (parágrafo)</label>
+        <textarea class="rs-ds-textarea" name="rs_cat_intro" id="rs_cat_intro" rows="4"></textarea>
+        <p class="rs-ds-help">Texto curto com o termo + definição (AEO/GEO).</p>
     </div>
-    <div class="form-field">
-        <label for="rs_cat_seo_title">SEO title</label>
-        <input type="text" name="rs_cat_seo_title" id="rs_cat_seo_title" value="" />
+    <div class="form-field rs-ds-term-field">
+        <label class="rs-ds-label" for="rs_cat_seo_title">SEO title</label>
+        <input type="text" class="rs-ds-input" name="rs_cat_seo_title" id="rs_cat_seo_title" value="" />
     </div>
-    <div class="form-field">
-        <label for="rs_cat_seo_description">SEO meta description</label>
-        <textarea name="rs_cat_seo_description" id="rs_cat_seo_description" rows="3"></textarea>
+    <div class="form-field rs-ds-term-field">
+        <label class="rs-ds-label" for="rs_cat_seo_description">SEO meta description</label>
+        <textarea class="rs-ds-textarea" name="rs_cat_seo_description" id="rs_cat_seo_description" rows="3"></textarea>
     </div>
     <?php
 });
@@ -108,30 +108,30 @@ add_action('project-category_add_form_fields', function () {
 add_action('project-category_edit_form_fields', function ($term) {
     $seo = rs_category_seo_get((int) $term->term_id);
     ?>
-    <tr class="form-field">
-        <th scope="row"><label for="rs_cat_h1">H1 do arquivo</label></th>
+    <tr class="form-field rs-ds-term-field">
+        <th scope="row"><label class="rs-ds-label" for="rs_cat_h1">H1 do arquivo</label></th>
         <td>
-            <input type="text" name="rs_cat_h1" id="rs_cat_h1" value="<?php echo esc_attr($seo['h1']); ?>" class="regular-text" />
-            <p class="description">Ex.: Projetos de identidade visual. Se vazio, usa o nome da tag. <?php echo function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : ''; ?></p>
+            <input type="text" name="rs_cat_h1" id="rs_cat_h1" value="<?php echo esc_attr($seo['h1']); ?>" class="rs-ds-input" />
+            <p class="rs-ds-help">Ex.: Projetos de identidade visual. Se vazio, usa o nome da tag.</p>
         </td>
     </tr>
-    <tr class="form-field">
-        <th scope="row"><label for="rs_cat_intro">Introdução (parágrafo)</label></th>
+    <tr class="form-field rs-ds-term-field">
+        <th scope="row"><label class="rs-ds-label" for="rs_cat_intro">Introdução (parágrafo)</label></th>
         <td>
-            <textarea name="rs_cat_intro" id="rs_cat_intro" rows="4" class="large-text"><?php echo esc_textarea($seo['intro']); ?></textarea>
-            <p class="description">Texto curto com o termo + definição. Preencha no termo EN e no gêmeo PT.</p>
+            <textarea name="rs_cat_intro" id="rs_cat_intro" rows="4" class="rs-ds-textarea"><?php echo esc_textarea($seo['intro']); ?></textarea>
+            <p class="rs-ds-help">Texto curto com o termo + definição. Preencha no termo EN e no gêmeo PT.</p>
         </td>
     </tr>
-    <tr class="form-field">
-        <th scope="row"><label for="rs_cat_seo_title">SEO title</label></th>
+    <tr class="form-field rs-ds-term-field">
+        <th scope="row"><label class="rs-ds-label" for="rs_cat_seo_title">SEO title</label></th>
         <td>
-            <input type="text" name="rs_cat_seo_title" id="rs_cat_seo_title" value="<?php echo esc_attr($seo['seoTitle']); ?>" class="regular-text" />
+            <input type="text" name="rs_cat_seo_title" id="rs_cat_seo_title" value="<?php echo esc_attr($seo['seoTitle']); ?>" class="rs-ds-input" />
         </td>
     </tr>
-    <tr class="form-field">
-        <th scope="row"><label for="rs_cat_seo_description">SEO meta description</label></th>
+    <tr class="form-field rs-ds-term-field">
+        <th scope="row"><label class="rs-ds-label" for="rs_cat_seo_description">SEO meta description</label></th>
         <td>
-            <textarea name="rs_cat_seo_description" id="rs_cat_seo_description" rows="3" class="large-text"><?php echo esc_textarea($seo['seoDescription']); ?></textarea>
+            <textarea name="rs_cat_seo_description" id="rs_cat_seo_description" rows="3" class="rs-ds-textarea"><?php echo esc_textarea($seo['seoDescription']); ?></textarea>
         </td>
     </tr>
     <?php

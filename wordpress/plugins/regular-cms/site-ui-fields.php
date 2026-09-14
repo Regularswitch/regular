@@ -294,54 +294,59 @@ function rs_site_ui_render_meta_box(WP_Post $post): void {
     $layout = $data['shared'];
     $menus_url = admin_url('nav-menus.php');
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Layout compartilhado e labels em <strong>English</strong> e <strong>Português</strong>. Campos vazios usam o fallback do código Next.js. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<p style="margin:0 0 16px;color:#646970;">';
-    echo 'O menu do header é editado em <a href="' . esc_url($menus_url) . '">Aparência → Menus</a>.';
-    echo '</p>';
+    echo '<div class="rs-ds-editor rs-site-ui-editor">';
+    rs_ds_alert('Um único post. Layout compartilhado e labels em English e Português. Campos vazios usam o fallback do código Next.js.', 'info');
+    echo '<p class="rs-ds-help">O menu do header é editado em <a href="' . esc_url($menus_url) . '">Aparência → Menus</a>.</p>';
 
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Geral — layout compartilhado</strong></legend>';
-    echo '<p style="margin:0 0 12px;"><label for="rs_site_ui_home_columns_shared" style="display:block;font-weight:500;margin-bottom:4px;">Colunas na home (Selected Projects)</label>';
-    echo '<select id="rs_site_ui_home_columns_shared" name="rs_site_ui_shared[homeColumns]">';
+    rs_ds_fieldset_open('Geral — layout compartilhado');
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label" for="rs_site_ui_home_columns_shared">Colunas na home (Selected Projects)</label>';
+    echo '<select id="rs_site_ui_home_columns_shared" name="rs_site_ui_shared[homeColumns]" class="rs-ds-input">';
     foreach ([1, 2, 3] as $cols) {
         echo '<option value="' . $cols . '"' . selected($layout['homeColumns'], $cols, false) . '>' . $cols . '</option>';
     }
-    echo '</select></p>';
-    echo '<p style="margin:0 0 12px;"><label for="rs_site_ui_projects_initial_shared" style="display:block;font-weight:500;margin-bottom:4px;">Projetos ao abrir /projects (antes do “see more”)</label>';
-    echo '<input type="number" min="1" max="100" style="width:100px;" id="rs_site_ui_projects_initial_shared" name="rs_site_ui_shared[projectsInitialCount]" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" />';
-    echo '<span style="margin-left:8px;color:#646970;font-size:12px;">Padrão: 32 (8 linhas × 4)</span></p>';
-    echo '<p style="margin:0;"><label for="rs_site_ui_latest_count_shared" style="display:block;font-weight:500;margin-bottom:4px;">Itens no carrossel “The Latest”</label>';
-    echo '<select id="rs_site_ui_latest_count_shared" name="rs_site_ui_shared[latestCount]">';
+    echo '</select></div>';
+
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label" for="rs_site_ui_projects_initial_shared">Projetos ao abrir /projects (antes do “see more”)</label>';
+    echo '<input type="number" min="1" max="100" class="rs-ds-input" style="max-width:100px;" id="rs_site_ui_projects_initial_shared" name="rs_site_ui_shared[projectsInitialCount]" value="' . esc_attr((string) $layout['projectsInitialCount']) . '" />';
+    rs_ds_help('Padrão: 32 (8 linhas × 4)');
+    echo '</div>';
+
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label" for="rs_site_ui_latest_count_shared">Itens no carrossel “The Latest”</label>';
+    echo '<select id="rs_site_ui_latest_count_shared" name="rs_site_ui_shared[latestCount]" class="rs-ds-input">';
     foreach ([4, 6, 8, 12] as $n) {
         echo '<option value="' . $n . '"' . selected($layout['latestCount'], $n, false) . '>' . $n . '</option>';
     }
-    echo '</select></p></fieldset>';
+    echo '</select></div>';
+    rs_ds_fieldset_close();
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
     foreach (['en', 'pt'] as $locale) {
-        $active = $locale === 'en';
-        echo '<div class="rs-metabox-tabpanel' . ($active ? ' is-active' : '') . '" data-tab="' . esc_attr($locale) . '" role="tabpanel"' . ($active ? '' : ' hidden') . '>';
-        echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Labels de seção</strong></legend>';
+        rs_ds_locale_panel_open($locale, $locale === 'en');
+        rs_ds_fieldset_open('Labels de seção');
         echo '<div data-rs-accordion class="rs-site-ui-accordion">';
         rs_metabox_accordion_item_open('Labels', true);
         foreach (RS_SITE_UI_LABEL_KEYS as $base_key => $config) {
             $field = $config[0];
             $label = rs_site_ui_label_for_locale($base_key, $locale);
             $id = 'rs_site_ui_' . $field . '_' . $locale;
-            echo '<p class="rs-admin-text-field" style="margin:0 0 12px;"><label for="' . esc_attr($id) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
+            echo '<div class="rs-ds-field"><label class="rs-ds-label" for="' . esc_attr($id) . '">' . esc_html($label) . '</label>';
             rs_render_rich_text_field(
                 $id,
                 'rs_site_ui_i18n_input[' . $locale . '][labels][' . $field . ']',
                 (string) ($data['locales'][$locale]['labels'][$field] ?? ''),
                 'compact'
             );
-            echo '</p>';
+            echo '</div>';
         }
         rs_metabox_accordion_item_close();
-        echo '</div></fieldset></div>';
+        echo '</div>';
+        rs_ds_fieldset_close();
+        rs_ds_locale_panel_close();
     }
+    rs_ds_locale_tabs_close();
     echo '</div>';
 }
 

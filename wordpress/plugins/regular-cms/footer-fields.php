@@ -317,7 +317,6 @@ function rs_footer_render_locale_fields(string $locale, array $meta): void {
     $index = 0;
     foreach ($groups as $label => $keys) {
         rs_metabox_accordion_item_open($label, $index === 0);
-        echo '<div class="rs-metabox-fieldset" style="border:0;padding:4px 0 8px;margin:0;">';
         foreach ($keys as $key) {
             rs_render_admin_text_field(
                 $key . '_' . $locale,
@@ -326,7 +325,6 @@ function rs_footer_render_locale_fields(string $locale, array $meta): void {
                 (string) ($meta[$key] ?? '')
             );
         }
-        echo '</div>';
         rs_metabox_accordion_item_close();
         $index++;
     }
@@ -334,10 +332,9 @@ function rs_footer_render_locale_fields(string $locale, array $meta): void {
 }
 
 function rs_footer_render_shared_social(array $shared): void {
-    echo '<div data-rs-accordion class="rs-footer-social-accordion" style="margin:0 0 16px;">';
+    echo '<div data-rs-accordion class="rs-footer-social-accordion">';
     rs_metabox_accordion_item_open('Social (EN + PT)', true);
-    echo '<p style="margin:0 0 10px;color:#646970;">Os mesmos links valem para English e Português. Campo vazio = ícone oculto no site.</p>';
-    echo '<div class="rs-metabox-fieldset" style="border:0;padding:4px 0 8px;margin:0;">';
+    rs_ds_help('Os mesmos links valem para English e Português. Campo vazio = ícone oculto no site.');
     foreach (RS_FOOTER_SOCIAL_META_KEYS as $key => $label) {
         rs_render_admin_text_field(
             $key . '_shared',
@@ -346,7 +343,6 @@ function rs_footer_render_shared_social(array $shared): void {
             (string) ($shared[$key] ?? '')
         );
     }
-    echo '</div>';
     rs_metabox_accordion_item_close();
     echo '</div>';
 }
@@ -355,18 +351,24 @@ function rs_footer_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_footer_save', 'rs_footer_nonce');
     $post_id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
     $data = rs_footer_i18n_get($post_id);
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Textos por idioma nas abas; redes sociais são compartilhadas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
+
+    echo '<div class="rs-ds-editor rs-footer-editor">';
+    rs_ds_alert('Um único post. Textos por idioma nas abas; redes sociais são compartilhadas.', 'info');
 
     rs_footer_render_shared_social($data['shared']);
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_footer_render_locale_fields('en', $data['locales']['en']);
-    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
     rs_footer_render_locale_fields('pt', $data['locales']['pt']);
-    echo '</div></div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
+    echo '</div>';
 }
 
 add_action('save_post_footer', function (int $post_id) {

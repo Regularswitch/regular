@@ -170,27 +170,49 @@ add_action('add_meta_boxes_intro', function () {
 }, 10);
 
 function rs_intro_render_locale_fields(string $locale, array $loc): void {
-    $prefix = 'rs_intro_i18n_input[' . $locale . ']';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Título grande (headline)</strong></legend>';
-    rs_render_rich_text_field('rs_intro_content_' . $locale, $prefix . '[content]', (string) ($loc['content'] ?? ''), 'compact');
-    echo '</fieldset><fieldset class="rs-metabox-fieldset"><legend><strong>Parágrafo abaixo (body)</strong></legend>';
-    rs_render_rich_text_field('rs_intro_excerpt_' . $locale, $prefix . '[excerpt]', (string) ($loc['excerpt'] ?? ''), 'paragraph');
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Texto menor abaixo do título.</p></fieldset>';
+	$prefix = 'rs_intro_i18n_input[' . $locale . ']';
+
+	rs_ds_fieldset_open('Título grande (headline)');
+	rs_render_rich_text_field(
+		'rs_intro_content_' . $locale,
+		$prefix . '[content]',
+		(string) ($loc['content'] ?? ''),
+		'compact'
+	);
+	rs_ds_help('Texto principal da home. Use negrito para destacar trechos.');
+	rs_ds_fieldset_close();
+
+	rs_ds_fieldset_open('Parágrafo abaixo (body)');
+	rs_render_rich_text_field(
+		'rs_intro_excerpt_' . $locale,
+		$prefix . '[excerpt]',
+		(string) ($loc['excerpt'] ?? ''),
+		'paragraph'
+	);
+	rs_ds_help('Texto menor abaixo do título.');
+	rs_ds_fieldset_close();
 }
 
 function rs_intro_render_meta_box(WP_Post $post): void {
-    wp_nonce_field('rs_intro_save', 'rs_intro_nonce');
-    $id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
-    $data = rs_intro_i18n_get($id);
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite English e Português nas abas.</p>';
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
-    rs_intro_render_locale_fields('en', $data['locales']['en']);
-    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
-    rs_intro_render_locale_fields('pt', $data['locales']['pt']);
-    echo '</div></div>';
+	wp_nonce_field('rs_intro_save', 'rs_intro_nonce');
+	$id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
+	$data = rs_intro_i18n_get($id);
+
+	echo '<div class="rs-ds-editor rs-intro-editor">';
+	rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
+
+	rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+	rs_ds_locale_panel_open('en', true);
+	rs_intro_render_locale_fields('en', $data['locales']['en']);
+	rs_ds_locale_panel_close();
+
+	rs_ds_locale_panel_open('pt', false);
+	rs_intro_render_locale_fields('pt', $data['locales']['pt']);
+	rs_ds_locale_panel_close();
+
+	rs_ds_locale_tabs_close();
+	echo '</div>';
 }
 
 add_action('save_post_intro', function (int $post_id) {

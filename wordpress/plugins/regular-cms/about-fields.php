@@ -366,25 +366,26 @@ function rs_about_render_locale_fields(string $locale, array $loc): void {
         $sections = [['title' => '', 'text' => '', 'image_id' => 0]];
     }
 
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Headline</strong></legend>';
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field(
         'rs_about_headline_' . $locale,
         'rs_about_i18n[' . $locale . '][headline]',
         (string) ($loc['headline'] ?? ''),
         'inline'
     );
-    echo '</fieldset>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Texto introdutório</strong></legend>';
+    rs_ds_fieldset_close();
+
+    rs_ds_fieldset_open('Texto introdutório');
     rs_render_rich_text_field(
         'rs_about_body_' . $locale,
         'rs_about_i18n[' . $locale . '][body]',
         (string) ($loc['body'] ?? ''),
         'paragraph'
     );
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 
     echo '<div id="rs-about-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Seções do acordeão</strong></legend>';
+    rs_ds_fieldset_open('Seções do acordeão');
     echo '<div id="rs-about-sections-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_about_render_section_row((int) $index, $section, false, $locale);
@@ -393,9 +394,10 @@ function rs_about_render_locale_fields(string $locale, array $loc): void {
     echo '<div id="rs-about-section-template-' . esc_attr($locale) . '" hidden>';
     rs_about_render_section_row(0, ['title' => '', 'text' => '', 'image_id' => 0], true, $locale);
     echo '</div>';
-    echo '<p style="margin:12px 0 0;"><button type="button" class="button button-secondary rs-about-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-secondary rs-about-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button></p>';
     echo '<input type="hidden" id="rs-about-sections-' . esc_attr($locale) . '-json" name="rs_about_sections_' . esc_attr($locale) . '_json" value="" />';
-    echo '</fieldset></div>';
+    rs_ds_fieldset_close();
+    echo '</div>';
 }
 
 function rs_about_render_meta_box(WP_Post $post): void {
@@ -406,8 +408,10 @@ function rs_about_render_meta_box(WP_Post $post): void {
         : (int) $post->ID;
     $i18n = rs_about_i18n_get($canonical);
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Mídia compartilhada do hero</strong></legend>';
+    echo '<div class="rs-ds-editor rs-about-editor">';
+    rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
+
+    rs_ds_fieldset_open('Mídia compartilhada do hero');
     rs_section_shared_hero_render_fields(
         $canonical,
         $i18n['shared'],
@@ -418,19 +422,19 @@ function rs_about_render_meta_box(WP_Post $post): void {
         'rs_about_shared_hero_image',
         'rs_about_shared_hero_video'
     );
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
-    echo '<div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
-    echo '</div>';
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_about_render_locale_fields('en', $i18n['locales']['en']);
-    echo '</div>';
-    echo '<div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
     rs_about_render_locale_fields('pt', $i18n['locales']['pt']);
-    echo '</div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
     echo '</div>';
 }
 

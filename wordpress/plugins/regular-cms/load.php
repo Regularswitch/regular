@@ -47,6 +47,7 @@ require_once $rs_plugin_dir . '/hide-themerain-meta.php';
 require_once $rs_plugin_dir . '/admin-dashboard.php';
 require_once $rs_plugin_dir . '/content-repair.php';
 require_once $rs_plugin_dir . '/metabox-ui.php';
+require_once $rs_plugin_dir . '/ui-helpers.php';
 require_once $rs_plugin_dir . '/admin-design-system.php';
 require_once $rs_plugin_dir . '/admin-shell.php';
 require_once $rs_plugin_dir . '/sync-media-en-to-pt.php';

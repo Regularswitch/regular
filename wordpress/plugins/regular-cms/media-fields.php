@@ -1,6 +1,7 @@
 <?php
 /**
  * Campo de upload de mídia reutilizável (meta boxes).
+ * Apresentação DS — names/IDs/data-attrs intactos para o JS.
  */
 
 if (defined('RS_MEDIA_FIELDS_LOADED')) {
@@ -23,16 +24,23 @@ function rs_render_media_field(
     $url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';
     $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
     $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+    $has_file = $url !== '';
 
     $pick_label = match ($library) {
         'video' => 'Selecionar vídeo',
         'media' => 'Selecionar mídia',
         default => 'Selecionar imagem',
     };
+    $hint = match ($library) {
+        'video' => 'MP4 ou vídeo da biblioteca',
+        'media' => 'Imagem, GIF ou vídeo',
+        default => 'JPG, PNG, GIF ou WebP',
+    };
+    $zone_class = 'rs-ds-dropzone rs-media-field' . ($has_file ? ' is-filled' : '');
     ?>
-    <p class="rs-media-field" style="margin:0 0 14px;">
+    <div class="<?php echo esc_attr($zone_class); ?>" data-rs-media-zone="<?php echo esc_attr($field_id); ?>">
         <?php if ($label !== '') : ?>
-            <label style="display:block;font-weight:500;margin-bottom:6px;"><?php echo esc_html($label); ?></label>
+            <p class="rs-ds-label" style="align-self:stretch;text-align:left;margin:0 0 4px;"><?php echo esc_html($label); ?></p>
         <?php endif; ?>
         <input
             type="hidden"
@@ -46,21 +54,30 @@ function rs_render_media_field(
         <?php if ($include_name) : ?>
             <input type="hidden" name="<?php echo esc_attr($name); ?>_cleared" id="<?php echo esc_attr($field_id); ?>_cleared" value="0" />
         <?php endif; ?>
-        <button
-            type="button"
-            class="button rs-media-pick"
-            data-target="<?php echo esc_attr($field_id); ?>"
-            data-library="<?php echo esc_attr($library); ?>"
-        ><?php echo esc_html($pick_label); ?></button>
-        <button type="button" class="button rs-media-clear" data-target="<?php echo esc_attr($field_id); ?>">Remover</button>
-        <span class="rs-media-preview" data-target="<?php echo esc_attr($field_id); ?>" style="display:block;margin-top:8px;">
+
+        <span class="rs-media-preview" data-target="<?php echo esc_attr($field_id); ?>">
             <?php if ($url && $is_video) : ?>
-                <video src="<?php echo esc_url($url); ?>" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>
+                <video src="<?php echo esc_url($url); ?>" class="rs-ds-dropzone__preview-media" muted playsinline controls></video>
             <?php elseif ($url) : ?>
-                <img src="<?php echo esc_url($url); ?>" alt="" style="max-width:220px;height:auto;border-radius:4px;" />
+                <img src="<?php echo esc_url($url); ?>" alt="" class="rs-ds-dropzone__preview-media" />
+            <?php else : ?>
+                <span class="rs-ds-dropzone__icon" aria-hidden="true">↑</span>
+                <p class="rs-ds-dropzone__title"><?php echo esc_html($pick_label); ?></p>
+                <p class="rs-ds-dropzone__hint">Clique para abrir a biblioteca</p>
+                <p class="rs-ds-dropzone__meta"><?php echo esc_html($hint); ?></p>
             <?php endif; ?>
         </span>
-    </p>
+
+        <p class="rs-ds-actions rs-ds-actions--row" style="margin-top:var(--rs-space-3);">
+            <button
+                type="button"
+                class="button button-secondary rs-media-pick"
+                data-target="<?php echo esc_attr($field_id); ?>"
+                data-library="<?php echo esc_attr($library); ?>"
+            ><?php echo esc_html($pick_label); ?></button>
+            <button type="button" class="button rs-media-clear" data-target="<?php echo esc_attr($field_id); ?>"<?php echo $has_file ? '' : ' style="display:none;"'; ?>>Remover</button>
+        </p>
+    </div>
     <?php
 }
 
@@ -105,30 +122,47 @@ jQuery(function ($) {
         });
     }
 
+    function zoneFor(target) {
+        return $('[data-rs-media-zone="' + target + '"]');
+    }
+
     function setPreview(target, attachment) {
         const preview = $('.rs-media-preview[data-target="' + target + '"]');
+        const clearBtn = $('.rs-media-clear[data-target="' + target + '"]');
+        const zone = zoneFor(target);
+
         if (!attachment || !attachment.url) {
-            preview.empty();
+            const library = $('#' + target).data('rs-library') || 'image';
+            const title = library === 'video' ? 'Selecionar vídeo' : (library === 'media' ? 'Selecionar mídia' : 'Selecionar imagem');
+            const meta = library === 'video' ? 'MP4 ou vídeo da biblioteca' : (library === 'media' ? 'Imagem, GIF ou vídeo' : 'JPG, PNG, GIF ou WebP');
+            preview.html(
+                '<span class="rs-ds-dropzone__icon" aria-hidden="true">↑</span>' +
+                '<p class="rs-ds-dropzone__title">' + title + '</p>' +
+                '<p class="rs-ds-dropzone__hint">Clique para abrir a biblioteca</p>' +
+                '<p class="rs-ds-dropzone__meta">' + meta + '</p>'
+            );
+            clearBtn.hide();
+            zone.removeClass('is-filled');
             return;
         }
 
         const mime = attachment.mime || '';
         if (mime.indexOf('video/') === 0) {
             preview.html(
-                '<video src="' + attachment.url + '" style="max-width:220px;height:auto;border-radius:4px;" muted playsinline controls></video>'
+                '<video src="' + attachment.url + '" class="rs-ds-dropzone__preview-media" muted playsinline controls></video>'
             );
-            return;
+        } else {
+            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
+                || attachment.url;
+            preview.html('<img src="' + thumb + '" alt="" class="rs-ds-dropzone__preview-media" />');
         }
-
-        const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url)
-            || attachment.url;
-        preview.html('<img src="' + thumb + '" alt="" style="max-width:220px;height:auto;border-radius:4px;" />');
+        clearBtn.show();
+        zone.addClass('is-filled');
     }
 
-    $(document).on('click', '.rs-media-pick, .rs-project-pick-media', function (event) {
-        event.preventDefault();
-        const target = $(this).data('target');
-        const library = $(this).data('library') || $('#' + target).data('rs-library') || 'image';
+    function openPicker(button) {
+        const target = $(button).data('target');
+        const library = $(button).data('library') || $('#' + target).data('rs-library') || 'image';
 
         const frameOptions = {
             title: library === 'video' ? 'Selecionar vídeo' : (library === 'media' ? 'Selecionar mídia' : 'Selecionar imagem'),
@@ -154,7 +188,6 @@ jQuery(function ($) {
             if (cleared) {
                 cleared.value = '0';
             }
-            // Espelhos cedo do formulário de projeto (hero/logo).
             const valuePost = document.getElementById(String(target) + '_post');
             if (valuePost) {
                 valuePost.value = String(attachment.id);
@@ -168,6 +201,22 @@ jQuery(function ($) {
         });
 
         frame.open();
+    }
+
+    $(document).on('click', '.rs-media-pick, .rs-project-pick-media', function (event) {
+        event.preventDefault();
+        openPicker(this);
+    });
+
+    $(document).on('click', '.rs-ds-dropzone .rs-media-preview', function (event) {
+        if ($(event.target).closest('video, a, button').length) {
+            return;
+        }
+        const target = $(this).data('target');
+        const pick = $('.rs-media-pick[data-target="' + target + '"]').get(0);
+        if (pick) {
+            openPicker(pick);
+        }
     });
 
     $(document).on('click', '.rs-media-clear, .rs-project-clear-media', function (event) {
@@ -183,7 +232,6 @@ jQuery(function ($) {
         if (cleared) {
             cleared.value = '1';
         }
-        // Só o campo clicado: não zerar hero ao remover logo (e vice-versa).
         const valuePost = document.getElementById(String(target) + '_post');
         if (valuePost) {
             valuePost.value = '0';

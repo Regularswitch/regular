@@ -336,6 +336,43 @@ body.rs-shell-screen .wp-list-table th {
 	border-bottom-color: var(--rs-border);
 }
 
+body.rs-shell-screen .wp-list-table tbody tr:hover td {
+	background: var(--rs-primary-soft);
+}
+
+body.rs-shell-screen .tablenav {
+	margin: 12px 0 8px;
+}
+
+body.rs-shell-screen .tablenav .button,
+body.rs-shell-screen .tablenav select,
+body.rs-shell-screen .search-box input[type="search"] {
+	border-radius: var(--rs-radius-md) !important;
+	border-color: var(--rs-border-strong);
+	min-height: 36px;
+}
+
+body.rs-shell-screen .row-actions {
+	color: var(--rs-text-muted);
+}
+
+body.rs-shell-screen .row-actions a {
+	color: var(--rs-primary);
+}
+
+body.rs-shell-screen .subsubsub a {
+	color: var(--rs-text-secondary);
+}
+
+body.rs-shell-screen .subsubsub a.current {
+	color: var(--rs-text);
+	font-weight: 600;
+}
+
+body.rs-shell-screen .rs-ds-badge {
+	vertical-align: middle;
+}
+
 /* Responsive: topbar + hubs */
 @media (max-width: 782px) {
 	.rs-shell-topbar__title {

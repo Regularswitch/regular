@@ -213,6 +213,20 @@ html:not(.dark) .brand-mark {
 	font-weight: 500;
 }
 
+/* Rich text do WP traz font-weight:400 inline em <span> — alinha ao texto corrido (300). */
+.intro-body :where(*:not(strong):not(b):not(a)),
+.about-body :where(*:not(strong):not(b):not(a)),
+.capabilities-accordion-body :where(*:not(strong):not(b):not(a)),
+.capabilities-accordion-list :where(*:not(strong):not(b):not(a)),
+.project-accordion-body :where(*:not(strong):not(b):not(a)),
+.legal-content :where(*:not(strong):not(b):not(a)),
+.education-institution-description :where(*:not(strong):not(b):not(a)),
+.contact-block-body :where(*:not(strong):not(b):not(a)),
+.project-summary :where(*:not(strong):not(b):not(a)),
+.capabilities-faq-answer :where(*:not(strong):not(b):not(a)) {
+	font-weight: inherit !important;
+}
+
 .capabilities-faq-answer {
 	font-size: 1.25rem;
 	font-weight: 300;

@@ -659,6 +659,207 @@ body.rs-ds-ready select.rs-ds-select:focus {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Editor wrappers (piloto Intro+)                                             */
+/* -------------------------------------------------------------------------- */
+
+.rs-ds-editor {
+	display: flex;
+	flex-direction: column;
+	gap: var(--rs-space-4);
+	font-family: var(--rs-font);
+}
+
+.rs-ds-fieldset {
+	margin: 0 0 var(--rs-space-4);
+	padding: var(--rs-space-4);
+	border: 1px solid var(--rs-border);
+	border-radius: var(--rs-radius-lg);
+	background: var(--rs-bg-subtle);
+}
+
+.rs-ds-fieldset:last-child {
+	margin-bottom: 0;
+}
+
+.rs-ds-fieldset__legend {
+	padding: 0 6px;
+	font-size: var(--rs-text-sm);
+	font-weight: 600;
+	color: var(--rs-text);
+}
+
+.rs-ds-locale-tabs {
+	margin-top: 0;
+}
+
+.rs-ds-locale-tabs > .rs-metabox-tablist.rs-ds-locale {
+	border-bottom: 0;
+	margin: 0 0 var(--rs-space-4);
+	gap: var(--rs-space-2);
+	padding: 0;
+	background: transparent;
+}
+
+.rs-ds-locale-tabs > .rs-metabox-tablist .rs-metabox-tab.rs-ds-locale__btn {
+	margin: 0;
+	border: 1px solid var(--rs-border);
+	border-radius: var(--rs-radius-md);
+	background: var(--rs-surface);
+	color: var(--rs-text);
+	padding: 0 14px;
+	min-height: 40px;
+	font-weight: 600;
+}
+
+.rs-ds-locale-tabs > .rs-metabox-tablist .rs-metabox-tab.rs-ds-locale__btn:hover,
+.rs-ds-locale-tabs > .rs-metabox-tablist .rs-metabox-tab.rs-ds-locale__btn:focus {
+	color: var(--rs-text);
+	border-color: var(--rs-primary);
+}
+
+.rs-ds-locale-tabs > .rs-metabox-tablist .rs-metabox-tab.rs-ds-locale__btn.is-active {
+	border-color: var(--rs-primary);
+	box-shadow: inset 0 0 0 1px var(--rs-primary);
+	background: var(--rs-primary-soft);
+	color: var(--rs-text);
+}
+
+body.rs-shell-screen #rs_intro_fields .inside {
+	margin: 0;
+	padding: 16px;
+}
+
+body.rs-shell-screen #rs_intro_fields .rs-ds-alert,
+body.rs-shell-screen #rs_capabilities_fields .rs-ds-alert {
+	margin: 0;
+}
+
+body.rs-shell-screen #rs_capabilities_fields .inside {
+	margin: 0;
+	padding: 16px;
+}
+
+.rs-ds-grid {
+	display: grid;
+	gap: var(--rs-space-3);
+}
+
+.rs-ds-grid--2 {
+	grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 782px) {
+	.rs-ds-grid--2 {
+		grid-template-columns: 1fr;
+	}
+}
+
+.rs-ds-actions {
+	margin: var(--rs-space-3) 0 0;
+}
+
+.rs-ds-faq-row {
+	border: 1px solid var(--rs-border);
+	border-radius: var(--rs-radius-md);
+	padding: var(--rs-space-3);
+	margin: 0 0 var(--rs-space-3);
+	background: var(--rs-surface);
+}
+
+.rs-ds-faq-row--new {
+	border-style: dashed;
+	background: var(--rs-bg-subtle);
+}
+
+.rs-ds-editor .rs-metabox-accordion-item {
+	margin: 0 0 var(--rs-space-3);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Projeto — abas Geral / EN / PT / Mídia                                     */
+/* -------------------------------------------------------------------------- */
+
+body.rs-shell-screen #rs_project_fields .inside {
+	margin: 0;
+	padding: 16px;
+}
+
+body.rs-shell-screen #rs_project_fields .rs-ds-alert {
+	margin: 0;
+}
+
+.rs-ds-project-tabs {
+	margin-top: 0;
+}
+
+.rs-ds-project-tablist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--rs-space-2);
+	margin: 0 0 var(--rs-space-4);
+	padding: 0;
+	border-bottom: 0;
+	background: transparent;
+}
+
+.rs-ds-project-tablist .rs-ds-project-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	border: 1px solid var(--rs-border);
+	border-radius: var(--rs-radius-md);
+	background: var(--rs-surface);
+	color: var(--rs-text);
+	padding: 0 14px;
+	min-height: 40px;
+	font-weight: 600;
+	font-size: var(--rs-text-sm);
+}
+
+.rs-ds-project-tablist .rs-ds-project-tab:hover,
+.rs-ds-project-tablist .rs-ds-project-tab:focus {
+	color: var(--rs-text);
+	border-color: var(--rs-primary);
+}
+
+.rs-ds-project-tablist .rs-ds-project-tab.is-active {
+	border-color: var(--rs-primary);
+	box-shadow: inset 0 0 0 1px var(--rs-primary);
+	background: var(--rs-primary-soft);
+	color: var(--rs-text);
+}
+
+.rs-ds-editor .rs-project-fieldset,
+.rs-ds-editor .rs-ds-fieldset.rs-project-fieldset {
+	margin: 0 0 var(--rs-space-4);
+}
+
+.rs-ds-check {
+	margin: 0 0 var(--rs-space-2);
+	font-size: var(--rs-text-sm);
+	color: var(--rs-text);
+}
+
+.rs-ds-check:last-child {
+	margin-bottom: 0;
+}
+
+.rs-ds-actions--row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--rs-space-2);
+}
+
+/* TinyMCE dentro do editor DS */
+.rs-ds-editor .wp-editor-wrap,
+.rs-ds-editor .mce-tinymce {
+	border-radius: var(--rs-radius-md);
+	overflow: hidden;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Dropzone                                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -713,6 +914,53 @@ body.rs-ds-ready select.rs-ds-select:focus {
 .rs-ds-dropzone__meta {
 	font-size: var(--rs-text-xs);
 	color: var(--rs-text-muted);
+}
+
+.rs-ds-dropzone.is-filled {
+	align-items: stretch;
+	min-height: 0;
+	padding: var(--rs-space-4);
+}
+
+.rs-ds-dropzone .rs-media-preview {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--rs-space-2);
+	cursor: pointer;
+	width: 100%;
+}
+
+.rs-ds-dropzone__preview-media {
+	max-width: 100%;
+	width: auto;
+	max-height: 220px;
+	height: auto;
+	border-radius: var(--rs-radius-md);
+	display: block;
+}
+
+.rs-ds-serp {
+	margin-top: var(--rs-space-4);
+}
+
+body.rs-shell-screen #rs_seo_fields .inside,
+body.rs-shell-screen #rs_seo_schema_fields .inside,
+body.rs-shell-screen #rs_about_fields .inside,
+body.rs-shell-screen #rs_contact_fields .inside,
+body.rs-shell-screen #rs_footer_fields .inside,
+body.rs-shell-screen #rs_legal_fields .inside,
+body.rs-shell-screen #rs_education_fields .inside,
+body.rs-shell-screen #rs_site_ui_fields .inside,
+body.rs-shell-screen #rs_projects_page_fields .inside {
+	margin: 0;
+	padding: 16px;
+}
+
+.rs-ds-term-field .rs-ds-input,
+.rs-ds-term-field .rs-ds-textarea {
+	max-width: 100%;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -914,4 +1162,39 @@ body.rs-system_page_rs-design-system #wpbody-content > .wrap.rs-ds-preview {
 	.rs-ds-card__header {
 		padding: var(--rs-space-4);
 	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Education — nested panels / institution media                              */
+/* -------------------------------------------------------------------------- */
+
+.rs-ds-panel {
+	margin: 0 0 var(--rs-space-3);
+	padding: var(--rs-space-3);
+	border-radius: var(--rs-radius-md);
+	background: var(--rs-bg-subtle);
+}
+
+.rs-education-gallery-block.rs-ds-panel {
+	border: 1px dashed var(--rs-border-strong);
+}
+
+.rs-education-gallery-caption-block.rs-ds-panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--rs-space-2);
+	border: 1px solid var(--rs-border);
+	background: var(--rs-surface);
+}
+
+.rs-education-institution-media {
+	margin: 0 0 var(--rs-space-4);
+	padding-bottom: var(--rs-space-4);
+	border-bottom: 1px solid var(--rs-border);
+}
+
+.rs-metabox-accordion-panel > .rs-ds-field,
+.rs-education-institution-texts .rs-ds-field,
+.rs-education-gallery-block > .rs-ds-field {
+	margin: 0 0 var(--rs-space-3);
 }

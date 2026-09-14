@@ -142,41 +142,49 @@ function rs_seo_schema_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_seo_schema_save', 'rs_seo_schema_nonce');
     $data = rs_seo_schema_get();
 
-    echo '<p style="margin-top:0;color:#646970;">Dados estruturados <code>ProfessionalService</code> em todas as páginas. Usado por Google e IAs. ';
-    if (function_exists('rs_plugin_version_markup')) {
-        echo rs_plugin_version_markup();
-    }
-    echo '</p>';
+    echo '<div class="rs-ds-editor rs-seo-schema-editor">';
+    rs_ds_alert('Dados estruturados ProfessionalService em todas as páginas. Usado por Google e IAs.', 'info');
 
-    $fields = [
-        'name'          => ['Nome', 'text'],
-        'descriptionEn' => ['Descrição (EN)', 'textarea'],
-        'descriptionPt' => ['Descrição (PT)', 'textarea'],
-        'foundingDate'  => ['Ano de fundação', 'text'],
-        'url'           => ['URL do site', 'text'],
-        'telephone'     => ['Telefone (E.164)', 'text'],
-        'email'         => ['E-mail', 'text'],
-        'locality'      => ['Cidade', 'text'],
-        'region'        => ['Estado/região', 'text'],
-        'country'       => ['País (código)', 'text'],
-        'areaServed'    => ['Áreas atendidas (um por linha, ex: BR)', 'textarea'],
-        'knowsAbout'    => ['knowsAbout — serviços/termos (um por linha)', 'textarea'],
-        'sameAs'        => ['sameAs — redes sociais (URLs, uma por linha)', 'textarea'],
+    $groups = [
+        'Identidade' => [
+            'name'          => ['Nome', 'text'],
+            'descriptionEn' => ['Descrição (EN)', 'textarea'],
+            'descriptionPt' => ['Descrição (PT)', 'textarea'],
+            'foundingDate'  => ['Ano de fundação', 'text'],
+            'url'           => ['URL do site', 'text'],
+        ],
+        'Contato & local' => [
+            'telephone' => ['Telefone (E.164)', 'text'],
+            'email'     => ['E-mail', 'text'],
+            'locality'  => ['Cidade', 'text'],
+            'region'    => ['Estado/região', 'text'],
+            'country'   => ['País (código)', 'text'],
+        ],
+        'Schema lists' => [
+            'areaServed' => ['Áreas atendidas (um por linha, ex: BR)', 'textarea'],
+            'knowsAbout' => ['knowsAbout — serviços/termos (um por linha)', 'textarea'],
+            'sameAs'     => ['sameAs — redes sociais (URLs, uma por linha)', 'textarea'],
+        ],
     ];
 
-    foreach ($fields as $key => [$label, $type]) {
-        $id = 'rs_seo_schema_' . $key;
-        $name = 'rs_seo_schema[' . $key . ']';
-        $value = (string) ($data[$key] ?? '');
-        echo '<p style="margin:0 0 12px;">';
-        echo '<label for="' . esc_attr($id) . '" style="display:block;font-weight:600;margin-bottom:4px;">' . esc_html($label) . '</label>';
-        if ($type === 'textarea') {
-            echo '<textarea class="large-text" rows="3" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '">' . esc_textarea($value) . '</textarea>';
-        } else {
-            echo '<input type="text" class="large-text" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
+    foreach ($groups as $legend => $fields) {
+        rs_ds_fieldset_open($legend);
+        foreach ($fields as $key => [$label, $type]) {
+            $id = 'rs_seo_schema_' . $key;
+            $name = 'rs_seo_schema[' . $key . ']';
+            $value = (string) ($data[$key] ?? '');
+            echo '<div class="rs-ds-field" style="margin-bottom:var(--rs-space-3);">';
+            echo '<label class="rs-ds-label" for="' . esc_attr($id) . '">' . esc_html($label) . '</label>';
+            if ($type === 'textarea') {
+                echo '<textarea class="rs-ds-textarea" rows="3" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '">' . esc_textarea($value) . '</textarea>';
+            } else {
+                echo '<input type="text" class="rs-ds-input" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
+            }
+            echo '</div>';
         }
-        echo '</p>';
+        rs_ds_fieldset_close();
     }
+    echo '</div>';
 }
 
 add_action('save_post_site-ui', function (int $post_id) {

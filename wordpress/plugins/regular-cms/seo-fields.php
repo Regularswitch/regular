@@ -151,18 +151,33 @@ function rs_seo_render_locale_fields(string $locale, array $loc): void {
     $prefix = 'rs_seo_i18n_input[' . $locale . ']';
     $title = (string) ($loc['title'] ?? '');
     $desc = (string) ($loc['description'] ?? '');
+    $title_id = 'rs_seo_title_' . $locale;
+    $desc_id = 'rs_seo_desc_' . $locale;
+    $serp_title = $title !== '' ? $title : 'Título da página';
+    $serp_desc = $desc !== '' ? $desc : 'A meta description aparece aqui nos resultados de busca.';
 
-    echo '<p style="margin:0 0 12px;">';
-    echo '<label for="rs_seo_title_' . esc_attr($locale) . '" style="display:block;font-weight:600;margin-bottom:4px;">Title tag</label>';
-    echo '<input type="text" class="large-text" id="rs_seo_title_' . esc_attr($locale) . '" name="' . esc_attr($prefix) . '[title]" value="' . esc_attr($title) . '" maxlength="120" autocomplete="off" />';
-    echo '<span style="display:block;margin-top:4px;color:#646970;font-size:12px;">' . esc_html(rs_seo_char_hint('title')) . ' Aparece na aba do browser e no Google.</span>';
-    echo '</p>';
+    rs_ds_fieldset_open('Title & description');
+    echo '<div class="rs-ds-field" style="margin-bottom:var(--rs-space-3);">';
+    echo '<label class="rs-ds-label" for="' . esc_attr($title_id) . '">Title tag</label>';
+    echo '<input type="text" class="rs-ds-input rs-seo-title-input" id="' . esc_attr($title_id) . '" name="' . esc_attr($prefix) . '[title]" value="' . esc_attr($title) . '" maxlength="120" autocomplete="off" data-rs-serp-title="' . esc_attr($locale) . '" />';
+    rs_ds_help(rs_seo_char_hint('title') . ' Aparece na aba do browser e no Google.');
+    echo '</div>';
 
-    echo '<p style="margin:0;">';
-    echo '<label for="rs_seo_desc_' . esc_attr($locale) . '" style="display:block;font-weight:600;margin-bottom:4px;">Meta description</label>';
-    echo '<textarea class="large-text" rows="3" id="rs_seo_desc_' . esc_attr($locale) . '" name="' . esc_attr($prefix) . '[description]" maxlength="320">' . esc_textarea($desc) . '</textarea>';
-    echo '<span style="display:block;margin-top:4px;color:#646970;font-size:12px;">' . esc_html(rs_seo_char_hint('description')) . ' Texto do snippet nos resultados de busca.</span>';
-    echo '</p>';
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label" for="' . esc_attr($desc_id) . '">Meta description</label>';
+    echo '<textarea class="rs-ds-textarea rs-seo-desc-input" rows="3" id="' . esc_attr($desc_id) . '" name="' . esc_attr($prefix) . '[description]" maxlength="320" data-rs-serp-desc="' . esc_attr($locale) . '">' . esc_textarea($desc) . '</textarea>';
+    rs_ds_help(rs_seo_char_hint('description') . ' Texto do snippet nos resultados de busca.');
+    echo '</div>';
+    rs_ds_fieldset_close();
+
+    echo '<div class="rs-ds-serp" data-rs-serp="' . esc_attr($locale) . '">';
+    echo '<p class="rs-ds-label" style="margin-bottom:var(--rs-space-2);">Prévia no Google</p>';
+    echo '<div class="rs-ds-serp__preview">';
+    echo '<p class="rs-ds-serp__url">regularswitch.com › …</p>';
+    echo '<p class="rs-ds-serp__title" data-rs-serp-out-title>' . esc_html($serp_title) . '</p>';
+    echo '<p class="rs-ds-serp__desc" data-rs-serp-out-desc>' . esc_html($serp_desc) . '</p>';
+    echo '</div>';
+    echo '</div>';
 }
 
 function rs_seo_render_meta_box(WP_Post $post): void {
@@ -170,25 +185,28 @@ function rs_seo_render_meta_box(WP_Post $post): void {
     $id = rs_seo_resolve_post_id((int) $post->ID);
     $data = rs_seo_i18n_get($id);
 
-    echo '<p style="margin-top:0;color:#646970;">Campos usados pelo site headless (Next.js). Se vazios, o front usa um fallback genérico.</p>';
-    if (function_exists('rs_plugin_version_markup')) {
-        echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">' . rs_plugin_version_markup() . '</p>';
-    }
+    echo '<div class="rs-ds-editor rs-seo-editor">';
+    rs_ds_alert('Campos usados pelo site headless (Next.js). Se vazios, o front usa um fallback genérico.', 'info');
 
-    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
-    echo '<div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
-    echo '</div>';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
 
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_panel_open('en', true);
     rs_seo_render_locale_fields('en', $data['locales']['en']);
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
+    rs_seo_render_locale_fields('pt', $data['locales']['pt']);
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
     echo '</div>';
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
-    rs_seo_render_locale_fields('pt', $data['locales']['pt']);
-    echo '</div>';
-    echo '</div>';
+    static $serp_js = false;
+    if ($serp_js) {
+        return;
+    }
+    $serp_js = true;
+    echo '<script>(function(){function sync(el){var loc=el.getAttribute("data-rs-serp-title")||el.getAttribute("data-rs-serp-desc");if(!loc)return;var box=document.querySelector(\'[data-rs-serp="\'+loc+\'"]\');if(!box)return;var t=document.getElementById("rs_seo_title_"+loc);var d=document.getElementById("rs_seo_desc_"+loc);var ot=box.querySelector("[data-rs-serp-out-title]");var od=box.querySelector("[data-rs-serp-out-desc]");if(ot&&t)ot.textContent=t.value.trim()||"Título da página";if(od&&d)od.textContent=d.value.trim()||"A meta description aparece aqui nos resultados de busca.";}document.addEventListener("input",function(e){var t=e.target;if(t&&(t.matches(".rs-seo-title-input")||t.matches(".rs-seo-desc-input")))sync(t);});})();</script>';
 }
 
 /**

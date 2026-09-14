@@ -1,7 +1,7 @@
 <?php
 /**
  * Design System do Regular CMS (admin).
- * FASE 2: tokens light/dark + componentes base — sem redesign de telas de conteúdo.
+ * Design System preview — tokens light/dark + componentes do admin.
  */
 
 if (defined('RS_ADMIN_DS_LOADED')) {
@@ -153,7 +153,7 @@ function rs_admin_ds_render_preview_page(): void {
 			<div>
 				<p class="rs-ds-breadcrumb">Sistema / Design System</p>
 				<h1 class="rs-ds-page-title">Regular CMS · Design System</h1>
-				<p class="rs-ds-page-desc">FASE 2 — tokens e componentes base. Telas de conteúdo ainda não foram redesenhadas.</p>
+				<p class="rs-ds-page-desc">Tokens, componentes e padrões usados nos metaboxes do Conteúdo (Intro, Capacidades, Projeto, SEO, etc.).</p>
 			</div>
 			<div class="rs-ds-page-actions">
 				<button type="button" class="rs-ds-btn rs-ds-btn--secondary rs-ds-theme-cycle">Alternar tema</button>

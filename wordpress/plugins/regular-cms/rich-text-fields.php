@@ -119,17 +119,17 @@ function rs_field_rich_text_profile(string $key): string {
 }
 
 function rs_render_admin_text_field(string $id, string $name, string $label, string $value): void {
-    echo '<p class="rs-admin-text-field" style="margin:0 0 10px;">';
-    echo '<label for="' . esc_attr($id) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
+    echo '<div class="rs-ds-field rs-admin-text-field">';
+    echo '<label class="rs-ds-label" for="' . esc_attr($id) . '">' . esc_html($label) . '</label>';
 
     if (rs_field_is_plain_text_key($name) || rs_field_is_href_key($name)) {
-        echo '<input type="text" style="width:100%;" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
-        echo '</p>';
+        echo '<input type="text" class="rs-ds-input" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
+        echo '</div>';
         return;
     }
 
     rs_render_rich_text_field($id, $name, $value, rs_field_rich_text_profile($name));
-    echo '</p>';
+    echo '</div>';
 }
 
 /**

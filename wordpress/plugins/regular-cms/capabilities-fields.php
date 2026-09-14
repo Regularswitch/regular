@@ -449,12 +449,11 @@ function rs_capabilities_render_section_row(
             <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-cap-remove-section">Remover</button>
         </div>
         <div class="rs-metabox-accordion-panel">
-            <div style="margin:0 0 12px;">
-                <label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>
+            <div class="rs-ds-field" style="margin:0 0 12px;">
+                <label class="rs-ds-label">Título</label>
                 <input
                     type="text"
-                    style="width:100%;"
-                    class="rs-metabox-accordion-title rs-cap-section-title"
+                    class="rs-ds-input rs-metabox-accordion-title rs-cap-section-title"
                     <?php if (!$is_template) : ?>
                         name="<?php echo esc_attr($name_prefix); ?>[title]"
                         value="<?php echo esc_attr(wp_strip_all_tags($title)); ?>"
@@ -463,12 +462,12 @@ function rs_capabilities_render_section_row(
                 />
             </div>
 
-            <div style="margin:0 0 12px;">
-                <label style="display:block;font-weight:500;margin-bottom:4px;">Texto</label>
+            <div class="rs-ds-field" style="margin:0 0 12px;">
+                <label class="rs-ds-label">Texto</label>
                 <?php if ($is_template) : ?>
                     <textarea
-                        class="rs-cap-section-text large-text"
-                        style="width:100%;min-height:120px;"
+                        class="rs-cap-section-text rs-ds-textarea"
+                        rows="5"
                         id="<?php echo esc_attr($editor_id); ?>"
                     ></textarea>
                 <?php else : ?>
@@ -486,32 +485,32 @@ function rs_capabilities_render_section_row(
             );
             ?>
 
-            <div style="margin:12px 0 0;display:grid;gap:12px;grid-template-columns:1fr 1fr;">
-                <div>
-                    <label style="display:block;font-weight:500;margin-bottom:4px;">Slug do projeto (link)</label>
+            <div class="rs-ds-grid rs-ds-grid--2" style="margin-top:12px;">
+                <div class="rs-ds-field">
+                    <label class="rs-ds-label">Slug do projeto (link)</label>
                     <input
                         type="text"
-                        style="width:100%;"
+                        class="rs-ds-input"
                         <?php if (!$is_template) : ?>
                             name="<?php echo esc_attr($name_prefix); ?>[related_project_slug]"
                             value="<?php echo esc_attr($related_project); ?>"
                         <?php endif; ?>
                         placeholder="ex: cine-joia"
                     />
-                    <p style="margin:4px 0 0;color:#646970;font-size:12px;">Liga a imagem ao projeto.</p>
+                    <p class="rs-ds-help">Liga a imagem ao projeto.</p>
                 </div>
-                <div>
-                    <label style="display:block;font-weight:500;margin-bottom:4px;">Slug da categoria (arquivo)</label>
+                <div class="rs-ds-field">
+                    <label class="rs-ds-label">Slug da categoria (arquivo)</label>
                     <input
                         type="text"
-                        style="width:100%;"
+                        class="rs-ds-input"
                         <?php if (!$is_template) : ?>
                             name="<?php echo esc_attr($name_prefix); ?>[related_category_slug]"
                             value="<?php echo esc_attr($related_category); ?>"
                         <?php endif; ?>
                         placeholder="ex: identidade-visual"
                     />
-                    <p style="margin:4px 0 0;color:#646970;font-size:12px;">Link “ver projetos” da tag.</p>
+                    <p class="rs-ds-help">Link “ver projetos” da tag.</p>
                 </div>
             </div>
         </div>
@@ -531,20 +530,18 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
         $sections = [['title' => '', 'text' => '', 'image_id' => 0]];
     }
 
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Headline</strong></legend>';
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field(
         $headline_id,
         $headline_name,
         (string) ($loc['headline'] ?? ''),
         'inline',
     );
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Use o botão <strong>B</strong> para destacar palavras.</p>';
-    echo '</fieldset>';
+    rs_ds_help('Use o botão B para destacar palavras.');
+    rs_ds_fieldset_close();
 
     echo '<div id="rs-cap-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
-    echo '<fieldset class="rs-metabox-fieldset">';
-    echo '<legend><strong>Seções</strong></legend>';
+    rs_ds_fieldset_open('Seções');
     echo '<div id="rs-cap-sections-list-' . esc_attr($locale) . '" data-rs-accordion-list>';
     foreach ($sections as $index => $section) {
         rs_capabilities_render_section_row((int) $index, $section, false, $locale);
@@ -558,11 +555,11 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
         $locale
     );
     echo '</div>';
-    echo '<p style="margin:12px 0 0;">';
+    echo '<p class="rs-ds-actions">';
     echo '<button type="button" class="button button-secondary rs-cap-add-section" data-locale="' . esc_attr($locale) . '">+ Adicionar seção</button>';
     echo '</p>';
     echo '<input type="hidden" id="rs-cap-sections-' . esc_attr($locale) . '-json" name="rs_cap_sections_' . esc_attr($locale) . '_json" value="" />';
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
     echo '</div>';
 
     $faq_title = (string) ($loc['faqTitle'] ?? '');
@@ -571,36 +568,45 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
         $faq_items = [['question' => '', 'answer' => '']];
     }
 
-    echo '<fieldset class="rs-metabox-fieldset" style="margin-top:16px;">';
-    echo '<legend><strong>Perguntas frequentes (FAQ · AEO)</strong></legend>';
-    echo '<p style="margin:0 0 12px;color:#646970;font-size:12px;">Gera a seção na página e o schema <code>FAQPage</code>.</p>';
-    echo '<p style="margin:0 0 12px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Título da seção</label>';
-    echo '<input type="text" class="large-text" name="rs_cap_i18n[' . esc_attr($locale) . '][faqTitle]" value="' . esc_attr($faq_title) . '" placeholder="Perguntas frequentes" /></p>';
+    rs_ds_fieldset_open('Perguntas frequentes (FAQ · AEO)');
+    rs_ds_help('Gera a seção na página e o schema FAQPage.');
+    echo '<div class="rs-ds-field" style="margin:0 0 12px;">';
+    echo '<label class="rs-ds-label">Título da seção</label>';
+    echo '<input type="text" class="rs-ds-input" name="rs_cap_i18n[' . esc_attr($locale) . '][faqTitle]" value="' . esc_attr($faq_title) . '" placeholder="Perguntas frequentes" />';
+    echo '</div>';
 
     echo '<div id="rs-cap-faq-list-' . esc_attr($locale) . '">';
     foreach ($faq_items as $fi => $faq) {
         $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $fi . ']';
-        echo '<div class="rs-cap-faq-row" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin:0 0 10px;background:#fff;">';
-        echo '<p style="margin:0 0 8px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Pergunta</label>';
-        echo '<input type="text" class="large-text" name="' . esc_attr($prefix) . '[question]" value="' . esc_attr((string) ($faq['question'] ?? '')) . '" /></p>';
-        echo '<p style="margin:0;"><label style="display:block;font-weight:500;margin-bottom:4px;">Resposta</label>';
-        echo '<textarea class="large-text" rows="3" name="' . esc_attr($prefix) . '[answer]">' . esc_textarea((string) ($faq['answer'] ?? '')) . '</textarea></p>';
+        echo '<div class="rs-cap-faq-row rs-ds-faq-row">';
+        echo '<div class="rs-ds-field" style="margin:0 0 8px;">';
+        echo '<label class="rs-ds-label">Pergunta</label>';
+        echo '<input type="text" class="rs-ds-input" name="' . esc_attr($prefix) . '[question]" value="' . esc_attr((string) ($faq['question'] ?? '')) . '" />';
+        echo '</div>';
+        echo '<div class="rs-ds-field">';
+        echo '<label class="rs-ds-label">Resposta</label>';
+        echo '<textarea class="rs-ds-textarea" rows="3" name="' . esc_attr($prefix) . '[answer]">' . esc_textarea((string) ($faq['answer'] ?? '')) . '</textarea>';
+        echo '</div>';
         echo '</div>';
     }
     echo '</div>';
-    echo '<p style="margin:8px 0 0;color:#646970;font-size:12px;">Para adicionar mais itens, salve e reabra — ou duplique uma linha vazia no próximo save com campos extras (até 12). Preencha só o que for usar.</p>';
+    rs_ds_help('Slots extras abaixo (até 12). Preencha só o que for usar.');
 
     // Slots extras vazios para novas perguntas sem JS.
     for ($extra = count($faq_items); $extra < max(count($faq_items) + 2, 3) && $extra < 12; $extra++) {
         $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $extra . ']';
-        echo '<div class="rs-cap-faq-row" style="border:1px dashed #c3c4c7;border-radius:4px;padding:12px;margin:0 0 10px;background:#f6f7f7;">';
-        echo '<p style="margin:0 0 8px;"><label style="display:block;font-weight:500;margin-bottom:4px;">Pergunta (nova)</label>';
-        echo '<input type="text" class="large-text" name="' . esc_attr($prefix) . '[question]" value="" /></p>';
-        echo '<p style="margin:0;"><label style="display:block;font-weight:500;margin-bottom:4px;">Resposta</label>';
-        echo '<textarea class="large-text" rows="2" name="' . esc_attr($prefix) . '[answer]"></textarea></p>';
+        echo '<div class="rs-cap-faq-row rs-ds-faq-row rs-ds-faq-row--new">';
+        echo '<div class="rs-ds-field" style="margin:0 0 8px;">';
+        echo '<label class="rs-ds-label">Pergunta (nova)</label>';
+        echo '<input type="text" class="rs-ds-input" name="' . esc_attr($prefix) . '[question]" value="" />';
+        echo '</div>';
+        echo '<div class="rs-ds-field">';
+        echo '<label class="rs-ds-label">Resposta</label>';
+        echo '<textarea class="rs-ds-textarea" rows="2" name="' . esc_attr($prefix) . '[answer]"></textarea>';
+        echo '</div>';
         echo '</div>';
     }
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 }
 
 function rs_capabilities_render_meta_box(WP_Post $post): void {
@@ -611,20 +617,20 @@ function rs_capabilities_render_meta_box(WP_Post $post): void {
         : (int) $post->ID;
     $i18n = rs_capabilities_i18n_get($canonical);
 
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite <strong>English</strong> e <strong>Português</strong> nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<div class="rs-metabox-tabs" data-rs-tabs>';
-    echo '<div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button>';
-    echo '</div>';
+    echo '<div class="rs-ds-editor rs-cap-editor">';
+    rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
 
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_capabilities_render_locale_fields('en', $i18n['locales']['en']);
-    echo '</div>';
+    rs_ds_locale_panel_close();
 
-    echo '<div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_open('pt', false);
     rs_capabilities_render_locale_fields('pt', $i18n['locales']['pt']);
-    echo '</div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
     echo '</div>';
 }
 

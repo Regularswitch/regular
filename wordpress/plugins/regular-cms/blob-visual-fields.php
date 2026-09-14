@@ -286,18 +286,18 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
 
     ?>
     <style>
-        .rs-blob-help { margin: 0 0 16px; color: #646970; }
-        .rs-blob-hint { margin: 8px 0 0; color: #646970; font-size: 12px; }
+        .rs-blob-help { margin: 0 0 16px; color: var(--rs-text-muted, #646970); }
+        .rs-blob-hint { margin: 8px 0 0; color: var(--rs-text-muted, #646970); font-size: 12px; }
         .rs-blob-field { margin: 0 0 18px; }
-        .rs-blob-label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .rs-blob-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--rs-text, #1d2327); }
         .rs-blob-toolbar {
             display: inline-flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 8px;
             padding: 10px 12px;
-            border-radius: 999px;
-            background: #18181b;
+            border-radius: var(--rs-radius-lg, 12px);
+            background: var(--rs-text, #18181b);
             box-shadow: 0 1px 0 rgb(0 0 0 / 0.08);
             max-width: 100%;
         }

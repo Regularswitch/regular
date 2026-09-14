@@ -3,7 +3,7 @@
  * Plugin Name: Regular CMS
  * Plugin URI:  https://regularswitch.com
  * Description: CPTs, meta boxes, i18n EN/PT e REST (api-etc/v2/all-posts) do site Regular Switch.
- * Version:     1.5.41
+ * Version:     1.5.45
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Regular
@@ -65,15 +65,16 @@ function rs_render_language_column(string $column_name, int $post_ID): void {
         $post_type === 'project'
         || (function_exists('rs_section_i18n_is_migrated_type') && rs_section_i18n_is_migrated_type((string) $post_type))
     ) {
-        echo '<strong>EN</strong> · <strong>PT</strong>';
-        echo '<span style="display:block;color:#646970;font-size:11px;margin-top:2px;">post único</span>';
+        echo '<span class="rs-ds-badge rs-ds-badge--info">EN</span> ';
+        echo '<span class="rs-ds-badge rs-ds-badge--info">PT</span>';
+        echo '<span class="rs-ds-help" style="display:block;margin-top:4px;">post único</span>';
         return;
     }
 
     // Fallback raro (CPTs ainda com gêmeos). Marcas não usam esta coluna.
     $badge = rs_project_locale_badge($post_ID);
     $opposite = $badge === 'PT' ? 'EN' : 'PT';
-    echo '<strong style="margin-right:8px;">' . esc_html($badge) . '</strong>';
+    echo '<span class="rs-ds-badge rs-ds-badge--success">' . esc_html($badge) . '</span> ';
 
     $wp_rest_nonce = wp_create_nonce('wp_rest');
     $rs_nonce = wp_create_nonce('rs_translate_proxy_' . $post_ID);

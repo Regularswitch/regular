@@ -203,27 +203,27 @@ function rs_legal_render_locale_fields(string $locale, array $loc): void {
     echo '<div data-rs-accordion class="rs-legal-accordion">';
 
     rs_metabox_accordion_item_open('Política de privacidade', true);
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Título</label>';
     rs_render_rich_text_field('rs_legal_privacy_title_' . $locale, $prefix . '[privacyTitle]', (string) $loc['privacyTitle'], 'compact');
-    echo '</p>';
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Corpo</label>';
+    echo '</div>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Corpo</label>';
     rs_render_rich_text_field('rs_legal_privacy_body_' . $locale, $prefix . '[privacyBody]', (string) $loc['privacyBody'], 'paragraph');
-    echo '</p>';
+    echo '</div>';
     rs_metabox_accordion_item_close();
 
     rs_metabox_accordion_item_open('Popup de cookies', false);
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Título do modal</label>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Título do modal</label>';
     rs_render_rich_text_field('rs_legal_cookies_modal_title_' . $locale, $prefix . '[cookiesModalTitle]', (string) $loc['cookiesModalTitle'], 'compact');
-    echo '</p>';
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Introdução (opcional)</label>';
+    echo '</div>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Introdução (opcional)</label>';
     rs_render_rich_text_field('rs_legal_cookies_intro_' . $locale, $prefix . '[cookiesIntro]', (string) $loc['cookiesIntro'], 'paragraph');
-    echo '</p>';
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Botão rejeitar</label>';
+    echo '</div>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Botão rejeitar</label>';
     rs_render_rich_text_field('rs_legal_reject_' . $locale, $prefix . '[rejectAllLabel]', (string) $loc['rejectAllLabel'], 'compact');
-    echo '</p>';
-    echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Botão enviar</label>';
+    echo '</div>';
+    echo '<div class="rs-ds-field"><label class="rs-ds-label">Botão enviar</label>';
     rs_render_rich_text_field('rs_legal_submit_' . $locale, $prefix . '[submitLabel]', (string) $loc['submitLabel'], 'compact');
-    echo '</p>';
+    echo '</div>';
     rs_metabox_accordion_item_close();
 
     foreach ((array) $loc['categories'] as $cat) {
@@ -231,16 +231,17 @@ function rs_legal_render_locale_fields(string $locale, array $loc): void {
         $cat_prefix = $prefix . '[categories][' . $id . ']';
         rs_metabox_accordion_item_open((string) $cat['title'] . ' (' . $id . ')', false);
         echo '<input type="hidden" name="' . esc_attr($cat_prefix . '[id]') . '" value="' . esc_attr($id) . '" />';
-        echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Título</label>';
+        echo '<div class="rs-ds-field"><label class="rs-ds-label">Título</label>';
         rs_render_rich_text_field('rs_legal_cat_title_' . $locale . '_' . $id, $cat_prefix . '[title]', (string) $cat['title'], 'compact');
-        echo '</p>';
-        echo '<p class="rs-admin-text-field"><label style="display:block;font-weight:500;margin-bottom:4px;">Descrição</label>';
+        echo '</div>';
+        echo '<div class="rs-ds-field"><label class="rs-ds-label">Descrição</label>';
         rs_render_rich_text_field('rs_legal_cat_' . $locale . '_' . $id, $cat_prefix . '[description]', (string) $cat['description'], 'paragraph');
-        echo '</p>';
+        echo '</div>';
         if (empty($cat['locked'])) {
             echo '<p><label><input type="checkbox" name="' . esc_attr($cat_prefix . '[defaultOn]') . '" value="1"' . checked(!empty($cat['defaultOn']), true, false) . ' /> Ligado por padrão</label></p>';
         } else {
-            echo '<input type="hidden" name="' . esc_attr($cat_prefix . '[defaultOn]') . '" value="1" /><p style="color:#646970;">Categoria obrigatória.</p>';
+            echo '<input type="hidden" name="' . esc_attr($cat_prefix . '[defaultOn]') . '" value="1" />';
+            rs_ds_help('Categoria obrigatória.');
         }
         rs_metabox_accordion_item_close();
     }
@@ -252,15 +253,22 @@ function rs_legal_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_legal_save', 'rs_legal_nonce');
     $id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
     $data = rs_legal_i18n_get($id);
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Edite English e Português nas abas. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+
+    echo '<div class="rs-ds-editor rs-legal-editor">';
+    rs_ds_alert('Um único post. Edite English e Português nas abas.', 'info');
+
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_legal_render_locale_fields('en', $data['locales']['en']);
-    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
     rs_legal_render_locale_fields('pt', $data['locales']['pt']);
-    echo '</div></div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
+    echo '</div>';
 }
 
 add_action('save_post_legal', function (int $post_id) {

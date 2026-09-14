@@ -308,22 +308,23 @@ add_action('add_meta_boxes_contact', function () {
 
 function rs_contact_render_text_field(string $name, string $label, string $value, string $field_key, string $locale): void {
     $id = 'rs_contact_' . $locale . '_' . $field_key;
-    echo '<p class="rs-admin-text-field" style="margin:0 0 12px;"><label for="' . esc_attr($id) . '" style="display:block;font-weight:500;margin-bottom:4px;">' . esc_html($label) . '</label>';
+    echo '<div class="rs-ds-field">';
+    echo '<label class="rs-ds-label" for="' . esc_attr($id) . '">' . esc_html($label) . '</label>';
     if (rs_contact_info_is_plain_key($field_key)) {
-        echo '<input type="text" class="widefat" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
+        echo '<input type="text" class="rs-ds-input widefat" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" />';
     } else {
         $profile = str_contains($field_key, '_text') ? 'paragraph' : 'compact';
         rs_render_rich_text_field($id, $name, $value, $profile);
     }
-    echo '</p>';
+    echo '</div>';
 }
 
 function rs_contact_render_locale_fields(string $locale, array $loc): void {
     $info = rs_contact_normalize_info((array) ($loc['info'] ?? []), $locale);
     $prefix = 'rs_contact_i18n_input[' . $locale . ']';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Headline</strong></legend>';
+    rs_ds_fieldset_open('Headline');
     rs_render_rich_text_field('rs_contact_headline_' . $locale, $prefix . '[headline]', (string) ($loc['headline'] ?? ''), 'compact');
-    echo '</fieldset>';
+    rs_ds_fieldset_close();
 
     $groups = [
         'Contato' => ['contact_title' => 'Título', 'contact_location' => 'Cidade / localização', 'contact_phone' => 'Telefone (exibição)', 'contact_phone_tel' => 'Telefone para o link (só números)', 'contact_email' => 'E-mail'],
@@ -349,8 +350,11 @@ function rs_contact_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_contact_save', 'rs_contact_nonce');
     $id = function_exists('rs_section_i18n_resolve_id') ? rs_section_i18n_resolve_id((int) $post->ID) : (int) $post->ID;
     $data = rs_contact_i18n_get($id);
-    echo '<p style="margin-top:0;color:#646970;">Um único post. Hero compartilhado; textos em English e Português. ' . (function_exists('rs_plugin_version_markup') ? rs_plugin_version_markup() : '') . '</p>';
-    echo '<fieldset class="rs-metabox-fieldset"><legend><strong>Hero compartilhado</strong></legend>';
+
+    echo '<div class="rs-ds-editor rs-contact-editor">';
+    rs_ds_alert('Um único post. Hero compartilhado; textos em English e Português.', 'info');
+
+    rs_ds_fieldset_open('Hero compartilhado');
     rs_section_shared_hero_render_fields(
         $id,
         $data['shared'],
@@ -363,15 +367,20 @@ function rs_contact_render_meta_box(WP_Post $post): void {
         'Imagem',
         'Vídeo (mp4) — opcional'
     );
-    echo '</fieldset>';
-    echo '<div class="rs-metabox-tabs" data-rs-tabs><div class="rs-metabox-tablist" role="tablist">';
-    echo '<button type="button" class="rs-metabox-tab is-active" role="tab" aria-selected="true" data-tab="en">English</button>';
-    echo '<button type="button" class="rs-metabox-tab" role="tab" aria-selected="false" data-tab="pt">Português</button></div>';
-    echo '<div class="rs-metabox-tabpanel is-active" data-tab="en" role="tabpanel">';
+    rs_ds_fieldset_close();
+
+    rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
+
+    rs_ds_locale_panel_open('en', true);
     rs_contact_render_locale_fields('en', $data['locales']['en']);
-    echo '</div><div class="rs-metabox-tabpanel" data-tab="pt" role="tabpanel" hidden>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_panel_open('pt', false);
     rs_contact_render_locale_fields('pt', $data['locales']['pt']);
-    echo '</div></div>';
+    rs_ds_locale_panel_close();
+
+    rs_ds_locale_tabs_close();
+    echo '</div>';
 }
 
 add_action('save_post_contact', function (int $post_id) {
