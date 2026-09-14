@@ -141,16 +141,7 @@ add_action('admin_bar_menu', function (WP_Admin_Bar $bar): void {
 	}
 }, 80);
 
-/** Página de preview do Design System (validação FASE 2). */
-add_action('admin_menu', function (): void {
-	add_management_page(
-		'Regular Design System',
-		'Regular Design System',
-		'manage_options',
-		'rs-design-system',
-		'rs_admin_ds_render_preview_page'
-	);
-});
+/** Página de preview do Design System — registrada no menu Sistema (admin-shell). */
 
 function rs_admin_ds_render_preview_page(): void {
 	if (!current_user_can('manage_options')) {
@@ -160,7 +151,7 @@ function rs_admin_ds_render_preview_page(): void {
 	<div class="wrap rs-ds-preview">
 		<header class="rs-ds-page-header">
 			<div>
-				<p class="rs-ds-breadcrumb">Ferramentas / Design System</p>
+				<p class="rs-ds-breadcrumb">Sistema / Design System</p>
 				<h1 class="rs-ds-page-title">Regular CMS · Design System</h1>
 				<p class="rs-ds-page-desc">FASE 2 — tokens e componentes base. Telas de conteúdo ainda não foram redesenhadas.</p>
 			</div>

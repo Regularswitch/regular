@@ -3,7 +3,7 @@
  * Plugin Name: Regular CMS
  * Plugin URI:  https://regularswitch.com
  * Description: CPTs, meta boxes, i18n EN/PT e REST (api-etc/v2/all-posts) do site Regular Switch.
- * Version:     1.5.23
+ * Version:     1.5.41
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Regular
@@ -170,46 +170,6 @@ function rs_brand_disable_twins_once(): void {
 add_action('init', 'rs_brand_disable_twins_once', 20);
 
 add_action('admin_footer', 'rs_link_translate_script');
-
-/**
- * Separadores no menu admin: antes e depois dos CPTs do site.
- */
-function rs_admin_menu_separator(int $position, string $slug): void {
-    global $menu;
-
-    $menu[$position] = ['', 'read', 'separator' . $slug, '', 'wp-menu-separator rs-admin-menu-separator'];
-}
-
-add_action('admin_menu', function () {
-    rs_admin_menu_separator(26, 'rs-before-site-content');
-    rs_admin_menu_separator(37, 'rs-after-site-content');
-}, PHP_INT_MAX);
-
-add_action('admin_head', function () {
-    ?>
-    <style>
-        #adminmenu .wp-menu-separator.rs-admin-menu-separator {
-            display: block;
-            height: 1px;
-            margin: 8px 0;
-            padding: 0;
-            cursor: default;
-            pointer-events: none;
-        }
-
-        #adminmenu .wp-menu-separator.rs-admin-menu-separator .separator {
-            display: block;
-            height: 1px;
-            margin: 0 8px;
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        #adminmenu.folded .wp-menu-separator.rs-admin-menu-separator .separator {
-            margin: 0 4px;
-        }
-    </style>
-    <?php
-});
 
 add_filter( 'the_content', function( $content ) {
     if( _getLang() ) {

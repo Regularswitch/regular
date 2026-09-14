@@ -892,11 +892,16 @@ body.rs-ds-ready .rs-admin-notice-bell:focus {
 }
 
 /* Preview page background follows theme */
-body.tools_page_rs-design-system #wpcontent {
+body.tools_page_rs-design-system #wpcontent,
+body.admin_page_rs-design-system #wpcontent,
+body.rs-system_page_rs-design-system #wpcontent,
+body.toplevel_page_rs-design-system #wpcontent {
 	background: var(--rs-bg);
 }
 
-body.tools_page_rs-design-system #wpbody-content > .wrap.rs-ds-preview {
+body.tools_page_rs-design-system #wpbody-content > .wrap.rs-ds-preview,
+body.admin_page_rs-design-system #wpbody-content > .wrap.rs-ds-preview,
+body.rs-system_page_rs-design-system #wpbody-content > .wrap.rs-ds-preview {
 	margin-top: 12px;
 }
 
