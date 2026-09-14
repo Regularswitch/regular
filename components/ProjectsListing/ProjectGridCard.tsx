@@ -61,7 +61,7 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 							height={isFeatured ? 600 : isQuarter ? 800 : 900}
 							unoptimized={isGifUrl(cardImage)}
 							onLoadingComplete={() => setImageLoaded(true)}
-							className={`selected-projects-card-media h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]${
+							className={`selected-projects-card-media h-full w-full object-cover${
 								imageLoaded ? ' is-visible' : ''
 							}`}
 						/>

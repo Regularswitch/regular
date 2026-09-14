@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import type { ProjectsPageContent } from '../../lib/content/projects-page/defaults';
 import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects } from '../../types';
-import LatestProjects from '../LatestProjects/LatestProjects';
 import { useSiteUiLayout } from '../SiteUi/SiteUiProvider';
 import ProjectsGridSection from './ProjectsGridSection';
 import ProjectsListingHero from './ProjectsListingHero';
@@ -46,8 +45,6 @@ export default function ProjectsListing({ projects, categories, content, locale 
 				initialCount={layout.projectsInitialCount}
 				hrefForSlug={(slug) => projectHref(slug, locale)}
 			/>
-
-			<LatestProjects projects={sorted} locale={locale} />
 
 			<div className="h-10" />
 		</>

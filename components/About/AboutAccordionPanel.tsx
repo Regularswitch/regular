@@ -84,7 +84,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 							<div className={`accordion-panel${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
 								<div className="accordion-panel-inner">
 									<div
-										className="accordion-panel-content project-accordion-body pb-5 text-sm leading-relaxed text-(--muted) md:text-base"
+										className="accordion-panel-content project-accordion-body pb-5 text-(--muted)"
 										dangerouslySetInnerHTML={{ __html: section.body }}
 									/>
 								</div>

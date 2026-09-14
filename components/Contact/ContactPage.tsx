@@ -28,7 +28,7 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 								{block.title}
 							</h2>
 							<div
-								className="contact-block-body mt-5 font-hk text-lg leading-[1.65] text-(--muted) md:mt-6 md:text-xl md:leading-[1.7]"
+								className="contact-block-body mt-5 font-hk text-(--muted) md:mt-6"
 								dangerouslySetInnerHTML={{ __html: block.body }}
 							/>
 						</div>

@@ -33,7 +33,7 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 				/>
 
 				<div
-					className="about-body intro-body mt-8 min-w-0 max-w-none font-hk text-base leading-relaxed md:mt-0 md:text-lg"
+					className="about-body intro-body mt-8 min-w-0 max-w-none font-hk md:mt-0"
 					dangerouslySetInnerHTML={{ __html: content.body }}
 				/>
 			</section>

@@ -115,7 +115,7 @@ function LatestProjectCard({ project, href }: { project: Project; href: string }
 						height={640}
 						sizes="(max-width: 768px) 70vw, 25vw"
 						unoptimized={isGifUrl(cardImage)}
-						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+						className="h-full w-full object-cover"
 					/>
 				) : null}
 				{project.title ? (

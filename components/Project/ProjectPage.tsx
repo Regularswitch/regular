@@ -119,7 +119,7 @@ export default function ProjectPage({ project, meta, latestProjects, locale = 'e
 								) : null}
 								{summary ? (
 									<div
-										className="project-summary mt-4 min-w-0 font-hk text-[clamp(1rem,2.4vw,1.25rem)] font-normal leading-[1.35] tracking-[-0.01em] text-(--muted) md:mt-5"
+										className="project-summary mt-4 min-w-0 font-hk text-(--muted) md:mt-5"
 										dangerouslySetInnerHTML={{ __html: summary }}
 									/>
 								) : null}

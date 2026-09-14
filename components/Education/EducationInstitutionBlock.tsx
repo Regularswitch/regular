@@ -47,7 +47,7 @@ export default function EducationInstitutionBlock({ institution }: EducationInst
 
 			{institution.description ? (
 				<div
-					className="education-institution-description font-hk text-sm leading-relaxed text-(--fg) md:text-base md:leading-[1.65]"
+					className="education-institution-description font-hk text-(--fg)"
 					dangerouslySetInnerHTML={{ __html: institution.description }}
 				/>
 			) : null}

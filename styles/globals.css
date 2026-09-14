@@ -184,6 +184,35 @@ html:not(.dark) .brand-mark {
 	color: var(--muted);
 }
 
+/*
+ * Texto corrido do site (intro, about, capabilities, projetos, legal…):
+ * 20px / light — pedido editorial (antes 16px regular).
+ */
+.intro-body,
+.about-body,
+.capabilities-accordion-body,
+.capabilities-accordion-list,
+.project-accordion-body,
+.legal-content,
+.education-institution-description,
+.contact-block-body,
+.project-summary {
+	font-size: 1.25rem;
+	font-weight: 300;
+	line-height: 1.65;
+}
+
+.intro-body :where(strong, b),
+.about-body :where(strong, b),
+.capabilities-accordion-body :where(strong, b),
+.project-accordion-body :where(strong, b),
+.legal-content :where(strong, b),
+.education-institution-description :where(strong, b),
+.contact-block-body :where(strong, b),
+.project-summary :where(strong, b) {
+	font-weight: 500;
+}
+
 .intro-body p {
 	margin: 0;
 }
@@ -286,7 +315,7 @@ html:not(.dark) .brand-mark {
 }
 
 .selected-projects-card-image {
-	aspect-ratio: 4 / 3;
+	aspect-ratio: 1 / 1;
 	border-radius: var(--radius);
 	background: color-mix(in srgb, var(--fg) 6%, var(--surface));
 }
@@ -321,11 +350,22 @@ html:not(.dark) .brand-mark {
 	position: relative;
 	z-index: 2;
 	opacity: 0;
-	transition: opacity 0.45s ease;
+	transform: scale(1);
+	transform-origin: center center;
+	/* Usar transform (não a prop `scale` do Tailwind v4) para o hover animar de fato */
+	transition:
+		opacity 0.45s ease,
+		transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: transform;
 }
 
 .selected-projects-card-media.is-visible {
 	opacity: 1;
+}
+
+.selected-projects-item a:hover .selected-projects-card-media,
+.selected-projects-item a:focus-visible .selected-projects-card-media {
+	transform: scale(1.04);
 }
 
 .selected-projects-card-empty {
@@ -398,17 +438,23 @@ html:not(.dark) .brand-mark {
 
 	.selected-projects-card-media {
 		opacity: 1;
+		transform: none;
 		transition: none;
+		will-change: auto;
+	}
+
+	.selected-projects-item a:hover .selected-projects-card-media,
+	.selected-projects-item a:focus-visible .selected-projects-card-media {
+		transform: none;
 	}
 }
 
 /*
- * Destaque full-width: mesma altura visual de um card half (4/3)
- * em grid de 2 colunas → proporção ≈ 8/3 (largo).
+ * Destaque full-width na home: 16:9.
  */
 .selected-projects-item--featured .selected-projects-card-image,
 .selected-projects-item--full .selected-projects-card-image {
-	aspect-ratio: 8 / 3;
+	aspect-ratio: 16 / 9;
 }
 
 .selected-projects-tag {
@@ -428,10 +474,10 @@ html:not(.dark) .brand-mark {
 	justify-content: center;
 	border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent);
 	border-radius: 9999px;
-	padding: 0.65rem 1.75rem;
-	font-size: 0.6875rem;
+	padding: 0.8rem 2rem;
+	font-size: 1rem;
 	font-weight: 600;
-	letter-spacing: 0.12em;
+	letter-spacing: 0.08em;
 	/* text-transform: uppercase; */
 	color: var(--fg);
 	transition: opacity 0.2s ease, border-color 0.2s ease;
@@ -654,6 +700,18 @@ html:not(.dark) .brand-mark {
 	background: var(--surface);
 }
 
+.latest-projects-card-image img {
+	transform: scale(1);
+	transform-origin: center center;
+	transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: transform;
+}
+
+.latest-projects-card:hover .latest-projects-card-image img,
+.latest-projects-card:focus-visible .latest-projects-card-image img {
+	transform: scale(1.04);
+}
+
 .latest-projects-card-title {
 	position: absolute;
 	inset: auto 0 0;
@@ -682,6 +740,19 @@ html:not(.dark) .brand-mark {
 @media (hover: none) {
 	.latest-projects-card-title {
 		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.latest-projects-card-image img {
+		transform: none;
+		transition: none;
+		will-change: auto;
+	}
+
+	.latest-projects-card:hover .latest-projects-card-image img,
+	.latest-projects-card:focus-visible .latest-projects-card-image img {
 		transform: none;
 	}
 }
@@ -1848,16 +1919,16 @@ html:not(.dark) .brand-mark {
 .selected-projects-cta--full-mobile {
 	width: 100%;
 	max-width: 100%;
-	padding-top: 0.85rem;
-	padding-bottom: 0.85rem;
+	padding-top: 0.95rem;
+	padding-bottom: 0.95rem;
 }
 
 @media (min-width: 768px) {
 	.selected-projects-cta--full-mobile {
 		width: auto;
 		max-width: none;
-		padding-top: 0.65rem;
-		padding-bottom: 0.65rem;
+		padding-top: 0.8rem;
+		padding-bottom: 0.8rem;
 	}
 }
 

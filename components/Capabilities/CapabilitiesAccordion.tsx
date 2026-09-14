@@ -75,7 +75,7 @@ export default function CapabilitiesAccordion({
 
 											{section.body ? (
 												<div
-													className="capabilities-accordion-body mt-5 text-sm leading-relaxed text-(--muted) md:mt-6 md:text-base"
+													className="capabilities-accordion-body mt-5 text-(--muted) md:mt-6"
 													dangerouslySetInnerHTML={{ __html: section.body }}
 												/>
 											) : null}
@@ -87,7 +87,7 @@ export default function CapabilitiesAccordion({
 															{section.servicesTitle}
 														</p>
 													) : null}
-													<ul className="capabilities-accordion-list mt-3 space-y-1.5 text-sm text-(--muted) md:text-base">
+													<ul className="capabilities-accordion-list mt-3 space-y-1.5 text-(--muted)">
 														{section.services.map((service) => (
 															<li key={service}>{service}</li>
 														))}

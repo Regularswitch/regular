@@ -12,7 +12,7 @@ export default function LegalWpPage({ title, content }: LegalWpPageProps) {
 				</h1>
 			) : null}
 			<div
-				className="legal-content font-hk text-base leading-relaxed text-(--fg) [&_a]:underline [&_p+p]:mt-4"
+				className="legal-content font-hk text-(--fg) [&_a]:underline [&_p+p]:mt-4"
 				dangerouslySetInnerHTML={{ __html: content }}
 			/>
 		</article>

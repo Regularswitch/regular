@@ -29,7 +29,7 @@ export default function IntroSection({ intro, locale = 'en' }: IntroSectionProps
 			/>
 			{body ? (
 				<div
-					className="intro-body mt-8 max-w-4xl font-hk text-base leading-relaxed md:mt-12 md:text-lg lg:text-xl"
+					className="intro-body mt-8 max-w-4xl font-hk md:mt-12"
 					dangerouslySetInnerHTML={{ __html: body }}
 				/>
 			) : null}
