@@ -1,5 +1,5 @@
 import { tipoLinguagens } from "./Language"
-import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectMeta, type ProjectStructuredData, type Projects, type SiteUiContent } from '../types';
+import { type Brand, type BlobVisual, type CapabilitiesContent, type Category, type FooterContent, type Intro, type ProjectMeta, type ProjectStructuredData, type Projects, type SeoContent, type SiteUiContent } from '../types';
 import type { AboutContent } from '../lib/content/about/defaults';
 import type { ContactContent } from '../lib/content/contact/defaults';
 import type { EducationContent } from '../lib/content/education/defaults';
@@ -81,6 +81,7 @@ export type responseWp = {
     projects_page_data?: ProjectsPageContent
     site_ui_data?: SiteUiContent
     project_data?: ProjectStructuredData
+    seo_data?: SeoContent
     meta?: Record<string, string>
 }
 

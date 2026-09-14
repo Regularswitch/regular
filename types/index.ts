@@ -145,6 +145,12 @@ export type SiteUiContent = {
   layout?: SiteUiLayout;
 };
 
+/** SEO por página/projeto (vindo do CMS, locale da request). */
+export type SeoContent = {
+  title?: string;
+  description?: string;
+};
+
 export type BlobVisual = {
   /** Exibe o LiquidBlob3D no topo da home. */
   enabled?: boolean;

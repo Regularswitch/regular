@@ -31,6 +31,7 @@ require_once $rs_plugin_dir . '/legal-fields.php';
 require_once $rs_plugin_dir . '/projects-page-fields.php';
 require_once $rs_plugin_dir . '/site-ui-fields.php';
 require_once $rs_plugin_dir . '/blob-visual-fields.php';
+require_once $rs_plugin_dir . '/seo-fields.php';
 require_once $rs_plugin_dir . '/header-menus.php';
 
 // Projetos (CPT + i18n + meta boxes)

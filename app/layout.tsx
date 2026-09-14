@@ -14,7 +14,12 @@ import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
 
 export const metadata = {
-	title: 'Regular Switch',
+	title: {
+		default: 'RegularSwitch',
+		template: '%s',
+	},
+	description:
+		'Franco-Brazilian design studio based in São Paulo. Brand strategy, visual identity, branding and generative design.',
 };
 
 /** Permite dados frescos do WP (footer social, legal) em dev/local. */

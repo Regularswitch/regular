@@ -1,6 +1,10 @@
+import type { Metadata } from 'next';
+
 import { GetApi, GetMeta } from '../../../../components/ApiWp';
 import ProjectPage from '../../../../components/Project/ProjectPage';
 import { excludeProjectTranslationTwins } from '../../../../lib/projects/sort';
+import { fetchProjectSeo } from '../../../../lib/seo/fetch';
+import { buildPageMetadata, DEFAULT_SITE_NAME } from '../../../../lib/seo/metadata';
 import type { ProjectMeta, Projects } from '../../../../types';
 
 export const revalidate = 10;
@@ -9,6 +13,21 @@ export const dynamicParams = true;
 type PageProps = {
 	params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { slug } = await params;
+	const canonicalSlug = slug.replace(/-pt$/i, '');
+	const seo = await fetchProjectSeo(canonicalSlug, 'pt');
+	const fallbackTitle = seo.projectTitle
+		? `${seo.projectTitle} | ${DEFAULT_SITE_NAME}`
+		: DEFAULT_SITE_NAME;
+
+	return buildPageMetadata(seo, {
+		fallbackTitle,
+		locale: 'pt',
+		path: `/PT/project/${canonicalSlug}`,
+	});
+}
 
 export default async function PtProjectSlugPage({ params }: PageProps) {
 	const { slug } = await params;

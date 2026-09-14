@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 
 import AboutPage from '../../../components/About/AboutPage';
 import CapabilitiesPage from '../../../components/Capabilities/CapabilitiesPage';
@@ -20,6 +21,9 @@ import { fetchContactPage } from '../../../lib/fetch/contact';
 import { fetchEducationPage } from '../../../lib/fetch/education';
 import { fetchLegalPage } from '../../../lib/fetch/legal';
 import { fetchProjectsListingPage } from '../../../lib/fetch/projectsListing';
+import { fetchSectionSeo, sectionSeoFallbacks } from '../../../lib/seo/fetch';
+import { buildPageMetadata } from '../../../lib/seo/metadata';
+import { seoPostTypeForRouteSlug } from '../../../lib/seo/routeMap';
 
 export const revalidate = 10;
 export const dynamicParams = true;
@@ -27,6 +31,24 @@ export const dynamicParams = true;
 type PageProps = {
 	params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { slug } = await params;
+	const section = seoPostTypeForRouteSlug(slug);
+	if (!section) {
+		return buildPageMetadata({}, { fallbackTitle: 'RegularSwitch', locale: 'pt' });
+	}
+
+	const seo = await fetchSectionSeo(section, 'pt');
+	const fallback = sectionSeoFallbacks(section, 'pt');
+
+	return buildPageMetadata(seo, {
+		fallbackTitle: fallback.title,
+		fallbackDescription: fallback.description,
+		locale: 'pt',
+		path: `/PT/${slug}`,
+	});
+}
 
 export default async function PtSlugPage({ params }: PageProps) {
 	const { slug } = await params;

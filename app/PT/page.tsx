@@ -13,6 +13,8 @@ import SelectedProjects from '../../components/SelectedProjects/SelectedProjects
 import LatestProjects from '../../components/LatestProjects/LatestProjects';
 import LiquidBlob3D from '../../components/LiquidBlob3D/LiquidBlob3D';
 import { HOME_PROJECTS_CATEGORY_SLUG } from '../../lib/projects/categories';
+import { fetchSectionSeo, sectionSeoFallbacks } from '../../lib/seo/fetch';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 import { resolveBlobVisual } from '../../lib/site/blobDefaults';
 import { buildSiteUiContent, resolveSiteUi } from '../../lib/site/resolveSiteUi';
 import type { Brand, Category, Projects } from '../../types';
@@ -21,6 +23,17 @@ export const revalidate = 60;
 
 const HOME_SELECTED_COUNT = 5;
 const LATEST_FETCH_COUNT = 12;
+
+export async function generateMetadata() {
+	const seo = await fetchSectionSeo('intro', 'pt');
+	const fallback = sectionSeoFallbacks('intro', 'pt');
+	return buildPageMetadata(seo, {
+		fallbackTitle: fallback.title,
+		fallbackDescription: fallback.description,
+		locale: 'pt',
+		path: '/PT',
+	});
+}
 
 export default async function PtHomePage() {
 	const [homeProjects, latestProjects, allCat, brands, intro, siteUiRaw, blobVisualRaw] =
