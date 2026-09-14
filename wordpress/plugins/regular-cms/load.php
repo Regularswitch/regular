@@ -38,6 +38,7 @@ require_once $rs_plugin_dir . '/header-menus.php';
 // Projetos (CPT + i18n + meta boxes)
 require_once $rs_plugin_dir . '/project-cpt.php';
 require_once $rs_plugin_dir . '/project-fields.php';
+require_once $rs_plugin_dir . '/project-category-fields.php';
 require_once $rs_plugin_dir . '/project-i18n.php';
 require_once $rs_plugin_dir . '/project-media-protect.php';
 

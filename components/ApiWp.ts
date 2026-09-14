@@ -82,6 +82,12 @@ export type responseWp = {
     site_ui_data?: SiteUiContent
     project_data?: ProjectStructuredData
     seo_data?: SeoContent
+    category_seo?: {
+        seoTitle?: string
+        seoDescription?: string
+        h1?: string
+        intro?: string
+    }
     meta?: Record<string, string>
 }
 
@@ -116,11 +122,23 @@ export function porter(payloadWp: listResponseWp): Projects {
 }
 
 export function porterCategories(payloadWp: listResponseWp): Category[] {
-    return payloadWp.map((p) => ({
-        id: p.id,
-        title: p?.title?.rendered || p.name || '',
-        slug: p.slug || '',
-    }));
+    return payloadWp.map((p) => {
+        const seo = (p as { category_seo?: Record<string, unknown> }).category_seo;
+        const seoTitle = typeof seo?.seoTitle === 'string' ? seo.seoTitle.trim() : '';
+        const seoDescription = typeof seo?.seoDescription === 'string' ? seo.seoDescription.trim() : '';
+        const h1 = typeof seo?.h1 === 'string' ? seo.h1.trim() : '';
+        const intro = typeof seo?.intro === 'string' ? seo.intro.trim() : '';
+
+        return {
+            id: p.id,
+            title: p?.title?.rendered || p.name || '',
+            slug: p.slug || '',
+            ...(seoTitle ? { seoTitle } : {}),
+            ...(seoDescription ? { seoDescription } : {}),
+            ...(h1 ? { h1 } : {}),
+            ...(intro ? { intro } : {}),
+        };
+    });
 }
 
 async function fetchWpList(path: string, data: Record<string, string | number> = {}): Promise<listResponseWp> {
@@ -166,6 +184,20 @@ export async function GetCategoriesApi(
     data: Record<string, string | number> = {},
 ): Promise<Category[]> {
     return porterCategories(await fetchWpList(path, data));
+}
+
+/** Uma categoria por slug (com SEO do arquivo). */
+export async function GetCategoryBySlug(
+    slug: string,
+    data: Record<string, string | number> = {},
+): Promise<Category | null> {
+    if (!slug) return null;
+    const terms = await GetCategoriesApi('/project-category', {
+        slug,
+        per_page: 1,
+        ...data,
+    });
+    return terms[0] ?? null;
 }
 
 /** Projetos filtrados por slug da taxonomia `project-category` (ex.: `home`, `education`). */

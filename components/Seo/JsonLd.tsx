@@ -3,7 +3,7 @@ type JsonLdProps = {
 	data: Record<string, unknown> | null | undefined;
 };
 
-/** Injeta JSON-LD no documento (SEO / AEO / GEO). */
+/** Injeta JSON-LD no documento (SEO / AEO / GEO). Usar só em Server Components. */
 export default function JsonLd({ id, data }: JsonLdProps) {
 	if (!data || typeof data !== 'object') return null;
 
@@ -11,6 +11,7 @@ export default function JsonLd({ id, data }: JsonLdProps) {
 		<script
 			id={id}
 			type="application/ld+json"
+			suppressHydrationWarning
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
 		/>
 	);

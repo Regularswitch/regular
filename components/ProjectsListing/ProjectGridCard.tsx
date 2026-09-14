@@ -4,7 +4,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { getVisibleCategoryTags } from '../../lib/projects/categories';
+import {
+	categoryArchivePath,
+	getVisibleCategoryTags,
+} from '../../lib/projects/categories';
 import { getProjectHeroImage, isGifUrl } from '../../lib/projects/images';
 import type { Category, Project } from '../../types';
 import type { GridSpan } from './constants';
@@ -14,9 +17,16 @@ type ProjectGridCardProps = {
 	categories: Category[];
 	span: GridSpan;
 	href: string;
+	locale?: 'en' | 'pt';
 };
 
-export default function ProjectGridCard({ project, categories, span, href }: ProjectGridCardProps) {
+export default function ProjectGridCard({
+	project,
+	categories,
+	span,
+	href,
+	locale = 'en',
+}: ProjectGridCardProps) {
 	const tags = getVisibleCategoryTags(project.category ?? [], categories);
 	const cardImage = getProjectHeroImage(project);
 	const [imageLoaded, setImageLoaded] = useState(false);
@@ -73,17 +83,22 @@ export default function ProjectGridCard({ project, categories, span, href }: Pro
 				<h3 className="selected-projects-card-title mt-4 font-hk text-lg font-medium uppercase tracking-tight text-(--fg) md:mt-5 md:text-xl">
 					{project.title}
 				</h3>
-
-				{tags.length > 0 ? (
-					<ul className="selected-projects-tags mt-3 flex flex-wrap gap-2 md:mt-4">
-						{tags.map((tag) => (
-							<li key={tag}>
-								<span className="selected-projects-tag">{tag}</span>
-							</li>
-						))}
-					</ul>
-				) : null}
 			</Link>
+
+			{tags.length > 0 ? (
+				<ul className="selected-projects-tags mt-3 flex flex-wrap gap-2 md:mt-4">
+					{tags.map((tag) => (
+						<li key={tag.id}>
+							<Link
+								href={categoryArchivePath(tag.slug, locale)}
+								className="selected-projects-tag"
+							>
+								{tag.title}
+							</Link>
+						</li>
+					))}
+				</ul>
+			) : null}
 		</article>
 	);
 }

@@ -4,7 +4,18 @@ export interface Category {
   id: number;
   title: string;
   slug?: string;
+  /** SEO / arquivo da tag (REST category_seo). */
+  seoTitle?: string;
+  seoDescription?: string;
+  h1?: string;
+  intro?: string;
 }
+
+export type CategoryTag = {
+  id: number;
+  title: string;
+  slug: string;
+};
 
 export interface Meta {
   slug: string;

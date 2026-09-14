@@ -66,6 +66,7 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 						categories={categories}
 						span={getHomeGridSpan(index, featuredIndex, layout.homeColumns)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
+						locale={locale}
 					/>
 				))}
 			</div>

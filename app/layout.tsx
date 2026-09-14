@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import Script from 'next/script';
 import { headers } from 'next/headers';
 import { GetBlobVisualApi, GetFooterByLocale, GetHeaderNavApi, GetLegalByLocale, GetSiteUiApi } from '../components/ApiWp';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
@@ -58,12 +57,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 		>
 			<head>
 				<meta name="color-scheme" content="dark light" />
+				<script
+					id="theme-boot"
+					dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
+				/>
+				<JsonLd id="org-jsonld" data={orgJsonLd} />
 			</head>
 			<body>
-				<Script id="theme-boot" strategy="beforeInteractive">
-					{THEME_BOOT_SCRIPT}
-				</Script>
-				<JsonLd id="org-jsonld" data={orgJsonLd} />
 				<CustomCursor palette={blob.palette} />
 				<ScrollProgressBar />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>

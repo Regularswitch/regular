@@ -8,6 +8,7 @@ import ContactPage from '../../components/Contact/ContactPage';
 import EducationPage from '../../components/Education/EducationPage';
 import LegalWpPage from '../../components/LegalWpPage';
 import ProjectsListing from '../../components/ProjectsListing/ProjectsListing';
+import JsonLd from '../../components/Seo/JsonLd';
 import {
 	ABOUT_PAGE_SLUG,
 	CAPABILITIES_PAGE_SLUG,
@@ -25,6 +26,7 @@ import { fetchProjectsListingPage } from '../../lib/fetch/projectsListing';
 import { fetchSectionSeo, sectionSeoFallbacks } from '../../lib/seo/fetch';
 import { buildPageMetadata } from '../../lib/seo/metadata';
 import { seoPostTypeForRouteSlug } from '../../lib/seo/routeMap';
+import { buildFaqPageJsonLd } from '../../lib/seo/schema';
 
 export const revalidate = 10;
 export const dynamicParams = true;
@@ -90,8 +92,17 @@ export default async function SlugPage({ params }: PageProps) {
 		const lang = (await cookies()).get('language')?.value ?? '';
 		const locale = lang === 'PT' ? 'pt' : 'en';
 		const { content, latestProjects } = await fetchCapabilitiesPage(locale);
+		const faqJsonLd = buildFaqPageJsonLd(
+			content.faq,
+			locale === 'pt' ? '/PT/capabilities' : '/capabilities',
+		);
 
-		return <CapabilitiesPage content={content} latestProjects={latestProjects} locale={locale} />;
+		return (
+			<>
+				<JsonLd id="capabilities-faq-jsonld" data={faqJsonLd} />
+				<CapabilitiesPage content={content} latestProjects={latestProjects} locale={locale} />
+			</>
+		);
 	}
 
 	if (slug === ABOUT_PAGE_SLUG) {

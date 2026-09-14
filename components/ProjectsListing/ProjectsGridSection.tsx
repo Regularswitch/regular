@@ -92,6 +92,7 @@ export default function ProjectsGridSection({
 						categories={categories}
 						span={getGridSpan(index)}
 						href={hrefForSlug(project.slug)}
+						locale={locale}
 					/>
 				))}
 
