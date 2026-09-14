@@ -21,10 +21,11 @@ export async function fetchCategoryArchivePage(
 ): Promise<CategoryArchiveData | null> {
 	if (!slug || slug === HOME_PROJECTS_CATEGORY_SLUG) return null;
 
-	const query = locale === 'pt' ? { translate: 'PT' as const } : {};
+	const query: Record<string, string | number> =
+		locale === 'pt' ? { translate: 'PT' } : {};
 
 	const [category, allCategories, siteUiRaw] = await Promise.all([
-		GetCategoryBySlug(slug, { ...query }),
+		GetCategoryBySlug(slug, query),
 		GetCategoriesApi('/project-category', { per_page: 100, ...query }),
 		GetSiteUiApi(),
 	]);
