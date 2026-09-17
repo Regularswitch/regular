@@ -16,7 +16,9 @@ import type { Category, Projects, SiteUiLabels } from '../../types';
 import { getHomeGridSpan } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
 import { SectionHeadingArrow } from '../SiteIcons';
-import { useSiteUiLayout } from '../SiteUi/SiteUiProvider';
+
+/** Home: sempre 2 colunas + destaque full-width (ref. design). */
+const HOME_COLUMNS = 2 as const;
 
 type SelectedProjectsProps = {
 	projects: Projects;
@@ -26,11 +28,10 @@ type SelectedProjectsProps = {
 };
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
-	const layout = useSiteUiLayout();
 	const homePool = sortProjectsByDate(projects).filter((p) => isHomeProject(p, categories));
 	const hasFeatured = homePool.some(isFeaturedOnHome);
 	/** Exatamente 2 linhas: 4 iguais, ou 1 destaque + 2 (grid 2 col). */
-	const maxProjects = homeProjectLimit(layout.homeColumns, hasFeatured);
+	const maxProjects = homeProjectLimit(HOME_COLUMNS, hasFeatured);
 
 	const selected = pickHomeProjects(homePool, maxProjects);
 	const featuredIndex = resolveFeaturedIndex(selected);
@@ -42,29 +43,23 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
 	const contactCta = locale === 'pt' ? 'Contato' : 'Contact';
-	const gridClass =
-		layout.homeColumns === 1
-			? 'selected-projects-grid selected-projects-grid--cols-1'
-			: layout.homeColumns === 3
-				? 'selected-projects-grid selected-projects-grid--cols-3'
-				: 'selected-projects-grid';
 
 	return (
 		<section className="selected-projects py-6 md:py-10" aria-label={title}>
 			<div className="mb-8 md:mb-12">
-				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+				<h2 className="inline-flex items-center gap-1.5 text-xl font-medium text-(--fg)">
 					{title}
 					<SectionHeadingArrow />
 				</h2>
 			</div>
 
-			<div className={gridClass}>
+			<div className="selected-projects-grid">
 				{selected.map((project, index) => (
 					<ProjectGridCard
 						key={project.id}
 						project={project}
 						categories={categories}
-						span={getHomeGridSpan(index, featuredIndex, layout.homeColumns)}
+						span={getHomeGridSpan(index, featuredIndex, HOME_COLUMNS)}
 						href={withLocalePrefix(`/project/${project.slug}`, locale)}
 						locale={locale}
 					/>

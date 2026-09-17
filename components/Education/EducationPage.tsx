@@ -25,18 +25,22 @@ export default function EducationPage({
 		<article className="education-page">
 			<EducationHero image={content.heroImage} video={content.heroVideo} />
 
-			{content.headline?.trim() ? (
-				<section className="education-intro py-10 md:py-14">
-					<h1
-						className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
-						dangerouslySetInnerHTML={{ __html: content.headline }}
-					/>
-				</section>
-			) : null}
+			{content.headline?.trim() || content.accordionSections.length > 0 ? (
+				<section className="education-intro-accordion py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
+					<div className="min-w-0">
+						{content.headline?.trim() ? (
+							<h1
+								className="intro-headline font-hk"
+								dangerouslySetInnerHTML={{ __html: content.headline }}
+							/>
+						) : null}
+					</div>
 
-			{content.accordionSections.length > 0 ? (
-				<section className="py-10 md:py-14">
-					<ProjectAccordion sections={content.accordionSections} />
+					{content.accordionSections.length > 0 ? (
+						<div className="education-accordion-col mt-10 min-w-0 md:mt-0">
+							<ProjectAccordion sections={content.accordionSections} />
+						</div>
+					) : null}
 				</section>
 			) : null}
 

@@ -28,7 +28,7 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 
 			<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
 				<h1
-					className="intro-headline min-w-0 font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
+					className="intro-headline min-w-0 font-hk"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>
 

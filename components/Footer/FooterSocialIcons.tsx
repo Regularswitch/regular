@@ -49,7 +49,7 @@ export default function FooterSocialIcons({
 
 	return (
 		<div className="site-footer-social">
-			<p className="site-footer-social-title font-hk text-base font-bold text-(--fg) md:text-lg">{title}</p>
+			<p className="site-footer-social-title font-hk text-xl font-medium text-(--fg)">{title}</p>
 			<nav className="site-footer-social-links" aria-label={title}>
 				{visible.map((item) => {
 					const network = item.network.trim().toLowerCase();

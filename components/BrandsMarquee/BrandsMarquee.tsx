@@ -32,7 +32,7 @@ function BrandMark({ name, logo }: { name: string; logo?: string }) {
 
 	if (!logo || failed) {
 		return (
-			<span className="whitespace-nowrap text-lg font-semibold tracking-tight text-(--fg) opacity-90 md:text-2xl">
+			<span className="whitespace-nowrap text-lg font-medium tracking-tight text-(--fg) opacity-90 md:text-2xl">
 				{name}
 			</span>
 		);
@@ -150,7 +150,7 @@ export default function BrandsMarquee({ title, brands, locale = 'en' }: BrandsMa
 	return (
 		<section className="py-6 md:py-10" aria-label={heading}>
 			<div className="mb-8 flex items-end justify-between md:mb-12">
-				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+				<h2 className="inline-flex items-center gap-1.5 text-xl font-medium text-(--fg)">
 					{heading}
 					<SectionHeadingArrow />
 				</h2>

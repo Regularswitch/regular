@@ -109,7 +109,7 @@ export default function CapabilitiesAccordion({
 											{section.services && section.services.length > 0 ? (
 												<div className="mt-6 md:mt-8">
 													{section.servicesTitle ? (
-														<p className="text-sm font-semibold text-(--fg) md:text-base">
+														<p className="text-sm font-medium text-(--fg) md:text-base">
 															{section.servicesTitle}
 														</p>
 													) : null}

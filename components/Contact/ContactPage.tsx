@@ -15,7 +15,7 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 		<article className="contact-page">
 			<section className="contact-intro py-10 md:py-14">
 				<h1
-					className="intro-headline max-w-4xl font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
+					className="intro-headline max-w-4xl font-hk"
 					dangerouslySetInnerHTML={{ __html: content.headline }}
 				/>
 			</section>
@@ -24,7 +24,7 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 				<div className="grid gap-12 sm:grid-cols-2 lg:gap-16">
 					{content.blocks.map((block) => (
 						<div key={block.title} className="contact-block">
-							<h2 className="font-hk text-sm font-semibold tracking-[0.18em] text-(--fg) md:text-base">
+							<h2 className="font-hk text-sm font-medium tracking-[0.18em] text-(--fg) md:text-base">
 								{block.title}
 							</h2>
 							<div

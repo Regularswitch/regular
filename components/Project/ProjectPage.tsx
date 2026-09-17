@@ -126,7 +126,7 @@ export default function ProjectPage({
 						{project.title || summary || tags.length > 0 ? (
 							<div className="project-intro-copy min-w-0">
 								{project.title ? (
-									<h1 className="project-title intro-headline font-hk text-[clamp(1.35rem,4.5vw,2.5rem)] font-medium leading-[1.08] tracking-[-0.02em] text-(--fg)">
+									<h1 className="project-title intro-headline font-hk text-(--fg)">
 										{project.title}
 									</h1>
 								) : null}

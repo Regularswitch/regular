@@ -7,7 +7,7 @@ export default function LegalWpPage({ title, content }: LegalWpPageProps) {
 	return (
 		<article className="legal-page mx-auto max-w-3xl py-10 md:py-14">
 			{title ? (
-				<h1 className="mb-8 font-hk text-[clamp(1.75rem,4vw,2.5rem)] font-medium leading-tight tracking-[-0.02em]">
+				<h1 className="intro-headline mb-8 font-hk">
 					{title}
 				</h1>
 			) : null}

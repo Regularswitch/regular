@@ -529,7 +529,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 						</div>
 						<div className="flex items-center gap-4">
 							<div>
-								<div className="text-(--fg) font-semibold text-lg leading-tight">{siteUi.labels.whatsNewTitle}</div>
+								<div className="text-(--fg) font-medium text-lg leading-tight">{siteUi.labels.whatsNewTitle}</div>
 								<div className="text-(--fg) text-sm opacity-70">{siteUi.labels.whatsNewSubtitle}</div>
 							</div>
 						</div>

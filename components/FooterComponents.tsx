@@ -86,12 +86,12 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 								: {})}
 						>
 							<div
-								className="font-hk text-base font-bold text-(--fg) md:text-lg"
+								className="font-hk text-xl font-medium text-(--fg)"
 								dangerouslySetInnerHTML={{ __html: item.title }}
 								suppressHydrationWarning
 							/>
 							<div
-								className="mt-1 text-sm text-(--muted) transition-opacity group-hover:opacity-80"
+								className="mt-1 text-xs text-(--muted) transition-opacity group-hover:opacity-80"
 								dangerouslySetInnerHTML={{ __html: item.subtitle }}
 								suppressHydrationWarning
 							/>
@@ -107,7 +107,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 			</div>
 
 			<nav
-				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-sm text-(--muted) md:mt-10"
+				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-xs text-(--muted) md:mt-10"
 				aria-label="Legal"
 			>
 				<span className="inline-flex items-center gap-2">

@@ -31,7 +31,7 @@ export default function CategoryArchivePage({
 	return (
 		<article className="category-archive-page">
 			<section className="category-archive-hero py-10 md:py-16" aria-label={h1}>
-				<h1 className="intro-headline max-w-5xl font-hk text-[clamp(1.5rem,4.2vw,2.75rem)] font-medium leading-[1.08] tracking-[-0.02em]">
+				<h1 className="intro-headline max-w-5xl font-hk">
 					{h1}
 				</h1>
 				{intro ? (

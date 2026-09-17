@@ -103,18 +103,18 @@ export function porter(payloadWp: listResponseWp): Projects {
         const featuredMedium = fromMeta ?? featuredMediumUrl(p) ?? featuredFull;
 
         return {
-            id: p.id,
-            title: p?.title?.rendered || p.name,
-            slug: p.slug,
-            link: p.link,
+        id: p.id,
+        title: p?.title?.rendered || p.name,
+        slug: p.slug,
+        link: p.link,
             // Cards (home / listagem) = imagem destacada do WP.
             image_medium: featuredMedium,
             image_full: featuredFull,
             content: p?.content?.rendered,
-            more: p?.excerpt?.rendered,
+        more: p?.excerpt?.rendered,
             category: p['project-category'],
-            description: p.description,
-            created_at: p.date,
+        description: p.description,
+        created_at: p.date,
             image: wpMediaUrl(p?._links?.['wp:attachment']?.[0]?.href),
             project_data,
         };

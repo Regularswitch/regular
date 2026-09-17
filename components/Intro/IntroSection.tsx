@@ -24,7 +24,7 @@ export default function IntroSection({ intro, locale = 'en' }: IntroSectionProps
 	return (
 		<section className="intro-section container mx-0 px-0 py-6 md:py-10 lg:py-[80px]" aria-label="Intro">
 			<h1
-				className="intro-headline font-hk text-[clamp(1.75rem,4.5vw,3.125rem)] font-medium leading-[1.05] tracking-[-0.02em]"
+				className="intro-headline font-hk"
 				dangerouslySetInnerHTML={{ __html: headline }}
 			/>
 			{body ? (

@@ -62,7 +62,7 @@ export default function LatestProjects({ projects, locale = 'en' }: LatestProjec
 	return (
 		<section className="latest-projects py-6 md:py-10" aria-label={title}>
 			<div className="mb-8 flex items-center justify-between md:mb-10">
-				<h2 className="inline-flex items-center gap-1.5 text-base font-medium text-(--fg) md:text-lg">
+				<h2 className="inline-flex items-center gap-1.5 text-xl font-medium text-(--fg)">
 					{title}
 					<SectionHeadingArrow />
 				</h2>

@@ -62,15 +62,11 @@ export default function ProjectGridCard({
 							alt={imageAlt}
 							sizes={
 								isFeatured
-									? '(max-width: 768px) 100vw, 90vw'
-									: isThird
-										? '(max-width: 768px) 100vw, 33vw'
-										: isQuarter
-											? '(max-width: 768px) 100vw, 25vw'
-											: '(max-width: 768px) 100vw, 50vw'
+									? '100vw'
+									: '(max-width: 767px) 100vw, 50vw'
 							}
-							width={isFeatured ? 1600 : isQuarter ? 800 : 1200}
-							height={isFeatured ? 600 : isQuarter ? 800 : 900}
+							width={isFeatured ? 1600 : 900}
+							height={isFeatured ? 600 : 900}
 							unoptimized={isGifUrl(cardImage)}
 							onLoadingComplete={() => setImageLoaded(true)}
 							className={`selected-projects-card-media h-full w-full object-cover${

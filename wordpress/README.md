@@ -11,6 +11,12 @@ wordpress/plugins/
 
 Um único plugin no admin: **Regular CMS** (`regular-cms/regular-cms.php`).
 
+Documentação do **admin redesenhado** (menus, Design System, metaboxes):  
+[`plugins/regular-cms/ADMIN.md`](plugins/regular-cms/ADMIN.md).
+
+Manual para o **time de conteúdo** (como adicionar/editar páginas e projetos):  
+[`plugins/regular-cms/MANUAL-CONTEUDO.md`](plugins/regular-cms/MANUAL-CONTEUDO.md).
+
 ## Convenção de slugs (EN/PT)
 
 Posts editáveis seguem o permalink **`{tipo}/{idioma}/`**:
