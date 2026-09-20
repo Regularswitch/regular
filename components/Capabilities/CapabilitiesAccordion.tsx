@@ -1,0 +1,155 @@
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+
+import BezierDivider from '../BezierDivider/BezierDivider';
+import { AccordionPlusIcon } from '../SiteIcons';
+import type { CapabilitySection } from '../../lib/content/capabilities/defaults';
+import { categoryArchivePath } from '../../lib/projects/categories';
+import { projectImageAltFallback } from '../../lib/projects/altText';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
+import { wpMediaUrl } from '../../lib/wp/mediaUrl';
+
+type CapabilitiesAccordionProps = {
+	sections: CapabilitySection[];
+	defaultOpenIndex?: number;
+	locale?: 'en' | 'pt';
+};
+
+export default function CapabilitiesAccordion({
+	sections,
+	defaultOpenIndex = -1,
+	locale = 'en',
+}: CapabilitiesAccordionProps) {
+	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
+
+	if (!sections.length) return null;
+
+	return (
+		<div className="capabilities-accordion">
+			<BezierDivider />
+			{sections.map((section, index) => {
+				const isOpen = openIndex === index;
+				const imageSrc = section.image ? (wpMediaUrl(section.image) ?? section.image) : undefined;
+				const projectHref = section.imageProjectSlug
+					? withLocalePrefix(`/project/${section.imageProjectSlug}`, locale)
+					: null;
+				const categoryHref = section.relatedCategorySlug
+					? categoryArchivePath(section.relatedCategorySlug, locale)
+					: null;
+				const imageAlt = projectImageAltFallback(
+					section.imageProjectSlug?.replace(/-/g, ' ') || section.title.replace(/<[^>]+>/g, ''),
+					locale,
+				);
+				const seeProjectLabel = locale === 'pt' ? 'Ver projeto' : 'See project';
+				const seeCategoryLabel = locale === 'pt' ? 'Ver projetos relacionados' : 'See related projects';
+
+				const imageEl = imageSrc ? (
+					<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface)">
+						<Image
+							src={imageSrc}
+							alt={imageAlt}
+							fill
+							sizes="(max-width: 768px) 100vw, 45vw"
+							className="object-cover object-center"
+						/>
+					</div>
+				) : null;
+
+				return (
+					<div key={section.title}>
+						<button
+							type="button"
+							className="accordion-trigger flex w-full items-center justify-between gap-4 py-5 text-left"
+							onClick={() => setOpenIndex(isOpen ? -1 : index)}
+							aria-expanded={isOpen}
+						>
+							<span
+								className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}
+								dangerouslySetInnerHTML={{ __html: section.title }}
+							/>
+							<span
+								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
+								aria-hidden
+							>
+								<AccordionPlusIcon />
+							</span>
+						</button>
+
+						<div className={`accordion-panel${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
+							<div className="accordion-panel-inner">
+								<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
+									<div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
+										{imageEl && projectHref ? (
+											<Link href={projectHref} className="block">
+												{imageEl}
+											</Link>
+										) : (
+											imageEl
+										)}
+
+										<div
+											className={`capabilities-accordion-content font-hk${imageSrc ? '' : ' md:col-span-2'}`}
+										>
+											{section.lead ? (
+												<p className="text-lg leading-snug text-(--fg) md:text-xl md:leading-tight">
+													{section.lead}
+												</p>
+											) : null}
+
+											{section.body ? (
+												<div
+													className="capabilities-accordion-body mt-5 text-(--muted) md:mt-6"
+													dangerouslySetInnerHTML={{ __html: section.body }}
+												/>
+											) : null}
+
+											{section.services && section.services.length > 0 ? (
+												<div className="mt-6 md:mt-8">
+													{section.servicesTitle ? (
+														<p className="text-sm font-medium text-(--fg) md:text-base">
+															{section.servicesTitle}
+														</p>
+													) : null}
+													<ul className="capabilities-accordion-list mt-3 space-y-1.5 text-(--muted)">
+														{section.services.map((service) => (
+															<li key={service}>{service}</li>
+														))}
+													</ul>
+												</div>
+											) : null}
+
+											{(projectHref || categoryHref) && (
+												<div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 md:mt-8">
+													{projectHref ? (
+														<Link
+															href={projectHref}
+															className="font-hk text-sm text-(--fg) underline underline-offset-4 md:text-base"
+														>
+															{seeProjectLabel}
+														</Link>
+													) : null}
+													{categoryHref ? (
+														<Link
+															href={categoryHref}
+															className="font-hk text-sm text-(--fg) underline underline-offset-4 md:text-base"
+														>
+															{seeCategoryLabel}
+														</Link>
+													) : null}
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<BezierDivider />
+					</div>
+				);
+			})}
+		</div>
+	);
+}

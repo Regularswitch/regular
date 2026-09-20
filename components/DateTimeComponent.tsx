@@ -1,57 +1,107 @@
-import React, { useState, useEffect } from 'react';
+'use client';
 
-const DateTimeComponent: React.FC = () => {
-    const [date, setDate] = useState('');
-    const [time, setTime] = useState('');
+import { useEffect, useState } from 'react';
 
-    useEffect(() => {
-        function updateTime() {
-            const options: Intl.DateTimeFormatOptions = {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                timeZone: 'America/Sao_Paulo',
-                hour12: false,
-            };
+type ContactLocale = 'en' | 'pt';
 
-            const timeOptions: Intl.DateTimeFormatOptions = {
-                timeZone: 'America/Sao_Paulo',
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-            };
-
-            const now = new Date();
-            const dateString = now.toLocaleDateString('en-US', options);
-            const timeString = now.toLocaleTimeString('en-US', timeOptions);
-
-            setDate(dateString);
-            setTime(timeString);
-        }
-
-        updateTime();
-        const interval = setInterval(updateTime, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div>
-            <style jsx>{`
-            #date {
-            font-size: 40px;
-            }
-            #time {
-            font-size: 40px;
-            }
-            .city {
-            font-size: 40px;
-            }
-        `}</style>
-            <p><span id="date">{date}</span></p>
-            <p><span className="city">São Paulo: </span><span id="time">{time}</span></p>
-        </div>
-    );
+type CityClock = {
+	id: 'sao-paulo' | 'paris';
+	label: string;
+	flag: string;
+	flagLabel: string;
+	timeZone: string;
 };
 
-export default DateTimeComponent;
+const CITIES: CityClock[] = [
+	{
+		id: 'sao-paulo',
+		label: 'São Paulo',
+		flag: '🇧🇷',
+		flagLabel: 'Brasil',
+		timeZone: 'America/Sao_Paulo',
+	},
+	{
+		id: 'paris',
+		label: 'Paris',
+		flag: '🇫🇷',
+		flagLabel: 'France',
+		timeZone: 'Europe/Paris',
+	},
+];
+
+type DateTimeComponentProps = {
+	locale?: ContactLocale;
+};
+
+type CityState = {
+	date: string;
+	time: string;
+};
+
+function formatClock(now: Date, locale: ContactLocale, timeZone: string): CityState {
+	const dateLocale = locale === 'pt' ? 'pt-BR' : 'en-US';
+
+	return {
+		date: now.toLocaleDateString(dateLocale, {
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric',
+			timeZone,
+		}),
+		time: now.toLocaleTimeString(dateLocale, {
+			timeZone,
+			hour12: false,
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+		}),
+	};
+}
+
+export default function DateTimeComponent({ locale = 'en' }: DateTimeComponentProps) {
+	const [clocks, setClocks] = useState<Record<string, CityState>>({});
+
+	useEffect(() => {
+		function updateTime() {
+			const now = new Date();
+			const next: Record<string, CityState> = {};
+
+			for (const city of CITIES) {
+				next[city.id] = formatClock(now, locale, city.timeZone);
+			}
+
+			setClocks(next);
+		}
+
+		updateTime();
+		const interval = setInterval(updateTime, 1000);
+		return () => clearInterval(interval);
+	}, [locale]);
+
+	return (
+		<div className="contact-datetime-display font-hk text-(--fg)">
+			<div className="contact-datetime-grid grid gap-10 sm:grid-cols-2 sm:gap-12 lg:gap-16">
+				{CITIES.map((city) => {
+					const clock = clocks[city.id];
+
+					return (
+						<div key={city.id} className="contact-datetime-city min-w-0">
+							<p className="contact-datetime-city-label flex items-center gap-2 text-[clamp(1rem,2vw,1.25rem)] leading-tight text-(--muted)">
+								<span className="text-[1.15em] leading-none" role="img" aria-label={city.flagLabel}>
+									{city.flag}
+								</span>
+								<span>{city.label}</span>
+							</p>
+							<p className="contact-datetime-date mt-3 text-[clamp(1.35rem,2.8vw,2.25rem)] leading-tight capitalize">
+								{clock?.date ?? '—'}
+							</p>
+							<p className="contact-datetime-time mt-2 text-[clamp(1.5rem,3vw,2.5rem)] leading-tight tabular-nums">
+								{clock?.time ?? '—'}
+							</p>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}

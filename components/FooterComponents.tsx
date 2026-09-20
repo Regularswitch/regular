@@ -1,60 +1,139 @@
-import Link from "next/link";
-export default function FooterComponents() {
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import type { FooterContent, FooterLink } from '../types';
+import FontVariante from './FontVariante';
+import FooterSocialIcons from './Footer/FooterSocialIcons';
+import { useFooterSocialLinks } from './Footer/FooterSocialProvider';
+import { DEFAULT_FOOTER_EN, DEFAULT_FOOTER_PT } from './Footer/footerDefaults';
+import { useLegalPolicies } from './Legal/LegalPoliciesProvider';
+import { getCookie } from './Translate';
+import { getContactMailto, getNewsletterHref } from '../lib/site/siteLinks';
+import { sanitizeFooterRichHtml } from '../lib/wp/sanitizeRichText';
+
+type FooterLocale = 'en' | 'pt';
+
+type FooterComponentsProps = {
+	footerEn: FooterContent | null;
+	footerPt: FooterContent | null;
+};
+
+function localeFromPathname(pathname: string): FooterLocale {
+	return pathname.startsWith('/PT') ? 'pt' : 'en';
+}
+
+function resolveLocale(pathname: string): FooterLocale {
+	if (pathname.startsWith('/PT')) return 'pt';
+	return getCookie('language') === 'PT' ? 'pt' : 'en';
+}
+
+function withPrefix(href: string, locale: FooterLocale) {
+	if (href.startsWith('http') || href.startsWith('mailto:')) return href;
+	const prefix = locale === 'pt' ? '/PT' : '';
+	return `${prefix}${href}`.replace(/^\/\//, '/') || href;
+}
+
+function isExternal(href: string) {
+	return href.startsWith('http') && !href.includes('regularswitch');
+}
+
+/** Prefer env placeholders for Contato / Newsletter até o cliente confirmar destinos. */
+function resolveFooterLinks(links: FooterLink[]): FooterLink[] {
+	return links.map((item) => {
+		const title = sanitizeFooterRichHtml(item.title);
+		const subtitle = sanitizeFooterRichHtml(item.subtitle);
+		const key = title.replace(/<[^>]+>/g, '').trim().toLowerCase();
+		if (key === 'contact' || key === 'contato') {
+			return { ...item, title, subtitle, href: getContactMailto() };
+		}
+		if (key === 'newsletter') {
+			return { ...item, title, subtitle, href: getNewsletterHref() };
+		}
+		return { ...item, title, subtitle };
+	});
+}
+
+export default function FooterComponents({ footerEn, footerPt }: FooterComponentsProps) {
+	const pathname = usePathname() ?? '';
+	const [locale, setLocale] = useState<FooterLocale>(() => localeFromPathname(pathname));
+	const { openPolicy, legal: legalFromProvider } = useLegalPolicies();
+	const socialLinks = useFooterSocialLinks();
+
+	useEffect(() => {
+		setLocale(resolveLocale(pathname));
+	}, [pathname]);
+
+	const fallback = locale === 'pt' ? DEFAULT_FOOTER_PT : DEFAULT_FOOTER_EN;
+	const fromWp = locale === 'pt' ? footerPt : footerEn;
+	const { brandMark, links: rawLinks } = fromWp ?? fallback;
+	const legal = legalFromProvider;
+	const links = resolveFooterLinks(rawLinks);
+
 	return (
-		<footer className="sm: px-5 xl: container mx-auto text-sm lg:w-[1200px] lg:mt-[100px]">
-			<div className="sm:flex justify-center flex-col xl:grid grid-cols-4 gap-5 md:gap-10 lg:gap-10 xl:gap-20">
-				<nav className="mb-8 sm:mb-0">
-					<ul>
-						<li>
-							<span className="select-none">© 2024-25 Regularswitch</span>
-						</li>
-						<li>
-							<span className="select-none">all rights reserved.</span>
-						</li>
-					</ul>
-				</nav>
-				<nav className="mb-8 sm:mb-0">
-					<ul>
-						<li>
-							<span className="select-none">
-								<Link href="tel:+5511945408448" legacyBehavior>
-									<a>+55 (11) 9 4540-8448</a>
-								</Link>
-							</span>
-						</li>
-						<li>
-							<span className="select-none">
-								<Link href="mailto:contact@regularswitch.com" legacyBehavior>
-									<a>contact@regularswitch.com</a>
-								</Link>
-							</span>
-						</li>
-					</ul>
-				</nav>
-				<nav>
-					<ul>
-						<li>							
-							<span className="select-none">
-								<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-									<a target="_blank" rel="noopener noreferrer" >
-										Rua da consolação, 65
-									</a>
-								</Link>
-							</span>
-						</li>
-						<li>
-							<span className="select-none">
-								<Link href="https://goo.gl/maps/XkwhrcMz1mZ3oKAz7" legacyBehavior>
-									<a target="_blank" rel="noopener noreferrer" >
-										Sao Paulo / Brazil 01301-000 
-									</a>
-								</Link>
-							</span>
-						</li>
-					</ul>
-				</nav>
+		<footer className="site-footer mt-6 border-t border-black/10 pt-8 dark:border-white/10 md:mt-8 md:pt-10">
+			<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
+				<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
+					{links.map((item: FooterLink) => (
+						<Link
+							key={`${item.title}-${item.href}`}
+							href={withPrefix(item.href, locale)}
+							className="group block max-w-xs"
+							{...(item.external || isExternal(item.href)
+								? { target: '_blank', rel: 'noopener noreferrer' }
+								: {})}
+						>
+							<div
+								className="font-hk text-xl font-medium text-(--fg)"
+								dangerouslySetInnerHTML={{ __html: item.title }}
+								suppressHydrationWarning
+							/>
+							<div
+								className="mt-1 text-xs text-(--muted) transition-opacity group-hover:opacity-80"
+								dangerouslySetInnerHTML={{ __html: item.subtitle }}
+								suppressHydrationWarning
+							/>
+						</Link>
+					))}
+				</div>
+
+				<FooterSocialIcons links={socialLinks} title="Social" />
 			</div>
-			<br />
+
+			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
+				<FontVariante text={brandMark} align="justify" splitOnMobile />
+			</div>
+
+			<nav
+				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-xs text-(--muted) md:mt-10"
+				aria-label="Legal"
+			>
+				<span className="inline-flex items-center gap-2">
+					<span>{legal.brand}</span>
+				</span>
+				<span className="inline-flex items-center gap-2">
+					<span aria-hidden>/</span>
+					<button
+						type="button"
+						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+						onClick={() => openPolicy('privacy')}
+					>
+						{legal.privacy}
+					</button>
+				</span>
+				<span className="inline-flex items-center gap-2">
+					<span aria-hidden>/</span>
+					<button
+						type="button"
+						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+						onClick={() => openPolicy('cookies')}
+					>
+						{legal.cookies}
+					</button>
+				</span>
+			</nav>
 		</footer>
 	);
 }

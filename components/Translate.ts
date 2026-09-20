@@ -14,12 +14,12 @@ export default function translate(text: string, language?: string): string {
 }
 
 export function getCookie(name: string) : string {
+    if (typeof document === 'undefined') return '';
     const value = `; ${document.cookie}`
     const parts = value.split(`; ${name}=`)
     return parts?.pop()?.split(';')?.shift() || ''
 }
 
 export function setCookie(name: string, value: string) {
-    document.cookie = `${name}=${value};path=/`
-    window.location.reload()
+    document.cookie = `${name}=${value};path=/;max-age=31536000;samesite=lax`
 }

@@ -1,0 +1,485 @@
+<?php
+/**
+ * Opção D: ao salvar o post EN, sincroniza só a mídia para o PT ligado.
+ * Textos (headline, acordeões, blocos) do PT não são alterados.
+ *
+ * Cobre: about, education, contact, capabilities.
+ */
+
+if (defined('RS_SYNC_MEDIA_EN_TO_PT_LOADED')) {
+    return;
+}
+define('RS_SYNC_MEDIA_EN_TO_PT_LOADED', true);
+
+/**
+ * CPT que participam do sync de mídia EN → PT.
+ *
+ * @return array<int, string>
+ */
+function rs_sync_media_post_types(): array {
+    // Após migração i18n (post único), mídia fica no mesmo post — sem sync EN→PT.
+    $types = ['about', 'education', 'contact', 'capabilities'];
+    if (!function_exists('rs_section_i18n_is_migrated_type')) {
+        return $types;
+    }
+
+    return array_values(array_filter($types, static function (string $type): bool {
+        return !rs_section_i18n_is_migrated_type($type);
+    }));
+}
+
+/**
+ * Páginas de seção (slug en/pt) — entram no bootstrap automático.
+ *
+ * @return array<int, string>
+ */
+function rs_sync_media_section_post_types(): array {
+    return rs_sync_media_post_types();
+}
+
+function rs_sync_media_link_pair(int $en_id, int $pt_id): void {
+    if (function_exists('rs_translate_link_pair')) {
+        rs_translate_link_pair($en_id, 'PT', $pt_id);
+        return;
+    }
+
+    update_post_meta($en_id, 'PT', $pt_id);
+    update_post_meta($pt_id, 'EN', $en_id);
+}
+
+function rs_sync_media_is_en_source(int $post_id): bool {
+    if ((int) get_post_meta($post_id, 'EN', true) > 0) {
+        return false; // é o gêmeo PT
+    }
+
+    $post = get_post($post_id);
+    if (!$post) {
+        return false;
+    }
+
+    if ($post->post_name === 'pt') {
+        return false;
+    }
+
+    if (function_exists('rs_detect_post_locale') && rs_detect_post_locale($post_id) === 'pt') {
+        return false;
+    }
+
+    // Ligado via coluna Language → PT
+    if ((int) get_post_meta($post_id, 'PT', true) > 0) {
+        return true;
+    }
+
+    // CPTs de página com slug en/pt (About, Education, etc.)
+    if ($post->post_name === 'en') {
+        return true;
+    }
+
+    if (function_exists('rs_detect_post_locale') && rs_detect_post_locale($post_id) === 'en') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Resolve o post PT gêmeo: meta PT, ou (só em páginas de seção) slug `pt`.
+ */
+function rs_sync_media_pt_twin_id(int $en_id): int {
+    $en = get_post($en_id);
+    if (!$en) {
+        return 0;
+    }
+
+    $pt_id = (int) get_post_meta($en_id, 'PT', true);
+    if ($pt_id > 0) {
+        $pt = get_post($pt_id);
+        if ($pt && $pt->post_status !== 'trash') {
+            $back = (int) get_post_meta($pt_id, 'EN', true);
+            // Só aceita par bidirecional. Órfão (EN vazio) ou de outro EN = ponteiro inválido.
+            if ($back === $en_id) {
+                return $pt_id;
+            }
+            delete_post_meta($en_id, 'PT');
+        } else {
+            delete_post_meta($en_id, 'PT');
+        }
+    }
+
+    // Páginas de seção: about/en + about/pt (um único par por CPT).
+    if (!in_array($en->post_type, rs_sync_media_section_post_types(), true)) {
+        return 0;
+    }
+
+    if ($en->post_name !== 'en' && !(function_exists('rs_detect_post_locale') && rs_detect_post_locale($en_id) === 'en')) {
+        return 0;
+    }
+
+    $siblings = get_posts([
+        'post_type'      => $en->post_type,
+        'post_status'    => ['publish', 'draft', 'pending', 'private'],
+        'name'           => 'pt',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+    ]);
+
+    if (empty($siblings[0])) {
+        $candidates = get_posts([
+            'post_type'      => $en->post_type,
+            'post_status'    => ['publish', 'draft', 'pending', 'private'],
+            'posts_per_page' => 20,
+            'fields'         => 'ids',
+            'exclude'        => [$en_id],
+        ]);
+        foreach ($candidates as $candidate_id) {
+            $candidate_id = (int) $candidate_id;
+            if ((int) get_post_meta($candidate_id, 'EN', true) === $en_id) {
+                $siblings = [$candidate_id];
+                break;
+            }
+            $cand = get_post($candidate_id);
+            if ($cand && $cand->post_name === 'pt') {
+                $siblings = [$candidate_id];
+                break;
+            }
+        }
+    }
+
+    if (!empty($siblings[0])) {
+        $found = (int) $siblings[0];
+        rs_sync_media_link_pair($en_id, $found);
+        return $found;
+    }
+
+    return 0;
+}
+
+/**
+ * Aviso de sync EN→PT desativado (seções em post único / marcas sem i18n).
+ */
+function rs_sync_media_notice_html(int $post_id): string {
+    unset($post_id);
+    return '';
+}
+
+/**
+ * Copia image_id do EN → PT por índice; preserva textos do PT.
+ * Se o EN tiver mais itens, cria stubs no PT só com a mídia.
+ *
+ * @param array<int, array{title?: string, text?: string, image_id?: int}> $en
+ * @param array<int, array{title?: string, text?: string, image_id?: int}> $pt
+ * @return array<int, array{title: string, text: string, image_id: int}>
+ */
+function rs_sync_media_merge_section_images(array $en, array $pt): array {
+    $out = [];
+
+    foreach ($en as $i => $en_section) {
+        $pt_section = is_array($pt[$i] ?? null) ? $pt[$i] : [];
+        $out[] = [
+            'title'    => (string) ($pt_section['title'] ?? ''),
+            'text'     => (string) ($pt_section['text'] ?? ''),
+            'image_id' => (int) ($en_section['image_id'] ?? 0),
+        ];
+    }
+
+    // Mantém seções extras só no PT (sem apagar texto)
+    for ($i = count($en); $i < count($pt); $i++) {
+        if (!is_array($pt[$i])) {
+            continue;
+        }
+        $out[] = [
+            'title'    => (string) ($pt[$i]['title'] ?? ''),
+            'text'     => (string) ($pt[$i]['text'] ?? ''),
+            'image_id' => (int) ($pt[$i]['image_id'] ?? 0),
+        ];
+    }
+
+    return $out;
+}
+
+function rs_sync_about_media(int $from_id, int $to_id): void {
+    if (function_exists('rs_section_copy_hero_media')) {
+        rs_section_copy_hero_media($from_id, $to_id, RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY);
+    }
+
+    if (!function_exists('rs_about_get_sections')) {
+        return;
+    }
+
+    $merged = rs_sync_media_merge_section_images(
+        rs_about_get_sections($from_id),
+        rs_about_get_sections($to_id)
+    );
+
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_ABOUT_SECTIONS_KEY, array_values($merged));
+    } else {
+        update_post_meta($to_id, RS_ABOUT_SECTIONS_KEY, array_values($merged));
+    }
+}
+
+function rs_sync_capabilities_media(int $from_id, int $to_id): void {
+    if (!function_exists('rs_capabilities_get_sections')) {
+        return;
+    }
+
+    $merged = rs_sync_media_merge_section_images(
+        rs_capabilities_get_sections($from_id),
+        rs_capabilities_get_sections($to_id)
+    );
+
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_CAPABILITIES_SECTIONS_KEY, array_values($merged));
+    } else {
+        update_post_meta($to_id, RS_CAPABILITIES_SECTIONS_KEY, array_values($merged));
+    }
+}
+
+function rs_sync_contact_media(int $from_id, int $to_id): void {
+    if (function_exists('rs_section_copy_hero_media')) {
+        rs_section_copy_hero_media($from_id, $to_id, RS_CONTACT_HERO_IMAGE_KEY, RS_CONTACT_HERO_VIDEO_KEY);
+    }
+
+    if (defined('RS_CONTACT_INFO_KEY')) {
+        $en = [];
+        $pt = [];
+
+        if (function_exists('rs_meta_get_array')) {
+            $en_decoded = rs_meta_get_array($from_id, RS_CONTACT_INFO_KEY);
+            $pt_decoded = rs_meta_get_array($to_id, RS_CONTACT_INFO_KEY);
+            if (is_array($en_decoded)) {
+                $en = $en_decoded;
+            }
+            if (is_array($pt_decoded)) {
+                $pt = $pt_decoded;
+            }
+        } else {
+            $en_info = get_post_meta($from_id, RS_CONTACT_INFO_KEY, true);
+            $pt_info_raw = get_post_meta($to_id, RS_CONTACT_INFO_KEY, true);
+            if (is_array($en_info)) {
+                $en = $en_info;
+            } elseif (is_string($en_info) && $en_info !== '') {
+                $decoded = json_decode($en_info, true);
+                if (is_array($decoded)) {
+                    $en = $decoded;
+                }
+            }
+            if (is_array($pt_info_raw)) {
+                $pt = $pt_info_raw;
+            } elseif (is_string($pt_info_raw) && $pt_info_raw !== '') {
+                $decoded = json_decode($pt_info_raw, true);
+                if (is_array($decoded)) {
+                    $pt = $decoded;
+                }
+            }
+        }
+
+        if ($en !== []) {
+            // Copia telefones/e-mails do EN; mantém títulos/textos do PT quando existirem.
+            foreach (['contact_phone', 'contact_phone_tel', 'contact_email', 'address_street', 'jobs_email', 'internship_email'] as $key) {
+                if (!empty($en[$key])) {
+                    $pt[$key] = $en[$key];
+                }
+            }
+            if (!empty($en['contact_location']) && empty($pt['contact_location'])) {
+                $pt['contact_location'] = $en['contact_location'];
+            }
+            if (!empty($en['address_location']) && empty($pt['address_location'])) {
+                $pt['address_location'] = $en['address_location'];
+            }
+
+            $normalized = function_exists('rs_contact_normalize_info')
+                ? rs_contact_normalize_info($pt, 'pt')
+                : $pt;
+            $blocks = function_exists('rs_contact_info_to_blocks')
+                ? rs_contact_info_to_blocks($normalized)
+                : [];
+            if (function_exists('rs_meta_update_array')) {
+                rs_meta_update_array($to_id, RS_CONTACT_INFO_KEY, $normalized);
+                if ($blocks !== []) {
+                    rs_meta_update_array($to_id, RS_CONTACT_BLOCKS_KEY, $blocks);
+                }
+            } else {
+                update_post_meta($to_id, RS_CONTACT_INFO_KEY, wp_slash(wp_json_encode($normalized, JSON_UNESCAPED_UNICODE) ?: '{}'));
+                if ($blocks !== []) {
+                    update_post_meta($to_id, RS_CONTACT_BLOCKS_KEY, wp_slash(wp_json_encode($blocks, JSON_UNESCAPED_UNICODE) ?: '[]'));
+                }
+            }
+        }
+    }
+}
+
+function rs_sync_education_media(int $from_id, int $to_id): void {
+    if (function_exists('rs_section_copy_hero_media')) {
+        rs_section_copy_hero_media($from_id, $to_id, RS_EDUCATION_HERO_IMAGE_KEY, RS_EDUCATION_HERO_VIDEO_KEY);
+    }
+
+    if (!function_exists('rs_education_get_institutions_raw')) {
+        return;
+    }
+
+    $en = rs_education_get_institutions_raw($from_id);
+    $pt = rs_education_get_institutions_raw($to_id);
+    $gallery_keys = ['midGallery', 'bottomGallery'];
+    $out = [];
+
+    foreach ($en as $i => $en_item) {
+        if (!is_array($en_item)) {
+            continue;
+        }
+
+        $pt_item = is_array($pt[$i] ?? null) ? $pt[$i] : [
+            'name'          => '',
+            'description'   => '',
+            'logo_id'       => 0,
+            'midGallery'    => ['layout' => 'triple', 'image_ids' => '', 'caption' => ''],
+            'bottomGallery' => ['layout' => 'grid-2x2', 'image_ids' => '', 'caption' => ''],
+        ];
+
+        $entry = [
+            'name'        => (string) ($pt_item['name'] ?? ''),
+            'description' => (string) ($pt_item['description'] ?? ''),
+            'logo_id'     => (int) ($en_item['logo_id'] ?? 0),
+        ];
+
+        foreach ($gallery_keys as $key) {
+            $en_gal = is_array($en_item[$key] ?? null) ? $en_item[$key] : [];
+            $pt_gal = is_array($pt_item[$key] ?? null) ? $pt_item[$key] : [];
+
+            $entry[$key] = [
+                'layout'    => (string) ($en_gal['layout'] ?? $pt_gal['layout'] ?? 'pair'),
+                'image_ids' => (string) ($en_gal['image_ids'] ?? ''),
+                'caption'   => (string) ($pt_gal['caption'] ?? ''),
+            ];
+        }
+
+        $out[] = $entry;
+    }
+
+    // Instituições extras só no PT
+    for ($i = count($en); $i < count($pt); $i++) {
+        if (is_array($pt[$i])) {
+            $out[] = $pt[$i];
+        }
+    }
+
+    if (function_exists('rs_meta_update_array')) {
+        rs_meta_update_array($to_id, RS_EDUCATION_INSTITUTIONS_KEY, array_values($out));
+    } else {
+        update_post_meta($to_id, RS_EDUCATION_INSTITUTIONS_KEY, wp_slash(wp_json_encode(array_values($out), JSON_UNESCAPED_UNICODE) ?: '[]'));
+    }
+}
+
+function rs_sync_media_en_to_pt(int $en_id, string $post_type): void {
+    static $running = false;
+    if ($running) {
+        return;
+    }
+
+    if (!rs_sync_media_is_en_source($en_id)) {
+        return;
+    }
+
+    $pt_id = rs_sync_media_pt_twin_id($en_id);
+    if ($pt_id <= 0) {
+        return;
+    }
+
+    $running = true;
+
+    switch ($post_type) {
+        case 'about':
+            rs_sync_about_media($en_id, $pt_id);
+            break;
+        case 'education':
+            rs_sync_education_media($en_id, $pt_id);
+            break;
+        case 'contact':
+            rs_sync_contact_media($en_id, $pt_id);
+            break;
+        case 'capabilities':
+            rs_sync_capabilities_media($en_id, $pt_id);
+            break;
+    }
+
+    $running = false;
+}
+
+/**
+ * Liga pares en/pt e sincroniza mídia uma vez (About, Education, Contact, Capabilities).
+ */
+function rs_sync_media_bootstrap_all(): int {
+    $count = 0;
+
+    foreach (rs_sync_media_section_post_types() as $post_type) {
+        $ids = get_posts([
+            'post_type'      => $post_type,
+            'post_status'    => ['publish', 'draft', 'pending', 'private'],
+            'posts_per_page' => 50,
+            'fields'         => 'ids',
+        ]);
+
+        foreach ($ids as $post_id) {
+            $post_id = (int) $post_id;
+            if (!rs_sync_media_is_en_source($post_id)) {
+                continue;
+            }
+            if (rs_sync_media_pt_twin_id($post_id) <= 0) {
+                continue;
+            }
+            rs_sync_media_en_to_pt($post_id, $post_type);
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
+foreach (rs_sync_media_post_types() as $post_type) {
+    add_action("save_post_{$post_type}", function (int $post_id) use ($post_type) {
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+        if (wp_is_post_revision($post_id)) {
+            return;
+        }
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        rs_sync_media_en_to_pt($post_id, $post_type);
+    }, 99);
+}
+
+add_action('admin_init', function () {
+    if (get_option('rs_sync_media_bootstrap_v123')) {
+        return;
+    }
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
+
+    $count = rs_sync_media_bootstrap_all();
+    update_option('rs_sync_media_bootstrap_v123', 1, false);
+    set_transient('rs_sync_media_bootstrap_notice', $count, MINUTE_IN_SECONDS * 10);
+});
+
+add_action('admin_notices', function () {
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
+
+    $count = get_transient('rs_sync_media_bootstrap_notice');
+    if ($count === false) {
+        return;
+    }
+
+    delete_transient('rs_sync_media_bootstrap_notice');
+
+    echo '<div class="notice notice-success is-dismissible"><p>'
+        . esc_html(sprintf(
+            'Sync de mídia EN → PT: %d post(s) atualizado(s) (About, Education, Contact, Capabilities).',
+            (int) $count
+        ))
+        . '</p></div>';
+});

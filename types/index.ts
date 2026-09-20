@@ -3,7 +3,19 @@ export type Projects = Array<Project>
 export interface Category {
   id: number;
   title: string;
+  slug?: string;
+  /** SEO / arquivo da tag (REST category_seo). */
+  seoTitle?: string;
+  seoDescription?: string;
+  h1?: string;
+  intro?: string;
 }
+
+export type CategoryTag = {
+  id: number;
+  title: string;
+  slug: string;
+};
 
 export interface Meta {
   slug: string;
@@ -35,4 +47,190 @@ export type Project = {
   category?: number[];
   description?: string;
   created_at?: Date;
+  project_data?: ProjectStructuredData | null;
+};
+
+export type Brands = Brand[];
+
+export type Brand = {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
+  link?: string;
+};
+
+export type Intro = {
+  headline: string;
+  body: string;
+  /** Pills / balões abaixo do texto da home. */
+  balloons?: string[];
+};
+
+export type FooterLink = {
+  title: string;
+  subtitle: string;
+  href: string;
+  external?: boolean;
+};
+
+export type FooterLegal = {
+  brand: string;
+  privacy: string;
+  privacyHref: string;
+  /** HTML do popup de privacidade (editável no WP). */
+  privacyBody?: string;
+  cookies: string;
+  cookiesHref: string;
+  /** HTML do popup de cookies (editável no WP). */
+  cookiesBody?: string;
+};
+
+export type FooterSocialLink = {
+  network: string;
+  href: string;
+  label?: string;
+};
+
+export type FooterContent = {
+  brandMark: string;
+  links: FooterLink[];
+  legal: FooterLegal;
+  /** @deprecated Use socialLinks. */
+  social?: {
+    label: string;
+    href: string;
+  };
+  /** Ícones de redes no footer (editável no WP). */
+  socialLinks?: FooterSocialLink[];
+};
+
+export type CapabilitySection = {
+  title: string;
+  body: string;
+  image?: string;
+  /** Campos legados (defaults do código) */
+  lead?: string;
+  servicesTitle?: string;
+  services?: string[];
+  /** Projeto relacionado (link da imagem / CTA). */
+  imageProjectSlug?: string;
+  /** Arquivo de categoria relacionado (ex.: branding). */
+  relatedCategorySlug?: string;
+};
+
+export type CapabilitiesFaqItem = {
+  question: string;
+  answer: string;
+};
+
+export type CapabilitiesContent = {
+  headline: string;
+  sections: CapabilitySection[];
+  faqTitle?: string;
+  faq?: CapabilitiesFaqItem[];
+};
+
+export type SiteUiLabels = {
+  selectedProjects: string;
+  latestProjects: string;
+  brandsMarquee: string;
+  seeMoreProjects: string;
+  seeMoreWork: string;
+  whatsNewLabel: string;
+  whatsNewTitle: string;
+  whatsNewSubtitle: string;
+};
+
+export type SiteUiNavLink = {
+  label: string;
+  href: string;
+};
+
+export type SiteUiLocale = {
+  labels: SiteUiLabels;
+  nav: SiteUiNavLink[];
+};
+
+/** Layout compartilhado (não depende de idioma). */
+export type SiteUiLayout = {
+  /** Colunas da grade na home (Selected Projects). */
+  homeColumns: 1 | 2 | 3;
+  /** Quantos projetos mostrar ao abrir /projects (antes do “see more”). */
+  projectsInitialCount: number;
+  /** Quantos cards no carrossel “The Latest”. */
+  latestCount: number;
+};
+
+export type SiteUiContent = {
+  en: SiteUiLocale;
+  pt: SiteUiLocale;
+  layout?: SiteUiLayout;
+};
+
+/** SEO por página/projeto (vindo do CMS, locale da request). */
+export type SeoContent = {
+  title?: string;
+  description?: string;
+};
+
+export type BlobVisual = {
+  /** Exibe o LiquidBlob3D no topo da home. */
+  enabled?: boolean;
+  color1: string;
+  color2: string;
+  palette: string[];
+  /** URL do vídeo full-width na home (Sistema → Visual da home). */
+  video?: string;
+  /** Poster / fallback do vídeo da home. */
+  poster?: string;
+};
+
+export type ProjectMediaType = 'image' | 'video' | 'gif';
+
+export type ProjectStructuredImage = {
+  url?: string | false;
+  width?: number;
+  height?: number;
+  mime?: string;
+  type?: ProjectMediaType;
+  /** Texto alternativo da mídia (WP `_wp_attachment_image_alt`). */
+  alt?: string;
+};
+
+export type ProjectGalleryImage = {
+  url: string;
+  width?: number;
+  height?: number;
+  mime?: string;
+  type?: ProjectMediaType;
+  /** Texto alternativo da mídia (WP `_wp_attachment_image_alt`). */
+  alt?: string;
+  /** Ocupa as duas colunas no desktop. */
+  featured?: boolean;
+};
+
+export type ProjectStructuredData = {
+  heroImage?: ProjectStructuredImage | null;
+  logoImage?: ProjectStructuredImage | null;
+  /** Imagem destacada do WP (cards home/listagem). */
+  featuredImage?: ProjectStructuredImage | null;
+  accordion?: Array<{ index: number; title?: string; body: string }>;
+  /** URLs (legado) ou objetos com dimensões para grid fluido. */
+  gallery?: Array<string | ProjectGalleryImage>;
+  /** Vídeos do YouTube exibidos antes da galeria (largura total). */
+  youtubeVideos?: Array<{ id: string; url: string }>;
+  /** Destaque único na home (apenas um projeto deve estar true). */
+  featuredOnHome?: boolean;
+  /** Exibe vignette/logo no canto inferior esquerdo do hero. */
+  showVignette?: boolean;
+};
+
+export type ProjectMeta = {
+  slug: string;
+  img_single?: { url?: string | false };
+  img_secondary?: { url?: string | false };
+  img_primary?: { url?: string | false };
+  video?: { url?: string | false };
+  project_data?: ProjectStructuredData | null;
 };

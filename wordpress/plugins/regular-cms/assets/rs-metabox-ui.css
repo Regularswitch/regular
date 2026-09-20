@@ -1,0 +1,237 @@
+/* Abas + acordeão genéricos — conteúdo de cada painel vem do CPT. */
+
+.rs-metabox-tabs {
+	position: relative;
+	margin-top: 12px;
+}
+
+.rs-metabox-tablist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 14px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.rs-metabox-tab {
+	margin: 0 0 -1px;
+	padding: 8px 14px;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 4px 4px 0 0;
+	background: transparent;
+	color: #2271b1;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.rs-metabox-tab:hover,
+.rs-metabox-tab:focus {
+	color: #135e96;
+}
+
+.rs-metabox-tab.is-active {
+	border-color: #dcdcde;
+	background: #fff;
+	color: #1d2327;
+}
+
+.rs-metabox-tabpanel {
+	position: relative;
+}
+
+.rs-metabox-tabpanel[hidden] {
+	display: block !important;
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	height: 0 !important;
+	max-height: 0 !important;
+	margin: 0;
+	padding: 0;
+	overflow: hidden !important;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.rs-metabox-fieldset {
+	margin: 0 0 20px;
+	padding: 12px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.rs-metabox-fieldset legend {
+	font-weight: 600;
+	padding: 0 6px;
+}
+
+.rs-metabox-accordion-item {
+	margin: 0 0 10px;
+	padding: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.rs-metabox-accordion-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	background: #f6f7f7;
+	border-radius: 4px 4px 0 0;
+}
+
+.rs-metabox-accordion-drag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	color: #646970;
+	cursor: grab;
+	font-size: 12px;
+	letter-spacing: -1px;
+	user-select: none;
+}
+
+.rs-metabox-accordion-toggle {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	padding: 4px 0;
+	border: 0;
+	background: transparent;
+	color: #1d2327;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: left;
+}
+
+.rs-metabox-accordion-head-title {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rs-metabox-accordion-head-thumb {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 4px;
+	overflow: hidden;
+	background: #dcdcde;
+}
+
+.rs-metabox-accordion-head-thumb img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rs-metabox-accordion-panel {
+	max-height: 0;
+	overflow: hidden;
+	padding: 0 12px;
+	transition: max-height 0.2s ease;
+}
+
+.rs-metabox-accordion-item.is-open .rs-metabox-accordion-panel {
+	max-height: 4800px;
+	overflow: visible;
+	padding: 12px 12px 4px;
+}
+
+.rs-metabox-accordion-item.ui-sortable-helper {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.rs-metabox-accordion-placeholder {
+	min-height: 44px;
+	margin: 0 0 10px;
+	border: 2px dashed #2271b1;
+	border-radius: 4px;
+	background: #f0f6fc;
+}
+
+/* Editores compactos (footer, contact, labels, títulos) */
+.rs-admin-text-field .wp-editor-wrap,
+.rs-metabox-accordion-panel .wp-editor-wrap {
+	margin-bottom: 4px;
+}
+
+.rs-admin-text-field .wp-editor-container,
+.rs-metabox-accordion-panel .wp-editor-container {
+	border-radius: 4px;
+}
+
+.rs-admin-text-field .mce-tinymce,
+.rs-metabox-accordion-panel .mce-tinymce {
+	box-shadow: none !important;
+}
+
+.rs-admin-text-field iframe,
+.rs-metabox-accordion-panel .rs-admin-text-field iframe {
+	min-height: 70px !important;
+}
+
+.rs-footer-accordion,
+.rs-contact-accordion,
+.rs-legal-accordion,
+.rs-site-ui-accordion {
+	margin-top: 8px;
+}
+
+.rs-footer-accordion .rs-metabox-accordion-item,
+.rs-contact-accordion .rs-metabox-accordion-item,
+.rs-legal-accordion .rs-metabox-accordion-item,
+.rs-site-ui-accordion .rs-metabox-accordion-item {
+	margin-bottom: 8px;
+}
+
+.rs-metabox-accordion-panel {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.rs-media-thumb {
+	position: relative;
+	aspect-ratio: 1;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f6f7f7;
+	overflow: hidden;
+}
+
+.rs-media-thumb img,
+.rs-media-thumb video {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rs-media-thumb .rs-media-thumb-actions {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	background: rgba(0, 0, 0, 0.45);
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.rs-media-thumb:hover .rs-media-thumb-actions,
+.rs-media-thumb:focus-within .rs-media-thumb-actions {
+	opacity: 1;
+}

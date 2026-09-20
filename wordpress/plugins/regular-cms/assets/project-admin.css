@@ -1,0 +1,364 @@
+/* Só enfileirado em post.php / post-new.php do CPT project. */
+
+.rs-project-tabs {
+	position: relative;
+	margin-top: 12px;
+}
+
+.rs-project-tablist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 14px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.rs-project-tab {
+	margin: 0 0 -1px;
+	padding: 8px 14px;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 4px 4px 0 0;
+	background: transparent;
+	color: #2271b1;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.rs-project-tab:hover,
+.rs-project-tab:focus {
+	color: #135e96;
+}
+
+.rs-project-tab.is-active {
+	border-color: #dcdcde;
+	background: #fff;
+	color: #1d2327;
+}
+
+.rs-project-tabpanel {
+	position: relative;
+}
+
+/* Recorta a altura — left:-10000px ainda esticava o documento por causa do TinyMCE. */
+.rs-project-tabpanel[hidden] {
+	display: block !important;
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	height: 0 !important;
+	max-height: 0 !important;
+	margin: 0;
+	padding: 0;
+	overflow: hidden !important;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.rs-project-fieldset {
+	margin: 0 0 20px;
+	padding: 12px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.rs-project-fieldset legend {
+	font-weight: 600;
+	padding: 0 6px;
+}
+
+.rs-project-accordion-row {
+	margin: 0 0 10px;
+	padding: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.rs-project-accordion-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	background: #f6f7f7;
+	border-radius: 4px 4px 0 0;
+}
+
+.rs-project-accordion-drag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	color: #646970;
+	cursor: grab;
+	font-size: 12px;
+	letter-spacing: -1px;
+	user-select: none;
+}
+
+.rs-project-accordion-toggle {
+	flex: 1;
+	min-width: 0;
+	padding: 4px 0;
+	border: 0;
+	background: transparent;
+	color: #1d2327;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: left;
+}
+
+.rs-project-accordion-head-title {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rs-project-accordion-panel {
+	max-height: 0;
+	overflow: hidden;
+	padding: 0 12px;
+	transition: max-height 0.2s ease;
+}
+
+.rs-project-accordion-row.is-open .rs-project-accordion-panel {
+	max-height: 4800px;
+	overflow: visible;
+	padding: 12px 12px 4px;
+}
+
+.rs-project-accordion-row.ui-sortable-helper {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.rs-project-accordion-placeholder {
+	min-height: 44px;
+	margin: 0 0 10px;
+	border: 2px dashed #2271b1;
+	border-radius: 4px;
+	background: #f0f6fc;
+}
+
+/* Galeria — layout espelhado do site (ProjectGallery / globals.css) */
+#rs-project-gallery-list.rs-project-gallery-grid,
+.rs-project-gallery-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+	#rs-project-gallery-list.rs-project-gallery-grid,
+	.rs-project-gallery-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.rs-project-gallery-row {
+	min-width: 0;
+	width: 100%;
+	margin: 0;
+	box-sizing: border-box;
+}
+
+.rs-project-gallery-row--wide {
+	grid-column: 1 / -1;
+}
+
+@media (max-width: 480px) {
+	.rs-project-gallery-row--wide {
+		grid-column: auto;
+	}
+}
+
+.rs-project-gallery-tile {
+	position: relative;
+	width: 100%;
+	border: 1px solid #dcdcde;
+	border-radius: 5px;
+	background: #f6f7f7;
+	overflow: hidden;
+	cursor: grab;
+	box-sizing: border-box;
+}
+
+.rs-project-gallery-tile:active {
+	cursor: grabbing;
+}
+
+.rs-project-gallery-tile.is-featured {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.rs-project-gallery-media {
+	position: relative;
+	width: 100%;
+}
+
+.rs-project-gallery-actions {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.rs-project-gallery-handle,
+.rs-project-remove-gallery,
+.rs-project-gallery-featured {
+	position: absolute;
+	pointer-events: auto;
+	margin: 0;
+}
+
+.rs-project-gallery-handle {
+	top: 6px;
+	left: 6px;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	font-size: 11px;
+	line-height: 1;
+	letter-spacing: -1px;
+	user-select: none;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.rs-project-remove-gallery {
+	top: 4px;
+	right: 4px;
+	z-index: 2;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.rs-project-remove-gallery:hover {
+	background: #b32d2e;
+}
+
+.rs-project-gallery-featured {
+	bottom: 4px;
+	right: 4px;
+	z-index: 2;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.55);
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.rs-project-gallery-featured:hover,
+.rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
+	background: #2271b1;
+	color: #fff;
+}
+
+.rs-project-gallery-tile.is-featured .rs-project-gallery-featured,
+.rs-project-gallery-tile:hover .rs-project-gallery-handle,
+.rs-project-gallery-tile:hover .rs-project-remove-gallery,
+.rs-project-gallery-tile:hover .rs-project-gallery-featured {
+	opacity: 1;
+}
+
+.rs-project-gallery-preview {
+	display: block;
+	width: 100%;
+	margin: 0 !important;
+	line-height: 0;
+}
+
+.rs-project-gallery-preview img,
+.rs-project-gallery-preview video {
+	display: block;
+	width: 100% !important;
+	max-width: 100% !important;
+	height: auto !important;
+	border-radius: 0 !important;
+	vertical-align: top;
+}
+
+.rs-project-gallery-preview video {
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	background: #1d2327;
+}
+
+.rs-project-gallery-badge {
+	position: absolute;
+	bottom: 6px;
+	left: 6px;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 7px;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.72);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	pointer-events: none;
+}
+
+.rs-project-gallery-badge svg {
+	display: block;
+	flex: 0 0 auto;
+}
+
+.rs-project-gallery-placeholder {
+	min-height: 72px;
+	border: 2px dashed #2271b1;
+	border-radius: 5px;
+	background: #f0f6fc;
+	box-sizing: border-box;
+}
+
+.rs-project-gallery-placeholder.rs-project-gallery-row--wide {
+	grid-column: 1 / -1;
+}
+
+.rs-project-gallery-row.ui-sortable-helper .rs-project-gallery-tile {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+@media (hover: none), (pointer: coarse) {
+	.rs-project-gallery-handle,
+	.rs-project-remove-gallery,
+	.rs-project-gallery-featured {
+		opacity: 1;
+	}
+}

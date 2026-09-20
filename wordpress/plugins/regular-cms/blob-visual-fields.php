@@ -1,0 +1,855 @@
+<?php
+/**
+ * Cores do blob da home — paleta única para EN e PT.
+ * Admin: swatches visuais (estilo toolbar) em vez de lista de hex.
+ */
+
+if (defined('RS_BLOB_VISUAL_LOADED')) {
+    return;
+}
+define('RS_BLOB_VISUAL_LOADED', true);
+
+const RS_BLOB_DEFAULT_COLOR1 = '#fe4857';
+const RS_BLOB_DEFAULT_COLOR2 = '#4af117';
+const RS_BLOB_DEFAULT_PALETTE = '#7B00FF,#D400FF,#FF5FAF,#304FFE,#FFD500,#4af117,#fe4857';
+const RS_BLOB_MAX_COLORS = 8;
+
+const RS_BLOB_META_COLOR1 = 'rs_blob_color1';
+const RS_BLOB_META_COLOR2 = 'rs_blob_color2';
+const RS_BLOB_META_PALETTE = 'rs_blob_palette';
+const RS_BLOB_META_ENABLED = 'rs_blob_enabled';
+/** Vídeo full-width na home (abaixo dos Selected Projects). */
+const RS_BLOB_META_VIDEO_ID = 'rs_home_video_id';
+/** Poster / fallback do vídeo da home. */
+const RS_BLOB_META_POSTER_ID = 'rs_home_video_poster_id';
+/** URL externa do vídeo (opcional; usada se não houver upload). */
+const RS_BLOB_META_VIDEO_URL = 'rs_home_video_url';
+
+function rs_blob_default_palette(): array {
+    return array_map('trim', explode(',', RS_BLOB_DEFAULT_PALETTE));
+}
+
+function rs_blob_normalize_hex(string $value, string $fallback): string {
+    $value = trim($value);
+
+    if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value)) {
+        if (strlen($value) === 4) {
+            $value = '#' . $value[1] . $value[1] . $value[2] . $value[2] . $value[3] . $value[3];
+        }
+        return strtolower($value);
+    }
+
+    return strtolower($fallback);
+}
+
+function rs_blob_parse_palette(string $raw, array $fallback): array {
+    $parts = preg_split('/[\s,]+/', trim($raw), -1, PREG_SPLIT_NO_EMPTY);
+    $colors = [];
+    $seen = [];
+
+    foreach ($parts as $part) {
+        $normalized = rs_blob_normalize_hex($part, '');
+        if ($normalized === '' || isset($seen[$normalized])) {
+            continue;
+        }
+        $seen[$normalized] = true;
+        $colors[] = $normalized;
+        if (count($colors) >= RS_BLOB_MAX_COLORS) {
+            break;
+        }
+    }
+
+    return count($colors) >= 2 ? $colors : $fallback;
+}
+
+/** Garante que a cor escolhida exista na paleta. */
+function rs_blob_clamp_to_palette(string $color, array $palette, string $fallback): string {
+    $color = rs_blob_normalize_hex($color, '');
+    if ($color !== '' && in_array($color, $palette, true)) {
+        return $color;
+    }
+    $fallback = rs_blob_normalize_hex($fallback, '');
+    if ($fallback !== '' && in_array($fallback, $palette, true)) {
+        return $fallback;
+    }
+    return $palette[0] ?? RS_BLOB_DEFAULT_COLOR1;
+}
+
+function rs_blob_visual_get_post_id(): int {
+    $posts = get_posts([
+        'post_type'      => 'home-visual',
+        'post_status'    => 'publish',
+        'name'           => 'default',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+    ]);
+
+    return !empty($posts[0]) ? (int) $posts[0] : 0;
+}
+
+function rs_blob_visual_get_meta(int $post_id): array {
+    return [
+        RS_BLOB_META_COLOR1    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR1, true),
+        RS_BLOB_META_COLOR2    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR2, true),
+        RS_BLOB_META_PALETTE   => (string) get_post_meta($post_id, RS_BLOB_META_PALETTE, true),
+        RS_BLOB_META_ENABLED   => (string) get_post_meta($post_id, RS_BLOB_META_ENABLED, true),
+        RS_BLOB_META_VIDEO_ID  => (int) get_post_meta($post_id, RS_BLOB_META_VIDEO_ID, true),
+        RS_BLOB_META_POSTER_ID => (int) get_post_meta($post_id, RS_BLOB_META_POSTER_ID, true),
+        RS_BLOB_META_VIDEO_URL => (string) get_post_meta($post_id, RS_BLOB_META_VIDEO_URL, true),
+    ];
+}
+
+function rs_blob_visual_attachment_url(int $attachment_id): string {
+    if ($attachment_id <= 0) {
+        return '';
+    }
+    $url = wp_get_attachment_url($attachment_id);
+    return is_string($url) ? $url : '';
+}
+
+function rs_blob_visual_sanitize_video_url(string $raw): string {
+    $raw = trim($raw);
+    if ($raw === '') {
+        return '';
+    }
+    $url = esc_url_raw($raw);
+    if ($url === '') {
+        return '';
+    }
+    // Aceita http(s) e caminhos relativos do próprio site.
+    if (preg_match('#^(https?:)?//#i', $url) || str_starts_with($url, '/')) {
+        return $url;
+    }
+    return '';
+}
+
+function rs_blob_visual_resolve_video_url(array $meta): string {
+    $from_upload = rs_blob_visual_attachment_url((int) ($meta[RS_BLOB_META_VIDEO_ID] ?? 0));
+    if ($from_upload !== '') {
+        return $from_upload;
+    }
+    return rs_blob_visual_sanitize_video_url((string) ($meta[RS_BLOB_META_VIDEO_URL] ?? ''));
+}
+
+function rs_blob_visual_is_enabled(int $post_id): bool {
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    $raw = get_post_meta($post_id, RS_BLOB_META_ENABLED, true);
+    // Meta ausente: desligado (site atual sem blob até ativar no admin).
+    if ($raw === '' || $raw === false || $raw === null) {
+        return false;
+    }
+
+    return (string) $raw === '1' || $raw === 1 || $raw === true;
+}
+
+function rs_blob_visual_payload(?int $post_id = null): array {
+    $post_id = $post_id ?: rs_blob_visual_get_post_id();
+    $defaults_palette = rs_blob_default_palette();
+
+    if ($post_id <= 0) {
+        return [
+            'enabled'  => false,
+            'color1'   => RS_BLOB_DEFAULT_COLOR1,
+            'color2'   => RS_BLOB_DEFAULT_COLOR2,
+            'palette'  => $defaults_palette,
+            'video'    => '',
+            'poster'   => '',
+        ];
+    }
+
+    $meta = rs_blob_visual_get_meta($post_id);
+    $palette = rs_blob_parse_palette($meta[RS_BLOB_META_PALETTE], $defaults_palette);
+
+    return [
+        'enabled' => rs_blob_visual_is_enabled($post_id),
+        'color1'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR1], $palette, RS_BLOB_DEFAULT_COLOR1),
+        'color2'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR2], $palette, RS_BLOB_DEFAULT_COLOR2),
+        'palette' => $palette,
+        'video'   => rs_blob_visual_resolve_video_url($meta),
+        'poster'  => rs_blob_visual_attachment_url((int) $meta[RS_BLOB_META_POSTER_ID]),
+    ];
+}
+
+function rs_blob_visual_ensure_post(): void {
+    if (get_option('rs_blob_visual_post_ensured_v1')) {
+        return;
+    }
+
+    if (rs_blob_visual_get_post_id() > 0) {
+        update_option('rs_blob_visual_post_ensured_v1', 1);
+        return;
+    }
+
+    $post_id = (int) wp_insert_post([
+        'post_title'  => 'Visual da home',
+        'post_status' => 'publish',
+        'post_type'   => 'home-visual',
+        'post_name'   => 'default',
+        'post_author' => 1,
+    ], true);
+
+    if (!is_wp_error($post_id) && $post_id > 0) {
+        update_post_meta($post_id, RS_BLOB_META_COLOR1, RS_BLOB_DEFAULT_COLOR1);
+        update_post_meta($post_id, RS_BLOB_META_COLOR2, RS_BLOB_DEFAULT_COLOR2);
+        update_post_meta($post_id, RS_BLOB_META_PALETTE, RS_BLOB_DEFAULT_PALETTE);
+        update_post_meta($post_id, RS_BLOB_META_ENABLED, '0');
+    }
+
+    update_option('rs_blob_visual_post_ensured_v1', 1);
+}
+
+add_action('init', function () {
+    foreach ([RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR2, RS_BLOB_META_PALETTE] as $key) {
+        register_post_meta('home-visual', $key, [
+            'single'        => true,
+            'type'          => 'string',
+            'show_in_rest'  => false,
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+
+    register_post_meta('home-visual', RS_BLOB_META_ENABLED, [
+        'single'        => true,
+        'type'          => 'boolean',
+        'show_in_rest'  => false,
+        'auth_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+    ]);
+
+    foreach ([RS_BLOB_META_VIDEO_ID, RS_BLOB_META_POSTER_ID] as $media_key) {
+        register_post_meta('home-visual', $media_key, [
+            'single'        => true,
+            'type'          => 'integer',
+            'show_in_rest'  => false,
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+
+    register_post_meta('home-visual', RS_BLOB_META_VIDEO_URL, [
+        'single'        => true,
+        'type'          => 'string',
+        'show_in_rest'  => false,
+        'auth_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+    ]);
+}, 20);
+
+/** Editor clássico — meta boxes de mídia salvam de forma confiável no POST. */
+add_filter('use_block_editor_for_post_type', function ($use, $post_type) {
+    if ($post_type === 'home-visual') {
+        return false;
+    }
+    return $use;
+}, 10, 2);
+
+add_action('init', 'rs_blob_visual_ensure_post', 25);
+
+add_action('rest_api_init', function () {
+    register_rest_route('rs/v1', '/blob-visual', [
+        'methods'             => 'GET',
+        'permission_callback' => '__return_true',
+        'callback'            => function () {
+            return rs_blob_visual_payload();
+        },
+    ]);
+});
+
+add_action('add_meta_boxes_home-visual', function () {
+    add_meta_box(
+        'rs_home_video_fields',
+        'Vídeo da home',
+        'rs_home_video_render_meta_box',
+        'home-visual',
+        'normal',
+        'high'
+    );
+
+    add_meta_box(
+        'rs_blob_visual_fields',
+        'Cores do blob',
+        'rs_blob_visual_render_meta_box',
+        'home-visual',
+        'normal',
+        'high'
+    );
+
+    remove_meta_box('postcustom', 'home-visual', 'normal');
+}, 10);
+
+function rs_home_video_render_meta_box(WP_Post $post): void {
+    wp_nonce_field('rs_blob_visual_save', 'rs_blob_visual_nonce');
+
+    $video_id = (int) get_post_meta($post->ID, RS_BLOB_META_VIDEO_ID, true);
+    $poster_id = (int) get_post_meta($post->ID, RS_BLOB_META_POSTER_ID, true);
+    $video_url = (string) get_post_meta($post->ID, RS_BLOB_META_VIDEO_URL, true);
+
+    echo '<p class="rs-blob-help" style="margin:0 0 16px;">';
+    echo 'Seção full-width na home (após Projetos Selecionados): <strong>autoplay, muted, loop</strong>. ';
+    echo 'Vale para EN e PT. Faça upload <em>ou</em> cole uma URL .mp4. ';
+    echo rs_plugin_version_markup();
+    echo '</p>';
+
+    if (function_exists('rs_render_media_field')) {
+        rs_render_media_field(
+            RS_BLOB_META_VIDEO_ID,
+            'Vídeo (mp4) — upload',
+            $video_id,
+            RS_BLOB_META_VIDEO_ID,
+            true,
+            'video'
+        );
+        rs_render_media_field(
+            RS_BLOB_META_POSTER_ID,
+            'Poster / imagem de fallback (opcional)',
+            $poster_id,
+            RS_BLOB_META_POSTER_ID,
+            true,
+            'image'
+        );
+    } else {
+        echo '<p>Campo de mídia indisponível.</p>';
+    }
+
+    echo '<p class="rs-blob-field" style="margin-top:18px;">';
+    echo '<label class="rs-blob-label" for="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '">URL do vídeo (opcional)</label>';
+    echo '<input type="url" class="widefat" id="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '" name="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '" value="' . esc_attr($video_url) . '" placeholder="https://…/video.mp4" />';
+    echo '<span style="display:block;margin-top:6px;color:#646970;font-size:12px;">Usada só se não houver vídeo enviado acima.</span>';
+    echo '</p>';
+}
+
+/**
+ * Toolbar de swatches — só seleção a partir da paleta (sem +).
+ */
+function rs_blob_render_color_picker_row(string $input_id, string $input_name, string $value, array $palette, string $label): void {
+    $value = rs_blob_clamp_to_palette($value, $palette, $palette[0] ?? RS_BLOB_DEFAULT_COLOR1);
+
+    echo '<div class="rs-blob-field" data-rs-blob-picker data-target="' . esc_attr($input_id) . '">';
+    echo '<label class="rs-blob-label">' . esc_html($label) . '</label>';
+    echo '<input type="hidden" id="' . esc_attr($input_id) . '" name="' . esc_attr($input_name) . '" value="' . esc_attr($value) . '" />';
+    echo '<div class="rs-blob-toolbar" role="listbox" aria-label="' . esc_attr($label) . '">';
+
+    foreach ($palette as $color) {
+        $active = strtolower($color) === strtolower($value) ? ' is-active' : '';
+        echo '<button type="button" class="rs-blob-swatch' . esc_attr($active) . '" role="option" data-color="' . esc_attr($color) . '" style="--swatch:' . esc_attr($color) . ';" aria-label="' . esc_attr($color) . '" title="' . esc_attr($color) . '">';
+        echo '<span class="rs-blob-swatch-dot" aria-hidden="true"></span>';
+        echo '</button>';
+    }
+
+    echo '</div>';
+    echo '</div>';
+}
+
+function rs_blob_visual_render_meta_box(WP_Post $post): void {
+    wp_nonce_field('rs_blob_visual_save', 'rs_blob_visual_nonce');
+
+    $meta = rs_blob_visual_get_meta($post->ID);
+    $palette = rs_blob_parse_palette(
+        trim($meta[RS_BLOB_META_PALETTE]) !== '' ? $meta[RS_BLOB_META_PALETTE] : RS_BLOB_DEFAULT_PALETTE,
+        rs_blob_default_palette()
+    );
+    $color1 = rs_blob_clamp_to_palette(
+        (string) $meta[RS_BLOB_META_COLOR1],
+        $palette,
+        RS_BLOB_DEFAULT_COLOR1
+    );
+    $color2 = rs_blob_clamp_to_palette(
+        (string) $meta[RS_BLOB_META_COLOR2],
+        $palette,
+        RS_BLOB_DEFAULT_COLOR2
+    );
+
+    echo '<p class="rs-blob-help">';
+    echo 'Paleta única para a home em <strong>inglês e português</strong>. ';
+    echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
+    echo 'Principal e secundária são escolhidas a partir dela. ';
+    echo rs_plugin_version_markup();
+    echo '</p>';
+
+    $enabled = rs_blob_visual_is_enabled((int) $post->ID);
+    echo '<p class="rs-blob-field" style="margin:0 0 18px;">';
+    echo '<label style="display:inline-flex;align-items:center;gap:8px;font-weight:600;">';
+    echo '<input type="checkbox" name="' . esc_attr(RS_BLOB_META_ENABLED) . '" value="1"' . checked($enabled, true, false) . ' />';
+    echo 'Exibir Liquid Blob 3D na home';
+    echo '</label>';
+    echo '<span style="display:block;margin-top:6px;color:#646970;font-size:12px;font-weight:400;">Quando desligado, a home começa direto no Intro. Cores da paleta continuam valendo para menu e cursor.</span>';
+    echo '</p>';
+
+    echo '<div class="rs-blob-field" data-rs-blob-palette>';
+    echo '<label class="rs-blob-label">Paleta (blob, menu e barra de progresso)</label>';
+    echo '<input type="hidden" id="' . esc_attr(RS_BLOB_META_PALETTE) . '" name="' . esc_attr(RS_BLOB_META_PALETTE) . '" value="' . esc_attr(implode(',', $palette)) . '" />';
+    echo '<div class="rs-blob-toolbar rs-blob-toolbar--palette" id="rs-blob-palette-list">';
+
+    foreach ($palette as $index => $color) {
+        echo '<button type="button" class="rs-blob-swatch" data-palette-index="' . esc_attr((string) $index) . '" data-color="' . esc_attr($color) . '" style="--swatch:' . esc_attr($color) . ';" title="' . esc_attr($color) . ' — clique para editar">';
+        echo '<span class="rs-blob-swatch-remove" title="Remover" aria-label="Remover">×</span>';
+        echo '</button>';
+    }
+
+    echo '<button type="button" class="rs-blob-swatch rs-blob-swatch--add" id="rs-blob-palette-add" title="Adicionar cor" aria-label="Adicionar cor">';
+    echo '<span class="rs-blob-swatch-plus" aria-hidden="true">+</span>';
+    echo '</button>';
+    echo '</div>';
+    echo '<input type="color" id="rs-blob-palette-native" class="rs-blob-native-color" value="#7b00ff" tabindex="-1" aria-hidden="true" />';
+    echo '<p class="rs-blob-hint">Clique para editar · × para remover · + para adicionar (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
+    echo '<button type="button" class="button button-small" id="rs-blob-palette-reset" style="margin-left:6px;">Restaurar paleta padrão</button>';
+    echo '</p>';
+    echo '</div>';
+
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR1, $color1, $palette, 'Cor principal');
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR2, RS_BLOB_META_COLOR2, $color2, $palette, 'Cor secundária');
+
+    ?>
+    <style>
+        .rs-blob-help { margin: 0 0 16px; color: var(--rs-text-muted, #646970); }
+        .rs-blob-hint { margin: 8px 0 0; color: var(--rs-text-muted, #646970); font-size: 12px; }
+        .rs-blob-field { margin: 0 0 18px; }
+        .rs-blob-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--rs-text, #1d2327); }
+        .rs-blob-toolbar {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: var(--rs-radius-lg, 12px);
+            background: var(--rs-text, #18181b);
+            box-shadow: 0 1px 0 rgb(0 0 0 / 0.08);
+            max-width: 100%;
+        }
+        .rs-blob-toolbar--palette { border-radius: 20px; }
+        .rs-blob-swatch {
+            position: relative;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            background: var(--swatch, #888);
+            cursor: pointer;
+            box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+            transition: transform 0.12s ease;
+        }
+        .rs-blob-swatch:hover { transform: scale(1.06); }
+        .rs-blob-swatch:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+        .rs-blob-swatch-dot {
+            display: none;
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #111;
+            box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35);
+        }
+        .rs-blob-swatch.is-active .rs-blob-swatch-dot { display: block; }
+        .rs-blob-swatch--add {
+            background: conic-gradient(
+                from 180deg,
+                #ff5faf,
+                #ffd500,
+                #4af117,
+                #304ffe,
+                #7b00ff,
+                #d400ff,
+                #ff5faf
+            );
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rs-blob-swatch-plus {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+        }
+        .rs-blob-swatch-remove {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #111;
+            color: #fff;
+            font-size: 11px;
+            line-height: 15px;
+            text-align: center;
+            box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+        }
+        .rs-blob-toolbar--palette .rs-blob-swatch:hover .rs-blob-swatch-remove,
+        .rs-blob-toolbar--palette .rs-blob-swatch:focus-within .rs-blob-swatch-remove {
+            display: block;
+        }
+        .rs-blob-native-color {
+            position: fixed;
+            z-index: 100000;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+    <script>
+    (function () {
+        if (window.__rsBlobColorPickerInit) return;
+        window.__rsBlobColorPickerInit = true;
+
+        var DEFAULT_PALETTE = <?php echo wp_json_encode(rs_blob_default_palette()); ?>;
+        var MAX_COLORS = <?php echo (int) RS_BLOB_MAX_COLORS; ?>;
+        var COLOR1_ID = '<?php echo esc_js(RS_BLOB_META_COLOR1); ?>';
+        var COLOR2_ID = '<?php echo esc_js(RS_BLOB_META_COLOR2); ?>';
+        var paletteInput = document.getElementById('<?php echo esc_js(RS_BLOB_META_PALETTE); ?>');
+        var paletteList = document.getElementById('rs-blob-palette-list');
+        var paletteAdd = document.getElementById('rs-blob-palette-add');
+        var paletteNative = document.getElementById('rs-blob-palette-native');
+        var mode = 'idle';
+        var editIndex = -1;
+
+        function normalizeHex(value) {
+            value = String(value || '').trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(value)) return value.toLowerCase();
+            if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+                return ('#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]).toLowerCase();
+            }
+            return '';
+        }
+
+        function uniqueColors(list) {
+            var out = [];
+            var seen = {};
+            (list || []).forEach(function (item) {
+                var color = normalizeHex(item);
+                if (!color || seen[color]) return;
+                seen[color] = true;
+                out.push(color);
+            });
+            return out;
+        }
+
+        function getPalette() {
+            if (!paletteInput) return DEFAULT_PALETTE.slice();
+            return uniqueColors(String(paletteInput.value || '').split(/[\s,]+/));
+        }
+
+        function clampToPalette(color, palette, fallback) {
+            color = normalizeHex(color);
+            if (color && palette.indexOf(color) !== -1) return color;
+            fallback = normalizeHex(fallback);
+            if (fallback && palette.indexOf(fallback) !== -1) return fallback;
+            return palette[0] || '#7b00ff';
+        }
+
+        function syncPrimaryColors(palette, mapOldToNew) {
+            [COLOR1_ID, COLOR2_ID].forEach(function (id, idx) {
+                var input = document.getElementById(id);
+                if (!input) return;
+                var current = normalizeHex(input.value);
+                if (mapOldToNew && mapOldToNew[current]) {
+                    current = mapOldToNew[current];
+                }
+                var fallback = palette[Math.min(idx, palette.length - 1)] || palette[0];
+                input.value = clampToPalette(current, palette, fallback);
+            });
+        }
+
+        function setPalette(colors, mapOldToNew) {
+            if (!paletteInput) return;
+            colors = uniqueColors(colors).slice(0, MAX_COLORS);
+            if (colors.length < 2) colors = DEFAULT_PALETTE.slice();
+            paletteInput.value = colors.join(',');
+            syncPrimaryColors(colors, mapOldToNew || null);
+            renderPalette();
+            refreshPickers();
+        }
+
+        function renderPalette() {
+            if (!paletteList || !paletteAdd) return;
+            var colors = getPalette();
+            paletteList.querySelectorAll('.rs-blob-swatch:not(.rs-blob-swatch--add)').forEach(function (el) {
+                el.remove();
+            });
+            colors.forEach(function (color, index) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rs-blob-swatch';
+                btn.setAttribute('data-palette-index', String(index));
+                btn.setAttribute('data-color', color);
+                btn.style.setProperty('--swatch', color);
+                btn.title = color + ' — clique para editar';
+                btn.innerHTML = '<span class="rs-blob-swatch-remove" title="Remover" aria-label="Remover">×</span>';
+                paletteList.insertBefore(btn, paletteAdd);
+            });
+            if (paletteAdd) {
+                paletteAdd.style.display = colors.length >= MAX_COLORS ? 'none' : '';
+            }
+        }
+
+        function refreshPickers() {
+            var palette = getPalette();
+            document.querySelectorAll('[data-rs-blob-picker]').forEach(function (field) {
+                var targetId = field.getAttribute('data-target');
+                var input = document.getElementById(targetId);
+                var toolbar = field.querySelector('.rs-blob-toolbar');
+                if (!input || !toolbar) return;
+
+                var current = clampToPalette(input.value, palette, palette[0]);
+                input.value = current;
+
+                toolbar.innerHTML = '';
+                palette.forEach(function (color) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'rs-blob-swatch' + (color === current ? ' is-active' : '');
+                    btn.setAttribute('data-color', color);
+                    btn.title = color;
+                    btn.style.setProperty('--swatch', color);
+                    btn.innerHTML = '<span class="rs-blob-swatch-dot" aria-hidden="true"></span>';
+                    toolbar.appendChild(btn);
+                });
+            });
+        }
+
+        function setPickerValue(field, color) {
+            color = normalizeHex(color);
+            if (!color) return;
+            if (getPalette().indexOf(color) === -1) return;
+            var targetId = field.getAttribute('data-target');
+            var input = document.getElementById(targetId);
+            if (input) input.value = color;
+            field.querySelectorAll('.rs-blob-swatch').forEach(function (el) {
+                el.classList.toggle('is-active', el.getAttribute('data-color') === color);
+            });
+        }
+
+        var SUGGESTED_COLORS = ['#7b00ff', '#d400ff', '#ff5faf', '#304ffe', '#ffd500', '#4af117', '#fe4857', '#00e5ff'];
+
+        function unusedColor(palette) {
+            for (var i = 0; i < SUGGESTED_COLORS.length; i++) {
+                if (palette.indexOf(SUGGESTED_COLORS[i]) === -1) return SUGGESTED_COLORS[i];
+            }
+            var tries = 0;
+            while (tries < 40) {
+                var hex = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+                if (palette.indexOf(hex) === -1) return hex;
+                tries += 1;
+            }
+            return '#111111';
+        }
+
+        function placeNativeOver(anchor) {
+            if (!paletteNative) return;
+            var rect = anchor && typeof anchor.getBoundingClientRect === 'function'
+                ? anchor.getBoundingClientRect()
+                : { left: window.innerWidth / 2 - 14, top: 120, width: 28, height: 28 };
+            paletteNative.style.left = Math.max(8, rect.left) + 'px';
+            paletteNative.style.top = Math.max(8, rect.top) + 'px';
+            paletteNative.style.width = Math.max(28, rect.width) + 'px';
+            paletteNative.style.height = Math.max(28, rect.height) + 'px';
+        }
+
+        function openNativeColor(native, startColor, anchor) {
+            if (!native) return;
+            var hex = normalizeHex(startColor) || '#7b00ff';
+            placeNativeOver(anchor);
+            native.defaultValue = hex;
+            native.value = hex;
+            window.requestAnimationFrame(function () {
+                try {
+                    if (typeof native.showPicker === 'function') {
+                        native.showPicker();
+                    } else {
+                        native.click();
+                    }
+                } catch (err) {
+                    native.click();
+                }
+            });
+        }
+
+        document.querySelectorAll('[data-rs-blob-picker]').forEach(function (field) {
+            field.addEventListener('click', function (event) {
+                var swatch = event.target.closest('.rs-blob-swatch');
+                if (!swatch || !field.contains(swatch)) return;
+                event.preventDefault();
+                setPickerValue(field, swatch.getAttribute('data-color'));
+            });
+        });
+
+        if (paletteList) {
+            paletteList.addEventListener('click', function (event) {
+                var remove = event.target.closest('.rs-blob-swatch-remove');
+                if (remove) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var swatch = remove.closest('.rs-blob-swatch');
+                    var index = swatch ? parseInt(swatch.getAttribute('data-palette-index') || '-1', 10) : -1;
+                    var colors = getPalette();
+                    if (index < 0 || colors.length <= 2) {
+                        window.alert('A paleta precisa de pelo menos 2 cores.');
+                        return;
+                    }
+                    colors.splice(index, 1);
+                    mode = 'idle';
+                    editIndex = -1;
+                    setPalette(colors);
+                    return;
+                }
+
+                if (event.target.closest('#rs-blob-palette-add')) {
+                    event.preventDefault();
+                    var colors = getPalette();
+                    if (colors.length >= MAX_COLORS) {
+                        window.alert('Máximo de ' + MAX_COLORS + ' cores na paleta.');
+                        return;
+                    }
+                    var next = unusedColor(colors);
+                    colors.push(next);
+                    setPalette(colors);
+                    mode = 'edit';
+                    editIndex = getPalette().indexOf(next);
+                    var added = paletteList && paletteList.querySelector('[data-palette-index="' + editIndex + '"]');
+                    openNativeColor(paletteNative, next, added || event.target.closest('#rs-blob-palette-add'));
+                    return;
+                }
+
+                var edit = event.target.closest('.rs-blob-swatch:not(.rs-blob-swatch--add)');
+                if (edit) {
+                    event.preventDefault();
+                    mode = 'edit';
+                    editIndex = parseInt(edit.getAttribute('data-palette-index') || '-1', 10);
+                    openNativeColor(paletteNative, edit.getAttribute('data-color'), edit);
+                }
+            });
+        }
+
+        if (paletteNative) {
+            paletteNative.addEventListener('input', function () {
+                if (mode !== 'edit' || editIndex < 0) return;
+                var color = normalizeHex(paletteNative.value);
+                if (!color) return;
+                var swatch = paletteList && paletteList.querySelector('[data-palette-index="' + editIndex + '"]');
+                if (swatch) {
+                    swatch.style.setProperty('--swatch', color);
+                }
+            });
+
+            paletteNative.addEventListener('change', function () {
+                var color = normalizeHex(paletteNative.value);
+                if (!color) return;
+                var colors = getPalette();
+
+                if (mode === 'edit' && editIndex >= 0 && editIndex < colors.length) {
+                    if (colors.indexOf(color) !== -1 && colors[editIndex] !== color) {
+                        window.alert('Essa cor já está na paleta.');
+                        return;
+                    }
+                    var oldColor = colors[editIndex];
+                    var map = {};
+                    map[oldColor] = color;
+                    colors[editIndex] = color;
+                    setPalette(colors, map);
+                    editIndex = getPalette().indexOf(color);
+                    if (editIndex < 0) mode = 'idle';
+                }
+            });
+        }
+
+        var resetBtn = document.getElementById('rs-blob-palette-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (!window.confirm('Restaurar a paleta padrão? Isso remove as cores extras.')) return;
+                mode = 'idle';
+                editIndex = -1;
+                setPalette(DEFAULT_PALETTE.slice());
+            });
+        }
+
+        setPalette(getPalette());
+    })();
+    </script>
+    <?php
+}
+
+add_action('save_post_home-visual', function (int $post_id) {
+    if (!isset($_POST['rs_blob_visual_nonce']) || !wp_verify_nonce($_POST['rs_blob_visual_nonce'], 'rs_blob_visual_save')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (wp_is_post_revision($post_id)) {
+        return;
+    }
+
+    $palette_raw = isset($_POST[RS_BLOB_META_PALETTE])
+        ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_PALETTE]))
+        : RS_BLOB_DEFAULT_PALETTE;
+    $palette = rs_blob_parse_palette($palette_raw, rs_blob_default_palette());
+
+    $color1 = rs_blob_clamp_to_palette(
+        isset($_POST[RS_BLOB_META_COLOR1]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR1])) : '',
+        $palette,
+        RS_BLOB_DEFAULT_COLOR1
+    );
+    $color2 = rs_blob_clamp_to_palette(
+        isset($_POST[RS_BLOB_META_COLOR2]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_COLOR2])) : '',
+        $palette,
+        RS_BLOB_DEFAULT_COLOR2
+    );
+
+    update_post_meta($post_id, RS_BLOB_META_COLOR1, $color1);
+    update_post_meta($post_id, RS_BLOB_META_COLOR2, $color2);
+    update_post_meta($post_id, RS_BLOB_META_PALETTE, implode(',', $palette));
+    update_post_meta($post_id, RS_BLOB_META_ENABLED, !empty($_POST[RS_BLOB_META_ENABLED]) ? '1' : '0');
+
+    // Mídia: só atualiza se os campos vieram no POST (evita apagar em saves parciais).
+    if (isset($_POST[RS_BLOB_META_VIDEO_ID]) || isset($_POST[RS_BLOB_META_VIDEO_ID . '_cleared'])) {
+        $video_id = !empty($_POST[RS_BLOB_META_VIDEO_ID . '_cleared'])
+            ? 0
+            : max(0, (int) ($_POST[RS_BLOB_META_VIDEO_ID] ?? 0));
+        update_post_meta($post_id, RS_BLOB_META_VIDEO_ID, $video_id);
+    }
+
+    if (isset($_POST[RS_BLOB_META_POSTER_ID]) || isset($_POST[RS_BLOB_META_POSTER_ID . '_cleared'])) {
+        $poster_id = !empty($_POST[RS_BLOB_META_POSTER_ID . '_cleared'])
+            ? 0
+            : max(0, (int) ($_POST[RS_BLOB_META_POSTER_ID] ?? 0));
+        update_post_meta($post_id, RS_BLOB_META_POSTER_ID, $poster_id);
+    }
+
+    if (isset($_POST[RS_BLOB_META_VIDEO_URL])) {
+        $video_url = rs_blob_visual_sanitize_video_url(
+            sanitize_text_field(wp_unslash((string) $_POST[RS_BLOB_META_VIDEO_URL]))
+        );
+        update_post_meta($post_id, RS_BLOB_META_VIDEO_URL, $video_url);
+    }
+});
+
+if (function_exists('rs_enqueue_admin_media_picker')) {
+    rs_enqueue_admin_media_picker(['home-visual']);
+}
