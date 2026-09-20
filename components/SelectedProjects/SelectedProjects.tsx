@@ -1,24 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useCallback, useRef } from 'react';
 
-import { CONTACT_PAGE_SLUG, pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
+import { pagePath, PROJECTS_PAGE_SLUG } from '../../lib/site/pageSlugs';
 import { isHomeProject } from '../../lib/projects/categories';
-import {
-	homeProjectLimit,
-	isFeaturedOnHome,
-	pickHomeProjects,
-	resolveFeaturedIndex,
-} from '../../lib/projects/featured';
+import { isFeaturedOnHome } from '../../lib/projects/featured';
 import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import { sortProjectsByDate } from '../../lib/projects/sort';
 import type { Category, Projects, SiteUiLabels } from '../../types';
-import { getHomeGridSpan } from '../ProjectsListing/constants';
 import ProjectGridCard from '../ProjectsListing/ProjectGridCard';
-import { SectionHeadingArrow } from '../SiteIcons';
+import { NavChevronLeft, NavChevronRight, SectionHeadingArrow } from '../SiteIcons';
 
-/** Home: sempre 2 colunas + destaque full-width (ref. design). */
-const HOME_COLUMNS = 2 as const;
+/** Quantos cards no carrossel abaixo do destaque. */
+const HOME_CAROUSEL_COUNT = 4;
 
 type SelectedProjectsProps = {
 	projects: Projects;
@@ -28,21 +23,50 @@ type SelectedProjectsProps = {
 };
 
 export default function SelectedProjects({ projects, categories, locale = 'en', labels }: SelectedProjectsProps) {
-	const homePool = sortProjectsByDate(projects).filter((p) => isHomeProject(p, categories));
-	const hasFeatured = homePool.some(isFeaturedOnHome);
-	/** Exatamente 2 linhas: 4 iguais, ou 1 destaque + 2 (grid 2 col). */
-	const maxProjects = homeProjectLimit(HOME_COLUMNS, hasFeatured);
+	const scrollRef = useRef<HTMLDivElement>(null);
 
-	const selected = pickHomeProjects(homePool, maxProjects);
-	const featuredIndex = resolveFeaturedIndex(selected);
+	const sorted = sortProjectsByDate(projects);
+	const filtered = sorted.filter((p) => isHomeProject(p, categories));
+	/** Já vem filtrado por categoria home na page; não esvaziar se o ID não bater. */
+	const homePool = filtered.length > 0 ? filtered : sorted;
 
-	if (!selected.length) return null;
+	const featured = homePool.find(isFeaturedOnHome) ?? null;
+	const carousel = homePool
+		.filter((p) => !featured || p.id !== featured.id)
+		.slice(0, HOME_CAROUSEL_COUNT);
+
+	const scrollBy = useCallback((direction: -1 | 1) => {
+		const el = scrollRef.current;
+		if (!el) return;
+
+		const card = el.querySelector<HTMLElement>('[data-selected-card]');
+		const styles = getComputedStyle(el);
+		const gap = Number.parseFloat(styles.columnGap || styles.gap || '20') || 20;
+		const amount = (card?.offsetWidth ?? 300) + gap;
+		const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+		const edge = 4;
+
+		if (direction > 0 && el.scrollLeft >= maxScroll - edge) {
+			el.scrollTo({ left: 0, behavior: 'smooth' });
+			return;
+		}
+
+		if (direction < 0 && el.scrollLeft <= edge) {
+			el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+			return;
+		}
+
+		el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+	}, []);
+
+	if (!featured && !carousel.length) return null;
 
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
-	const contactHref = withLocalePrefix(pagePath(CONTACT_PAGE_SLUG), locale);
 	const title = labels?.selectedProjects ?? (locale === 'pt' ? 'Projetos Selecionados' : 'Selected Projects');
 	const cta = labels?.seeMoreProjects ?? (locale === 'pt' ? 'Veja mais projetos' : 'See more projects');
-	const contactCta = locale === 'pt' ? 'Contato' : 'Contact';
+	const prevLabel = locale === 'pt' ? 'Projetos anteriores' : 'Previous projects';
+	const nextLabel = locale === 'pt' ? 'Próximos projetos' : 'Next projects';
+	const showNav = carousel.length > 0;
 
 	return (
 		<section className="selected-projects py-6 md:py-10" aria-label={title}>
@@ -53,27 +77,68 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 				</h2>
 			</div>
 
-			<div className="selected-projects-grid">
-				{selected.map((project, index) => (
+			{featured ? (
+				<div className="selected-projects-featured mb-8 md:mb-12">
 					<ProjectGridCard
-						key={project.id}
-						project={project}
+						project={featured}
 						categories={categories}
-						span={getHomeGridSpan(index, featuredIndex, HOME_COLUMNS)}
-						href={withLocalePrefix(`/project/${project.slug}`, locale)}
+						span="featured"
+						href={withLocalePrefix(`/project/${featured.slug}`, locale)}
 						locale={locale}
 					/>
-				))}
-			</div>
+				</div>
+			) : null}
 
-			<div className="selected-projects-ctas mt-12 md:mt-16">
-				<Link href={projectsHref} className="selected-projects-cta font-hk">
-					{cta}
-				</Link>
-				<Link href={contactHref} className="selected-projects-cta font-hk">
-					{contactCta}
-				</Link>
-			</div>
+			{carousel.length > 0 ? (
+				<>
+					{showNav ? (
+						<div className="selected-projects-nav mb-4 flex items-center justify-end gap-2 md:mb-5">
+							<button
+								type="button"
+								onClick={() => scrollBy(-1)}
+								className="selected-projects-nav-btn"
+								aria-label={prevLabel}
+							>
+								<NavChevronLeft />
+							</button>
+							<button
+								type="button"
+								onClick={() => scrollBy(1)}
+								className="selected-projects-nav-btn"
+								aria-label={nextLabel}
+							>
+								<NavChevronRight />
+							</button>
+						</div>
+					) : null}
+
+					<div ref={scrollRef} className="selected-projects-carousel" data-selected-carousel>
+						{carousel.map((project) => (
+							<div key={project.id} className="selected-projects-carousel-slide" data-selected-card>
+								<ProjectGridCard
+									project={project}
+									categories={categories}
+									span="half"
+									href={withLocalePrefix(`/project/${project.slug}`, locale)}
+									locale={locale}
+								/>
+							</div>
+						))}
+
+						<div className="selected-projects-carousel-cta">
+							<Link href={projectsHref} className="selected-projects-cta font-hk">
+								{cta}
+							</Link>
+						</div>
+					</div>
+				</>
+			) : (
+				<div className="selected-projects-ctas mt-4">
+					<Link href={projectsHref} className="selected-projects-cta font-hk">
+						{cta}
+					</Link>
+				</div>
+			)}
 		</section>
 	);
 }

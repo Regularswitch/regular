@@ -57,7 +57,11 @@ function rs_register_project_post_type(): void {
 }
 
 function rs_register_project_category_taxonomy(): void {
-    if (!post_type_exists('project') || taxonomy_exists('project-category')) {
+    if (!post_type_exists('project')) {
+        return;
+    }
+
+    if (taxonomy_exists('project-category')) {
         return;
     }
 
@@ -76,12 +80,21 @@ function rs_register_project_category_taxonomy(): void {
         'public'            => false,
         'publicly_queryable'=> false,
         'show_ui'           => true,
+        'show_in_menu'      => false, // menu sob Conteúdo (admin-shell)
         'show_in_rest'      => true,
         'show_admin_column' => true,
         'hierarchical'      => true,
         'rewrite'           => false,
     ]);
 }
+
+/** Se a taxonomia já existia (ThemeRain etc.), esconde menu órfão — shell adiciona sob Conteúdo. */
+add_filter('register_taxonomy_args', function (array $args, string $taxonomy): array {
+    if ($taxonomy === 'project-category') {
+        $args['show_in_menu'] = false;
+    }
+    return $args;
+}, 20, 2);
 
 // Depois do ThemeRain Core (init@10) — só registra se o CPT ainda não existir.
 add_action('init', 'rs_register_project_post_type', 11);

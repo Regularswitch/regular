@@ -73,7 +73,7 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	const links = resolveFooterLinks(rawLinks);
 
 	return (
-		<footer className="site-footer mt-10 border-t border-white/10 pt-12 md:mt-14 md:pt-16">
+		<footer className="site-footer mt-6 border-t border-black/10 pt-8 dark:border-white/10 md:mt-8 md:pt-10">
 			<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
 				<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
 					{links.map((item: FooterLink) => (

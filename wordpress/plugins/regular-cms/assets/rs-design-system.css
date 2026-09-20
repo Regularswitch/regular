@@ -734,6 +734,121 @@ body.rs-shell-screen #rs_capabilities_fields .rs-ds-alert {
 	margin: 0;
 }
 
+/* Intro — balões estilo chip (wrap + DnD + Add/Clear) */
+.rs-intro-balloons-board {
+	border: 1px solid var(--rs-border);
+	border-radius: var(--rs-radius-md);
+	background: var(--rs-bg-subtle, var(--rs-surface));
+	overflow: hidden;
+}
+
+.rs-intro-balloons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	min-height: 52px;
+	margin: 0;
+	padding: 14px;
+}
+
+.rs-intro-balloon-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 100%;
+	padding: 6px 12px 6px 8px;
+	border: 1px solid var(--rs-border);
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--rs-text);
+	cursor: grab;
+	user-select: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rs-intro-balloon-chip:hover,
+.rs-intro-balloon-chip:focus-within {
+	background: color-mix(in srgb, var(--rs-text) 8%, transparent);
+	border-color: color-mix(in srgb, var(--rs-text) 28%, transparent);
+}
+
+.rs-intro-balloon-chip.ui-sortable-helper {
+	cursor: grabbing;
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+	background: var(--rs-surface);
+}
+
+.rs-intro-balloon-placeholder {
+	display: inline-block;
+	min-width: 72px;
+	min-height: 32px;
+	border: 1px dashed var(--rs-primary, #2271b1);
+	border-radius: 9999px;
+	background: var(--rs-primary-soft, #f0f6fc);
+}
+
+.rs-intro-balloon-remove {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--rs-text-secondary, #646970);
+	font-size: 14px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.rs-intro-balloon-remove:hover {
+	background: color-mix(in srgb, var(--rs-text) 12%, transparent);
+	color: var(--rs-text);
+}
+
+.rs-intro-balloon-label {
+	min-width: 1ch;
+	outline: none;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.rs-intro-balloon-label:focus {
+	cursor: text;
+	user-select: text;
+}
+
+.rs-intro-balloons-composer {
+	padding: 0 14px 12px;
+}
+
+.rs-intro-balloons-composer .rs-intro-balloon-composer-input {
+	width: 100%;
+	max-width: 100%;
+}
+
+.rs-intro-balloons-footer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	border-top: 1px solid var(--rs-border);
+	background: color-mix(in srgb, var(--rs-surface) 70%, transparent);
+}
+
+.rs-intro-balloons-footer .rs-ds-btn {
+	border-radius: 9999px;
+	min-height: 34px;
+	padding: 0 16px;
+}
+
 body.rs-shell-screen #rs_capabilities_fields .inside {
 	margin: 0;
 	padding: 16px;

@@ -25,7 +25,7 @@ Na home do painel há atalhos para as seções principais.
 |--------------|-----------------|---------------------|
 | Texto grande da home | **Conteúdo → Intro** | `/` e `/PT/` |
 | Um case / projeto | **Conteúdo → Projetos** | `/project/…` e `/PT/project/…` |
-| Tags / arquivos de categoria | **Projetos → Categorias** | `/category/…` e `/PT/category/…` |
+| Tags / arquivos de categoria | **Conteúdo → Categorias** | `/category/…` e `/PT/category/…` |
 | Listagem “Projects / Work” | **Conteúdo → Página de projetos** | `/projects` e `/PT/projects` |
 | Sobre Nós | **Conteúdo → Sobre Nós** (About) | `/about-us` e `/PT/about-us` |
 | Capacidades + FAQ | **Conteúdo → Capacidades** | `/capabilities` e `/PT/capabilities` |
@@ -86,15 +86,16 @@ Se deixar vazio, o site usa um fallback genérico (pior para busca).
 
 ## 3. Fluxos do dia a dia
 
-### A) Atualizar a home (headline)
+### A) Atualizar a home (Intro)
 
 1. **Conteúdo → Intro** (abra o post único).
-2. Aba **English**: título grande + parágrafo.
+2. Aba **English**: título grande (coluna esquerda) + parágrafo (coluna direita) + **balões** (pills).
 3. Aba **Português**: equivalentes.
-4. Preencha o metabox **SEO** (home).
-5. **Atualizar**.
+4. Em **Balões**: chips em wrap — arraste para reordenar, **×** remove, digite + **Add** / Enter; **Clear All** limpa.
+5. Preencha o metabox **SEO** (home).
+6. **Atualizar**.
 
-Cores/animação do blob da home: **Sistema → Visual da home** (só se o time de design pedir).
+Cores/animação do blob e **vídeo full-width** da home: **Sistema → Visual da home** (vídeo + poster opcional; autoplay muted loop).
 
 ### B) Criar um projeto novo
 
@@ -129,7 +130,7 @@ Conferir no site: `/project/seu-slug` e `/PT/project/seu-slug`.
 
 ### D) Categorias (tags de projeto)
 
-1. **Conteúdo → Projetos → Categorias**.
+1. **Conteúdo → Categorias**.
 2. Crie ou edite o termo.
 3. Preencha:
    - **H1 do arquivo** (título da página da categoria)
@@ -170,7 +171,20 @@ Mesmo padrão:
 3. Sem abas EN/PT.
 4. Ordem: use a ordenação disponível na listagem (atributos de página / ordem do menu, conforme configurado no admin).
 
-### I) Rodapé e legal
+**Título da seção** (“Marcas que confiam em nós”): **Sistema → Interface do site** → aba do idioma → **Labels de seção**.
+
+### I) Títulos de seção da home / site
+
+Em **Sistema → Interface do site** (abas EN/PT):
+
+| Campo | Onde aparece |
+|-------|----------------|
+| Projetos Selecionados / Selected Projects | Home — grade Selected |
+| Últimos / The Latest | Carrossel “The Latest” |
+| Marcas que confiam em nós / Brands that trust us | Faixa de marcas |
+| CTAs “Veja mais…” | Botões das seções |
+
+### J) Rodapé e legal
 
 - **Footer:** textos e links por idioma; redes sociais em geral **iguais** nos dois idiomas.
 - **Privacidade & Cookies:** um post alimenta as páginas de privacidade e cookies; edite EN e PT com cuidado (texto jurídico).
@@ -218,7 +232,7 @@ Mesmo padrão:
 → Ajuste o **slug** na aba Geral e atualize. Avise o time se o slug antigo já estava indexado no Google.
 
 **“Não acho Categorias”**  
-→ **Conteúdo → Projetos → Categorias** (submenu de Projetos).
+→ **Conteúdo → Categorias** (item do menu Conteúdo, ao lado de Todos os projetos).
 
 ---
 

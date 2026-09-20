@@ -107,6 +107,38 @@ add_action('admin_menu', function (): void {
 	}
 }, 1);
 
+/** Categorias de projeto — submenu explícito sob Conteúdo (taxonomia fica órfã sem isso). */
+add_action('admin_menu', function (): void {
+	if (!taxonomy_exists('project-category')) {
+		return;
+	}
+
+	add_submenu_page(
+		'rs-content',
+		'Categorias de projeto',
+		'Categorias',
+		'edit_posts',
+		'edit-tags.php?taxonomy=project-category&post_type=project'
+	);
+}, 20);
+
+/** Destaca Conteúdo → Categorias na tela da taxonomia. */
+add_filter('parent_file', function (string $parent_file): string {
+	$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+	if ($screen && ($screen->taxonomy ?? '') === 'project-category') {
+		return 'rs-content';
+	}
+	return $parent_file;
+});
+
+add_filter('submenu_file', function (?string $submenu_file): ?string {
+	$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+	if ($screen && ($screen->taxonomy ?? '') === 'project-category') {
+		return 'edit-tags.php?taxonomy=project-category&post_type=project';
+	}
+	return $submenu_file;
+});
+
 /** Remove o submenu duplicado automático (= slug do parent). */
 add_action('admin_menu', function (): void {
 	remove_submenu_page('rs-content', 'rs-content');
@@ -150,15 +182,23 @@ function rs_admin_shell_render_hub(string $title, string $desc, array $items): v
 		<div class="rs-shell-hub-grid">
 			<?php foreach ($items as $item) : ?>
 				<?php
-				$url = function_exists('rs_dashboard_edit_url_for_type')
-					? rs_dashboard_edit_url_for_type($item['type'], $item['single'])
-					: admin_url('edit.php?post_type=' . rawurlencode($item['type']));
+				$type = (string) ($item['type'] ?? '');
+				if ($type === 'project-category') {
+					$url = admin_url('edit-tags.php?taxonomy=project-category&post_type=project');
+				} elseif (function_exists('rs_dashboard_edit_url_for_type')) {
+					$url = rs_dashboard_edit_url_for_type($type, !empty($item['single']));
+				} else {
+					$url = admin_url('edit.php?post_type=' . rawurlencode($type));
+				}
+				$hint = !empty($item['hint'])
+					? (string) $item['hint']
+					: (!empty($item['single']) ? 'Editar conteúdo' : 'Abrir listagem');
 				?>
 				<a class="rs-shell-hub-card" href="<?php echo esc_url($url); ?>">
 					<span class="rs-shell-hub-card__icon dashicons <?php echo esc_attr($item['icon']); ?>" aria-hidden="true"></span>
 					<span class="rs-shell-hub-card__body">
 						<strong><?php echo esc_html($item['label']); ?></strong>
-						<small><?php echo $item['single'] ? 'Editar conteúdo' : 'Abrir listagem'; ?></small>
+						<small><?php echo esc_html($hint); ?></small>
 					</span>
 				</a>
 			<?php endforeach; ?>
@@ -173,6 +213,7 @@ function rs_admin_shell_render_content_hub(): void {
 		'Páginas e peças editoriais do site. Escolha um item para editar.',
 		[
 			['type' => 'project', 'label' => 'Projetos', 'icon' => 'dashicons-portfolio', 'single' => false],
+			['type' => 'project-category', 'label' => 'Categorias', 'icon' => 'dashicons-tag', 'single' => false, 'hint' => 'Editar tags / arquivos'],
 			['type' => 'intro', 'label' => 'Intro', 'icon' => 'dashicons-text-page', 'single' => true],
 			['type' => 'about', 'label' => 'Sobre Nós', 'icon' => 'dashicons-groups', 'single' => true],
 			['type' => 'projects-page', 'label' => 'Página de projetos', 'icon' => 'dashicons-images-alt2', 'single' => true],
@@ -224,6 +265,15 @@ function rs_admin_shell_screen_context(): ?array {
 		return null;
 	}
 
+	/** Taxonomia de categorias — chrome Conteúdo mesmo se post_type vier vazio. */
+	if (($screen->taxonomy ?? '') === 'project-category') {
+		return [
+			'group'    => 'Conteúdo',
+			'title'    => 'Categorias de projeto',
+			'subtitle' => ($screen->base === 'term') ? 'Editar' : 'Listagem',
+		];
+	}
+
 	$post_type = (string) ($screen->post_type ?? '');
 	if ($post_type === '' || !in_array($post_type, rs_admin_shell_all_types(), true)) {
 		return null;
@@ -238,9 +288,6 @@ function rs_admin_shell_screen_context(): ?array {
 		$subtitle = $screen->action === 'add' ? 'Novo' : 'Editar';
 	} elseif ($screen->base === 'edit') {
 		$subtitle = 'Listagem';
-	} elseif ($screen->base === 'edit-tags' || $screen->base === 'term') {
-		$subtitle = 'Categorias';
-		$label = 'Categorias de projeto';
 	}
 
 	return [

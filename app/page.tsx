@@ -1,6 +1,5 @@
 import BrandsMarquee from '../components/BrandsMarquee/BrandsMarquee';
 import {
-	GetApi,
 	GetBlobVisualApi,
 	GetBrandsApi,
 	GetCategoriesApi,
@@ -10,7 +9,7 @@ import {
 } from '../components/ApiWp';
 import IntroSection from '../components/Intro/IntroSection';
 import SelectedProjects from '../components/SelectedProjects/SelectedProjects';
-import LatestProjects from '../components/LatestProjects/LatestProjects';
+import HomeVideoSection from '../components/HomeVideo/HomeVideoSection';
 import LiquidBlob3D from '../components/LiquidBlob3D/LiquidBlob3D';
 import { HOME_PROJECTS_CATEGORY_SLUG } from '../lib/projects/categories';
 import { fetchSectionSeo, sectionSeoFallbacks } from '../lib/seo/fetch';
@@ -21,10 +20,8 @@ import type { Brand, Category, Projects } from '../types';
 
 export const revalidate = 60;
 
-/** Grade "Selected" — categoria home (Site UI default = 5). */
+/** Selected home — destaque + carrossel (até 4 cards). */
 const HOME_SELECTED_COUNT = 5;
-/** Carrossel "The Latest" — teto do Site UI (3–12). */
-const LATEST_FETCH_COUNT = 12;
 
 export async function generateMetadata() {
 	const seo = await fetchSectionSeo('intro', 'en');
@@ -38,35 +35,19 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-	const [homeProjects, latestProjects, allCat, brands, intro, siteUiRaw, blobVisualRaw] =
-		await Promise.all([
-			GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
-				_embed: '',
-				per_page: HOME_SELECTED_COUNT,
-			}),
-			GetApi('/project/', {
-				_embed: '',
-				per_page: LATEST_FETCH_COUNT,
-				orderby: 'date',
-				order: 'desc',
-			}),
-			GetCategoriesApi('/project-category', { per_page: 22 }),
-			GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }),
-			GetIntroByLocale('en'),
-			GetSiteUiApi(),
-			GetBlobVisualApi(),
-		]).catch((error) => {
-			console.error('Failed to fetch data:', error);
-			return [[], [], [], [], null, null, null] as [
-				Projects,
-				Projects,
-				Category[],
-				Brand[],
-				null,
-				null,
-				null,
-			];
-		});
+	const [homeProjects, allCat, brands, intro, siteUiRaw, blobVisualRaw] = await Promise.all([
+		GetProjectsByCategorySlug(HOME_PROJECTS_CATEGORY_SLUG, {
+			_embed: '',
+			per_page: HOME_SELECTED_COUNT,
+		}).catch(() => [] as Projects),
+		GetCategoriesApi('/project-category', { per_page: 22 }).catch(() => [] as Category[]),
+		GetBrandsApi({ _embed: '', per_page: '100', orderby: 'menu_order', order: 'asc' }).catch(
+			() => [] as Brand[],
+		),
+		GetIntroByLocale('en').catch(() => null),
+		GetSiteUiApi().catch(() => null),
+		GetBlobVisualApi().catch(() => null),
+	]);
 
 	const ui = resolveSiteUi(buildSiteUiContent(siteUiRaw), 'en');
 	const blob = resolveBlobVisual(blobVisualRaw);
@@ -94,7 +75,7 @@ export default async function HomePage() {
 				labels={ui.labels}
 			/>
 
-			<LatestProjects projects={latestProjects} locale="en" />
+			<HomeVideoSection video={blob.video} poster={blob.poster} locale="en" />
 		</>
 	);
 }

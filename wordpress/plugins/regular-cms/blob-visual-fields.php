@@ -18,6 +18,12 @@ const RS_BLOB_META_COLOR1 = 'rs_blob_color1';
 const RS_BLOB_META_COLOR2 = 'rs_blob_color2';
 const RS_BLOB_META_PALETTE = 'rs_blob_palette';
 const RS_BLOB_META_ENABLED = 'rs_blob_enabled';
+/** Vídeo full-width na home (abaixo dos Selected Projects). */
+const RS_BLOB_META_VIDEO_ID = 'rs_home_video_id';
+/** Poster / fallback do vídeo da home. */
+const RS_BLOB_META_POSTER_ID = 'rs_home_video_poster_id';
+/** URL externa do vídeo (opcional; usada se não houver upload). */
+const RS_BLOB_META_VIDEO_URL = 'rs_home_video_url';
 
 function rs_blob_default_palette(): array {
     return array_map('trim', explode(',', RS_BLOB_DEFAULT_PALETTE));
@@ -83,11 +89,46 @@ function rs_blob_visual_get_post_id(): int {
 
 function rs_blob_visual_get_meta(int $post_id): array {
     return [
-        RS_BLOB_META_COLOR1  => (string) get_post_meta($post_id, RS_BLOB_META_COLOR1, true),
-        RS_BLOB_META_COLOR2  => (string) get_post_meta($post_id, RS_BLOB_META_COLOR2, true),
-        RS_BLOB_META_PALETTE => (string) get_post_meta($post_id, RS_BLOB_META_PALETTE, true),
-        RS_BLOB_META_ENABLED => (string) get_post_meta($post_id, RS_BLOB_META_ENABLED, true),
+        RS_BLOB_META_COLOR1    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR1, true),
+        RS_BLOB_META_COLOR2    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR2, true),
+        RS_BLOB_META_PALETTE   => (string) get_post_meta($post_id, RS_BLOB_META_PALETTE, true),
+        RS_BLOB_META_ENABLED   => (string) get_post_meta($post_id, RS_BLOB_META_ENABLED, true),
+        RS_BLOB_META_VIDEO_ID  => (int) get_post_meta($post_id, RS_BLOB_META_VIDEO_ID, true),
+        RS_BLOB_META_POSTER_ID => (int) get_post_meta($post_id, RS_BLOB_META_POSTER_ID, true),
+        RS_BLOB_META_VIDEO_URL => (string) get_post_meta($post_id, RS_BLOB_META_VIDEO_URL, true),
     ];
+}
+
+function rs_blob_visual_attachment_url(int $attachment_id): string {
+    if ($attachment_id <= 0) {
+        return '';
+    }
+    $url = wp_get_attachment_url($attachment_id);
+    return is_string($url) ? $url : '';
+}
+
+function rs_blob_visual_sanitize_video_url(string $raw): string {
+    $raw = trim($raw);
+    if ($raw === '') {
+        return '';
+    }
+    $url = esc_url_raw($raw);
+    if ($url === '') {
+        return '';
+    }
+    // Aceita http(s) e caminhos relativos do próprio site.
+    if (preg_match('#^(https?:)?//#i', $url) || str_starts_with($url, '/')) {
+        return $url;
+    }
+    return '';
+}
+
+function rs_blob_visual_resolve_video_url(array $meta): string {
+    $from_upload = rs_blob_visual_attachment_url((int) ($meta[RS_BLOB_META_VIDEO_ID] ?? 0));
+    if ($from_upload !== '') {
+        return $from_upload;
+    }
+    return rs_blob_visual_sanitize_video_url((string) ($meta[RS_BLOB_META_VIDEO_URL] ?? ''));
 }
 
 function rs_blob_visual_is_enabled(int $post_id): bool {
@@ -110,10 +151,12 @@ function rs_blob_visual_payload(?int $post_id = null): array {
 
     if ($post_id <= 0) {
         return [
-            'enabled' => false,
-            'color1'  => RS_BLOB_DEFAULT_COLOR1,
-            'color2'  => RS_BLOB_DEFAULT_COLOR2,
-            'palette' => $defaults_palette,
+            'enabled'  => false,
+            'color1'   => RS_BLOB_DEFAULT_COLOR1,
+            'color2'   => RS_BLOB_DEFAULT_COLOR2,
+            'palette'  => $defaults_palette,
+            'video'    => '',
+            'poster'   => '',
         ];
     }
 
@@ -125,6 +168,8 @@ function rs_blob_visual_payload(?int $post_id = null): array {
         'color1'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR1], $palette, RS_BLOB_DEFAULT_COLOR1),
         'color2'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR2], $palette, RS_BLOB_DEFAULT_COLOR2),
         'palette' => $palette,
+        'video'   => rs_blob_visual_resolve_video_url($meta),
+        'poster'  => rs_blob_visual_attachment_url((int) $meta[RS_BLOB_META_POSTER_ID]),
     ];
 }
 
@@ -176,7 +221,35 @@ add_action('init', function () {
             return current_user_can('edit_posts');
         },
     ]);
+
+    foreach ([RS_BLOB_META_VIDEO_ID, RS_BLOB_META_POSTER_ID] as $media_key) {
+        register_post_meta('home-visual', $media_key, [
+            'single'        => true,
+            'type'          => 'integer',
+            'show_in_rest'  => false,
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+
+    register_post_meta('home-visual', RS_BLOB_META_VIDEO_URL, [
+        'single'        => true,
+        'type'          => 'string',
+        'show_in_rest'  => false,
+        'auth_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+    ]);
 }, 20);
+
+/** Editor clássico — meta boxes de mídia salvam de forma confiável no POST. */
+add_filter('use_block_editor_for_post_type', function ($use, $post_type) {
+    if ($post_type === 'home-visual') {
+        return false;
+    }
+    return $use;
+}, 10, 2);
 
 add_action('init', 'rs_blob_visual_ensure_post', 25);
 
@@ -192,6 +265,15 @@ add_action('rest_api_init', function () {
 
 add_action('add_meta_boxes_home-visual', function () {
     add_meta_box(
+        'rs_home_video_fields',
+        'Vídeo da home',
+        'rs_home_video_render_meta_box',
+        'home-visual',
+        'normal',
+        'high'
+    );
+
+    add_meta_box(
         'rs_blob_visual_fields',
         'Cores do blob',
         'rs_blob_visual_render_meta_box',
@@ -202,6 +284,47 @@ add_action('add_meta_boxes_home-visual', function () {
 
     remove_meta_box('postcustom', 'home-visual', 'normal');
 }, 10);
+
+function rs_home_video_render_meta_box(WP_Post $post): void {
+    wp_nonce_field('rs_blob_visual_save', 'rs_blob_visual_nonce');
+
+    $video_id = (int) get_post_meta($post->ID, RS_BLOB_META_VIDEO_ID, true);
+    $poster_id = (int) get_post_meta($post->ID, RS_BLOB_META_POSTER_ID, true);
+    $video_url = (string) get_post_meta($post->ID, RS_BLOB_META_VIDEO_URL, true);
+
+    echo '<p class="rs-blob-help" style="margin:0 0 16px;">';
+    echo 'Seção full-width na home (após Projetos Selecionados): <strong>autoplay, muted, loop</strong>. ';
+    echo 'Vale para EN e PT. Faça upload <em>ou</em> cole uma URL .mp4. ';
+    echo rs_plugin_version_markup();
+    echo '</p>';
+
+    if (function_exists('rs_render_media_field')) {
+        rs_render_media_field(
+            RS_BLOB_META_VIDEO_ID,
+            'Vídeo (mp4) — upload',
+            $video_id,
+            RS_BLOB_META_VIDEO_ID,
+            true,
+            'video'
+        );
+        rs_render_media_field(
+            RS_BLOB_META_POSTER_ID,
+            'Poster / imagem de fallback (opcional)',
+            $poster_id,
+            RS_BLOB_META_POSTER_ID,
+            true,
+            'image'
+        );
+    } else {
+        echo '<p>Campo de mídia indisponível.</p>';
+    }
+
+    echo '<p class="rs-blob-field" style="margin-top:18px;">';
+    echo '<label class="rs-blob-label" for="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '">URL do vídeo (opcional)</label>';
+    echo '<input type="url" class="widefat" id="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '" name="' . esc_attr(RS_BLOB_META_VIDEO_URL) . '" value="' . esc_attr($video_url) . '" placeholder="https://…/video.mp4" />';
+    echo '<span style="display:block;margin-top:6px;color:#646970;font-size:12px;">Usada só se não houver vídeo enviado acima.</span>';
+    echo '</p>';
+}
 
 /**
  * Toolbar de swatches — só seleção a partir da paleta (sem +).
@@ -703,4 +826,30 @@ add_action('save_post_home-visual', function (int $post_id) {
     update_post_meta($post_id, RS_BLOB_META_COLOR2, $color2);
     update_post_meta($post_id, RS_BLOB_META_PALETTE, implode(',', $palette));
     update_post_meta($post_id, RS_BLOB_META_ENABLED, !empty($_POST[RS_BLOB_META_ENABLED]) ? '1' : '0');
+
+    // Mídia: só atualiza se os campos vieram no POST (evita apagar em saves parciais).
+    if (isset($_POST[RS_BLOB_META_VIDEO_ID]) || isset($_POST[RS_BLOB_META_VIDEO_ID . '_cleared'])) {
+        $video_id = !empty($_POST[RS_BLOB_META_VIDEO_ID . '_cleared'])
+            ? 0
+            : max(0, (int) ($_POST[RS_BLOB_META_VIDEO_ID] ?? 0));
+        update_post_meta($post_id, RS_BLOB_META_VIDEO_ID, $video_id);
+    }
+
+    if (isset($_POST[RS_BLOB_META_POSTER_ID]) || isset($_POST[RS_BLOB_META_POSTER_ID . '_cleared'])) {
+        $poster_id = !empty($_POST[RS_BLOB_META_POSTER_ID . '_cleared'])
+            ? 0
+            : max(0, (int) ($_POST[RS_BLOB_META_POSTER_ID] ?? 0));
+        update_post_meta($post_id, RS_BLOB_META_POSTER_ID, $poster_id);
+    }
+
+    if (isset($_POST[RS_BLOB_META_VIDEO_URL])) {
+        $video_url = rs_blob_visual_sanitize_video_url(
+            sanitize_text_field(wp_unslash((string) $_POST[RS_BLOB_META_VIDEO_URL]))
+        );
+        update_post_meta($post_id, RS_BLOB_META_VIDEO_URL, $video_url);
+    }
 });
+
+if (function_exists('rs_enqueue_admin_media_picker')) {
+    rs_enqueue_admin_media_picker(['home-visual']);
+}

@@ -9,7 +9,7 @@ type ContactPageProps = {
 };
 
 export default function ContactPage({ content, locale = 'en' }: ContactPageProps) {
-	const cityLabel = locale === 'pt' ? 'São Paulo' : 'São Paulo';
+	const clocksLabel = locale === 'pt' ? 'São Paulo e Paris' : 'São Paulo and Paris';
 
 	return (
 		<article className="contact-page">
@@ -36,7 +36,7 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 				</div>
 			</section>
 
-			<section className="contact-datetime border-t border-white/10 py-12 md:py-16" aria-label={cityLabel}>
+			<section className="contact-datetime border-t border-white/10 py-12 md:py-16" aria-label={clocksLabel}>
 				<DateTimeComponent locale={locale} />
 			</section>
 

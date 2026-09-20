@@ -63,6 +63,8 @@ export type Brand = {
 export type Intro = {
   headline: string;
   body: string;
+  /** Pills / balões abaixo do texto da home. */
+  balloons?: string[];
 };
 
 export type FooterLink = {
@@ -178,6 +180,10 @@ export type BlobVisual = {
   color1: string;
   color2: string;
   palette: string[];
+  /** URL do vídeo full-width na home (Sistema → Visual da home). */
+  video?: string;
+  /** Poster / fallback do vídeo da home. */
+  poster?: string;
 };
 
 export type ProjectMediaType = 'image' | 'video' | 'gif';

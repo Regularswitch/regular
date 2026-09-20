@@ -3,7 +3,7 @@
 Documentação do **novo admin** do WordPress headless da Regular Switch.  
 Escopo: **só o painel WP**. O front Next.js não muda por causa do chrome do CMS.
 
-**Versão atual do plugin:** ver `plugin-meta.php` (`RS_PLUGIN_VERSION`, hoje `1.5.45`).
+**Versão atual do plugin:** ver `plugin-meta.php` (`RS_PLUGIN_VERSION`, hoje `1.5.51`).
 
 Manual para o **time de conteúdo** (como publicar no site): [MANUAL-CONTEUDO.md](./MANUAL-CONTEUDO.md).
 
@@ -22,7 +22,7 @@ Manual para o **time de conteúdo** (como publicar no site): [MANUAL-CONTEUDO.md
 
 | Menu | Conteúdo |
 |------|----------|
-| **Conteúdo** | Projetos, Intro, Sobre, Página de projetos, Capacidades, Educação, Marcas, Contato |
+| **Conteúdo** | Projetos, **Categorias**, Intro, Sobre, Página de projetos, Capacidades, Educação, Marcas, Contato |
 | **Sistema** | Visual da home, Interface do site, Footer, Privacidade & Cookies, Menus do header, Design System (preview) |
 | **WP nativo** | Mídia, Usuários, etc. (inalterados) |
 
@@ -30,9 +30,9 @@ Manual para o **time de conteúdo** (como publicar no site): [MANUAL-CONTEUDO.md
 
 | Precisa editar… | Caminho |
 |-----------------|---------|
-| Home (headline) | Conteúdo → Intro |
-| Projetos | Conteúdo → Projetos |
-| **Categorias de projeto** | Conteúdo → Projetos → **Categorias** (`project-category`) |
+| Home (headline / body / balões) | Conteúdo → Intro |
+| Projetos | Conteúdo → Todos os projetos |
+| **Categorias de projeto** | Conteúdo → **Categorias** (`project-category`) |
 | Capacidades / FAQ | Conteúdo → Capacidades |
 | SEO title/description | Metabox **SEO** em cada CPT de conteúdo |
 | Schema da organização | Sistema → Interface do site → metabox Schema |
@@ -177,7 +177,7 @@ rsync -a wordpress/plugins/regular-cms/ \
 
 - [ ] Menu Conteúdo / Sistema e hubs
 - [ ] Toggle light/dark
-- [ ] Intro: abas EN/PT + salvar
+- [ ] Intro: abas EN/PT + headline/body/balões + salvar
 - [ ] Capacidades: seções + FAQ
 - [ ] Projeto: Geral / EN / PT / Mídia + galeria
 - [ ] SEO: prévia atualiza ao digitar

@@ -11,11 +11,11 @@ define('RS_SITE_UI_FIELDS_LOADED', true);
 const RS_SITE_UI_I18N_KEY = 'rs_site_ui_i18n';
 
 const RS_SITE_UI_LABEL_KEYS = [
-    'rs_site_ui_selected_projects'  => ['selectedProjects', 'Selected Projects', 'Projetos Selecionados'],
-    'rs_site_ui_latest_projects'    => ['latestProjects', 'The Latest', 'Últimos'],
-    'rs_site_ui_brands_marquee'     => ['brandsMarquee', 'Brands marquee', 'Marcas'],
-    'rs_site_ui_see_more_projects'  => ['seeMoreProjects', 'See more projects', 'Veja mais projetos'],
-    'rs_site_ui_see_more_work'      => ['seeMoreWork', 'See more work', 'Veja mais trabalhos'],
+    'rs_site_ui_selected_projects'  => ['selectedProjects', 'Section: Selected Projects', 'Seção: Projetos Selecionados'],
+    'rs_site_ui_latest_projects'    => ['latestProjects', 'Section: The Latest', 'Seção: Últimos / The Latest'],
+    'rs_site_ui_brands_marquee'     => ['brandsMarquee', 'Section: Brands that trust us', 'Seção: Marcas que confiam em nós'],
+    'rs_site_ui_see_more_projects'  => ['seeMoreProjects', 'CTA: See more projects', 'CTA: Veja mais projetos'],
+    'rs_site_ui_see_more_work'      => ['seeMoreWork', 'CTA: See more work', 'CTA: Veja mais trabalhos'],
     'rs_site_ui_whats_new_label'    => ['whatsNewLabel', "What's New (label)", 'Novidades (label)'],
     'rs_site_ui_whats_new_title'    => ['whatsNewTitle', "What's New (title)", 'Novidades (título)'],
     'rs_site_ui_whats_new_subtitle' => ['whatsNewSubtitle', "What's New (subtitle)", 'Novidades (subtítulo)'],
@@ -295,8 +295,8 @@ function rs_site_ui_render_meta_box(WP_Post $post): void {
     $menus_url = admin_url('nav-menus.php');
 
     echo '<div class="rs-ds-editor rs-site-ui-editor">';
-    rs_ds_alert('Um único post. Layout compartilhado e labels em English e Português. Campos vazios usam o fallback do código Next.js.', 'info');
-    echo '<p class="rs-ds-help">O menu do header é editado em <a href="' . esc_url($menus_url) . '">Aparência → Menus</a>.</p>';
+    rs_ds_alert('Um único post. Layout compartilhado e títulos de seção (EN/PT). Campo vazio = fallback do código Next.js.', 'info');
+    echo '<p class="rs-ds-help">Títulos como “Marcas que confiam em nós”, “Projetos Selecionados” e “Últimos” ficam em <strong>Labels de seção</strong> abaixo. O menu do header é editado em <a href="' . esc_url($menus_url) . '">Aparência → Menus</a> (ou Sistema → Menus do header).</p>';
 
     rs_ds_fieldset_open('Geral — layout compartilhado');
     echo '<div class="rs-ds-field">';

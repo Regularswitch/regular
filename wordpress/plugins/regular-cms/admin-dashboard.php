@@ -19,6 +19,7 @@ function rs_dashboard_content_links(): array {
         ['type' => 'about', 'label' => 'Sobre Nós', 'icon' => 'dashicons-groups', 'single' => true],
         ['type' => 'projects-page', 'label' => 'Página de projetos', 'icon' => 'dashicons-portfolio', 'single' => true],
         ['type' => 'project', 'label' => 'Projetos', 'icon' => 'dashicons-images-alt2', 'single' => false],
+        ['type' => 'project-category', 'label' => 'Categorias', 'icon' => 'dashicons-tag', 'single' => false],
         ['type' => 'capabilities', 'label' => 'Capacidades', 'icon' => 'dashicons-hammer', 'single' => true],
         ['type' => 'education', 'label' => 'Educação', 'icon' => 'dashicons-welcome-learn-more', 'single' => true],
         ['type' => 'brand', 'label' => 'Marcas', 'icon' => 'dashicons-awards', 'single' => false],
@@ -29,6 +30,10 @@ function rs_dashboard_content_links(): array {
 }
 
 function rs_dashboard_edit_url_for_type(string $post_type, bool $single): string {
+    if ($post_type === 'project-category') {
+        return admin_url('edit-tags.php?taxonomy=project-category&post_type=project');
+    }
+
     if (!post_type_exists($post_type)) {
         return admin_url();
     }

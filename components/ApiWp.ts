@@ -337,9 +337,16 @@ export function porterIntro(payloadWp: listResponseWp): Intro | null {
 
     const fromRest = item.intro_data;
     if (fromRest?.headline?.trim()) {
+        const balloons = Array.isArray(fromRest.balloons)
+            ? fromRest.balloons
+                    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+                    .filter(Boolean)
+            : [];
+
         return {
             headline: fromRest.headline.trim(),
             body: fromRest.body?.trim() ?? '',
+            balloons,
         };
     }
 
@@ -349,6 +356,7 @@ export function porterIntro(payloadWp: listResponseWp): Intro | null {
     return {
         headline,
         body: item.excerpt?.rendered?.trim() ?? '',
+        balloons: [],
     };
 }
 
@@ -952,8 +960,12 @@ export function porterBlobVisual(value: unknown): BlobVisual | null {
     if (!isBlobVisual(value)) return null;
     const item = value as Record<string, unknown>;
     return {
-        ...value,
+        color1: item.color1 as string,
+        color2: item.color2 as string,
+        palette: item.palette as string[],
         enabled: Boolean(item.enabled),
+        video: typeof item.video === 'string' ? item.video : '',
+        poster: typeof item.poster === 'string' ? item.poster : '',
     };
 }
 
