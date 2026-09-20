@@ -36,7 +36,7 @@ export default function AboutAccordionPanel({ sections }: AboutAccordionPanelPro
 	return (
 		<section className="about-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
 			{/* Coluna esquerda sempre reservada no desktop — acordeão permanece à direita ao fechar. */}
-			<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-[5px] bg-(--surface) md:sticky md:top-28 md:mb-0">
+			<div className="about-side-image relative mb-10 aspect-square min-w-0 overflow-hidden rounded-[5px] md:sticky md:top-28 md:mb-0">
 				{activeImage ? (
 					<Image
 						key={activeImage}
