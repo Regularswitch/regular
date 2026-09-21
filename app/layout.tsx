@@ -12,7 +12,7 @@ import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient, resolveBlobVisual } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
 import { getBaseUrl } from '../lib/config/getBaseUrl';
-import { fetchSeoOrgSchema, resolveOrgJsonLd } from '../lib/seo/schema';
+import { fetchSeoOrgSchema, resolveOrgJsonLd, buildWebSiteJsonLd } from '../lib/seo/schema';
 import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
 
@@ -49,6 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	const blob = resolveBlobVisual(blobVisualRaw);
 	const blobNavGradient = buildNavActiveGradient(blob.palette);
 	const orgJsonLd = resolveOrgJsonLd(seoSchema, locale);
+	const websiteJsonLd = buildWebSiteJsonLd(locale);
 
 	return (
 		<html
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
 				/>
 				<JsonLd id="org-jsonld" data={orgJsonLd} />
+				<JsonLd id="website-jsonld" data={websiteJsonLd} />
 			</head>
 			<body>
 				<CustomCursor palette={blob.palette} />

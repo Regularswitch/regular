@@ -1,4 +1,5 @@
 import type { SeoContent } from '../../types';
+import { CANONICAL_PRODUCTION_URL, getBaseUrl } from '../config/getBaseUrl';
 import type { SeoLocale } from './metadata';
 
 export type SeoOrgSchemaFields = {
@@ -23,6 +24,12 @@ export type SeoOrgSchemaResponse = {
 	jsonLdPt: Record<string, unknown>;
 };
 
+const ORG_LOGO_PATH = '/logo-blanc.svg';
+
+function orgLogoUrl(base = getBaseUrl()): string {
+	return `${base.replace(/\/$/, '')}${ORG_LOGO_PATH}`;
+}
+
 const FALLBACK_JSON_LD_EN: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'ProfessionalService',
@@ -30,7 +37,7 @@ const FALLBACK_JSON_LD_EN: Record<string, unknown> = {
 	description:
 		'Franco-Brazilian design studio based in São Paulo, founded in 2013. Brand strategy, visual identity, branding and generative design for brands and cultural institutions.',
 	foundingDate: '2013',
-	url: 'https://regularswitch.com.br',
+	url: CANONICAL_PRODUCTION_URL,
 	telephone: '+5511945408448',
 	email: 'contact@regularswitch.com',
 	address: {
@@ -86,14 +93,61 @@ export async function fetchSeoOrgSchema(): Promise<SeoOrgSchemaResponse | null> 
 	}
 }
 
+/** Garante url canônica + logo para crawlers (SEO / AEO). */
+export function enrichOrgJsonLd(
+	data: Record<string, unknown>,
+	base = getBaseUrl(),
+): Record<string, unknown> {
+	const logo = orgLogoUrl(base);
+	const url =
+		typeof data.url === 'string' && data.url.trim() && !/\.vercel\.app/i.test(data.url)
+			? data.url.replace(/\/$/, '')
+			: base;
+
+	return {
+		...data,
+		'@context': 'https://schema.org',
+		url,
+		logo: {
+			'@type': 'ImageObject',
+			url: logo,
+		},
+		image: logo,
+	};
+}
+
 export function resolveOrgJsonLd(
 	schema: SeoOrgSchemaResponse | null,
 	locale: SeoLocale = 'en',
 ): Record<string, unknown> {
-	if (locale === 'pt') {
-		return (schema?.jsonLdPt as Record<string, unknown>) ?? FALLBACK_JSON_LD_PT;
-	}
-	return (schema?.jsonLdEn as Record<string, unknown>) ?? FALLBACK_JSON_LD_EN;
+	const raw =
+		locale === 'pt'
+			? ((schema?.jsonLdPt as Record<string, unknown>) ?? FALLBACK_JSON_LD_PT)
+			: ((schema?.jsonLdEn as Record<string, unknown>) ?? FALLBACK_JSON_LD_EN);
+
+	return enrichOrgJsonLd(raw);
+}
+
+export function buildWebSiteJsonLd(locale: SeoLocale = 'en'): Record<string, unknown> {
+	const base = getBaseUrl();
+	const isPt = locale === 'pt';
+
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: 'RegularSwitch',
+		url: isPt ? `${base}/PT` : base,
+		inLanguage: isPt ? 'pt-BR' : 'en',
+		publisher: {
+			'@type': 'Organization',
+			name: 'RegularSwitch',
+			url: base,
+			logo: {
+				'@type': 'ImageObject',
+				url: orgLogoUrl(base),
+			},
+		},
+	};
 }
 
 export function buildFaqPageJsonLd(
@@ -127,17 +181,21 @@ export function buildCreativeWorkJsonLd(input: {
 }): Record<string, unknown> {
 	const name = input.seo?.title?.trim() || input.name;
 	const description = input.seo?.description?.trim() || input.description?.trim() || undefined;
+	const base = getBaseUrl();
 
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'CreativeWork',
 		name,
 		...(description ? { description } : {}),
-		...(input.url ? { url: input.url } : {}),
+		...(input.url
+			? { url: input.url.startsWith('http') ? input.url : `${base}${input.url}` }
+			: {}),
 		...(input.dateCreated ? { dateCreated: input.dateCreated } : {}),
 		creator: {
 			'@type': 'Organization',
 			name: 'RegularSwitch',
+			url: base,
 		},
 	};
 }
