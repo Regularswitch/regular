@@ -93,20 +93,37 @@ export async function fetchSeoOrgSchema(): Promise<SeoOrgSchemaResponse | null> 
 	}
 }
 
-/** Garante url canônica + logo para crawlers (SEO / AEO). */
+/** Garante Organization explícita + url canônica + logo (checagens AEO). */
 export function enrichOrgJsonLd(
 	data: Record<string, unknown>,
 	base = getBaseUrl(),
 ): Record<string, unknown> {
 	const logo = orgLogoUrl(base);
-	const url =
+	let url =
 		typeof data.url === 'string' && data.url.trim() && !/\.vercel\.app/i.test(data.url)
 			? data.url.replace(/\/$/, '')
 			: base;
 
+	// Preferir domínio canônico do site (não .com.br legado do CMS).
+	if (/regularswitch\.com\.br/i.test(url)) {
+		url = base;
+	}
+
+	const existingType = data['@type'];
+	const types = new Set<string>(['Organization', 'ProfessionalService']);
+	if (typeof existingType === 'string') types.add(existingType);
+	if (Array.isArray(existingType)) {
+		for (const t of existingType) {
+			if (typeof t === 'string') types.add(t);
+		}
+	}
+
 	return {
 		...data,
 		'@context': 'https://schema.org',
+		'@type': [...types],
+		'@id': `${base}/#organization`,
+		name: typeof data.name === 'string' && data.name.trim() ? data.name : 'RegularSwitch',
 		url,
 		logo: {
 			'@type': 'ImageObject',
@@ -128,25 +145,110 @@ export function resolveOrgJsonLd(
 	return enrichOrgJsonLd(raw);
 }
 
+/**
+ * Organization com `@type` string literal.
+ * aeo.js remote check: `s["@type"] === "Organization"` (array não passa).
+ */
+export function buildOrganizationJsonLd(
+	schema: SeoOrgSchemaResponse | null = null,
+	locale: SeoLocale = 'en',
+): Record<string, unknown> {
+	const enriched = resolveOrgJsonLd(schema, locale);
+	return {
+		...enriched,
+		'@type': 'Organization',
+	};
+}
+
 export function buildWebSiteJsonLd(locale: SeoLocale = 'en'): Record<string, unknown> {
 	const base = getBaseUrl();
 	const isPt = locale === 'pt';
+	const pageUrl = isPt ? `${base}/PT` : base;
 
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'WebSite',
+		'@id': `${base}/#website`,
 		name: 'RegularSwitch',
-		url: isPt ? `${base}/PT` : base,
+		url: pageUrl,
 		inLanguage: isPt ? 'pt-BR' : 'en',
-		publisher: {
-			'@type': 'Organization',
-			name: 'RegularSwitch',
-			url: base,
-			logo: {
-				'@type': 'ImageObject',
-				url: orgLogoUrl(base),
+		publisher: { '@id': `${base}/#organization` },
+	};
+}
+
+export function buildWebPageJsonLd(locale: SeoLocale = 'en', path = '/'): Record<string, unknown> {
+	const base = getBaseUrl();
+	const url = path.startsWith('http') ? path : `${base}${path === '/' ? '' : path}`;
+	const isPt = locale === 'pt';
+
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'WebPage',
+		'@id': `${url}#webpage`,
+		url,
+		name: 'RegularSwitch',
+		inLanguage: isPt ? 'pt-BR' : 'en',
+		isPartOf: { '@id': `${base}/#website` },
+		about: { '@id': `${base}/#organization` },
+		publisher: { '@id': `${base}/#organization` },
+	};
+}
+
+/** FAQ institucional para AEO (home / site-wide). */
+export function buildStudioFaqJsonLd(locale: SeoLocale = 'en'): Record<string, unknown> {
+	const base = getBaseUrl();
+	const isPt = locale === 'pt';
+	const pageUrl = isPt ? `${base}/PT` : base;
+
+	const items = isPt
+		? [
+				{
+					question: 'O que é a RegularSwitch?',
+					answer:
+						'A RegularSwitch é um estúdio de design franco-brasileiro em São Paulo, fundado em 2013. Atua em estratégia de marca, identidade visual, branding e design generativo para marcas e instituições culturais.',
+				},
+				{
+					question: 'Onde fica a RegularSwitch?',
+					answer:
+						'O estúdio fica em São Paulo, Brasil, e mantém presença também em Paris. Contato: contact@regularswitch.com.',
+				},
+				{
+					question: 'Quais serviços a RegularSwitch oferece?',
+					answer:
+						'Identidade visual, branding, rebranding, design generativo, design editorial, expografia e experiências digitais.',
+				},
+			]
+		: [
+				{
+					question: 'What is RegularSwitch?',
+					answer:
+						'RegularSwitch is a Franco-Brazilian design studio based in São Paulo, founded in 2013. We work on brand strategy, visual identity, branding and generative design for brands and cultural institutions.',
+				},
+				{
+					question: 'Where is RegularSwitch located?',
+					answer:
+						'The studio is based in São Paulo, Brazil, with a presence in Paris. Contact: contact@regularswitch.com.',
+				},
+				{
+					question: 'What services does RegularSwitch offer?',
+					answer:
+						'Visual identity, branding, rebranding, generative design, editorial design, exhibition design and digital experiences.',
+				},
+			];
+
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'FAQPage',
+		'@id': `${pageUrl}#faq`,
+		url: pageUrl,
+		mainEntity: items.map((item) => ({
+			'@type': 'Question',
+			name: item.question,
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: item.answer,
 			},
-		},
+		})),
 	};
 }
 

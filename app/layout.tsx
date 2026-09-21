@@ -12,7 +12,14 @@ import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient, resolveBlobVisual } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
 import { getBaseUrl } from '../lib/config/getBaseUrl';
-import { fetchSeoOrgSchema, resolveOrgJsonLd, buildWebSiteJsonLd } from '../lib/seo/schema';
+import {
+	fetchSeoOrgSchema,
+	resolveOrgJsonLd,
+	buildOrganizationJsonLd,
+	buildWebSiteJsonLd,
+	buildWebPageJsonLd,
+	buildStudioFaqJsonLd,
+} from '../lib/seo/schema';
 import { buildSiteUiWithHeaderNav } from '../lib/site/resolveSiteUi';
 import '../styles/globals.css';
 
@@ -49,7 +56,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	const blob = resolveBlobVisual(blobVisualRaw);
 	const blobNavGradient = buildNavActiveGradient(blob.palette);
 	const orgJsonLd = resolveOrgJsonLd(seoSchema, locale);
+	const organizationOnlyJsonLd = buildOrganizationJsonLd(seoSchema, locale);
 	const websiteJsonLd = buildWebSiteJsonLd(locale);
+	const webPageJsonLd = buildWebPageJsonLd(locale, locale === 'pt' ? '/PT' : '/');
+	const studioFaqJsonLd = buildStudioFaqJsonLd(locale);
 
 	return (
 		<html
@@ -64,8 +74,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					id="theme-boot"
 					dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
 				/>
+				<JsonLd id="organization-jsonld" data={organizationOnlyJsonLd} />
 				<JsonLd id="org-jsonld" data={orgJsonLd} />
 				<JsonLd id="website-jsonld" data={websiteJsonLd} />
+				<JsonLd id="webpage-jsonld" data={webPageJsonLd} />
+				<JsonLd id="studio-faq-jsonld" data={studioFaqJsonLd} />
 			</head>
 			<body>
 				<CustomCursor palette={blob.palette} />

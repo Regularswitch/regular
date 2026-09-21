@@ -873,17 +873,12 @@ body.rs-shell-screen #rs_capabilities_fields .inside {
 	margin: var(--rs-space-3) 0 0;
 }
 
-.rs-ds-faq-row {
-	border: 1px solid var(--rs-border);
-	border-radius: var(--rs-radius-md);
-	padding: var(--rs-space-3);
-	margin: 0 0 var(--rs-space-3);
-	background: var(--rs-surface);
+.rs-cap-faq-list {
+	margin: 0 0 var(--rs-space-2);
 }
 
-.rs-ds-faq-row--new {
-	border-style: dashed;
-	background: var(--rs-bg-subtle);
+.rs-cap-faq-list .rs-metabox-accordion-item {
+	margin: 0 0 var(--rs-space-3);
 }
 
 .rs-ds-editor .rs-metabox-accordion-item {
@@ -1239,6 +1234,98 @@ body.rs-ds-ready .rs-metabox-accordion-item {
 	border-color: var(--rs-border);
 	background: var(--rs-surface);
 	border-radius: var(--rs-radius-md);
+}
+
+body.rs-ds-ready .rs-metabox-accordion-head {
+	background: var(--rs-bg-subtle);
+	border-radius: var(--rs-radius-md) var(--rs-radius-md) 0 0;
+}
+
+body.rs-ds-ready .rs-metabox-accordion-toggle {
+	color: var(--rs-text);
+	font-family: var(--rs-font);
+}
+
+body.rs-ds-ready .rs-metabox-accordion-drag {
+	color: var(--rs-text-secondary);
+}
+
+/* Remover — link destrutivo compacto (padroniza WP button-link-delete) */
+body.rs-ds-ready .rs-metabox-accordion-remove,
+body.rs-ds-ready .button-link-delete.rs-metabox-accordion-remove,
+body.rs-ds-ready button.rs-metabox-accordion-remove {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin: 0;
+	min-height: 28px;
+	padding: 0 10px;
+	border: 1px solid transparent;
+	border-radius: var(--rs-radius-md);
+	background: transparent;
+	box-shadow: none;
+	color: var(--rs-danger);
+	font-family: var(--rs-font);
+	font-size: var(--rs-text-xs);
+	font-weight: 600;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background var(--rs-duration) var(--rs-ease),
+		border-color var(--rs-duration) var(--rs-ease),
+		color var(--rs-duration) var(--rs-ease);
+}
+
+body.rs-ds-ready .rs-metabox-accordion-remove:hover,
+body.rs-ds-ready .button-link-delete.rs-metabox-accordion-remove:hover,
+body.rs-ds-ready button.rs-metabox-accordion-remove:hover {
+	background: var(--rs-danger-soft);
+	border-color: transparent;
+	color: var(--rs-danger);
+	text-decoration: none;
+}
+
+body.rs-ds-ready .rs-metabox-accordion-remove:focus-visible,
+body.rs-ds-ready .button-link-delete.rs-metabox-accordion-remove:focus-visible {
+	outline: none;
+	box-shadow: var(--rs-focus-ring);
+}
+
+/* Mesmo padrão em acordeões de projeto e demais Remover link-delete no editor DS */
+body.rs-ds-ready .rs-ds-editor .button-link-delete,
+body.rs-ds-ready .rs-project-remove-accordion {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin: 0;
+	min-height: 28px;
+	padding: 0 10px;
+	border: 1px solid transparent;
+	border-radius: var(--rs-radius-md);
+	background: transparent;
+	box-shadow: none;
+	color: var(--rs-danger);
+	font-family: var(--rs-font);
+	font-size: var(--rs-text-xs);
+	font-weight: 600;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background var(--rs-duration) var(--rs-ease),
+		color var(--rs-duration) var(--rs-ease);
+}
+
+body.rs-ds-ready .rs-ds-editor .button-link-delete:hover,
+body.rs-ds-ready .rs-project-remove-accordion:hover {
+	background: var(--rs-danger-soft);
+	color: var(--rs-danger);
+	text-decoration: none;
 }
 
 body.rs-ds-ready .rs-admin-notice-bell {

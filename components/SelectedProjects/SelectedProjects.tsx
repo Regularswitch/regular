@@ -124,12 +124,12 @@ export default function SelectedProjects({ projects, categories, locale = 'en', 
 								/>
 							</div>
 						))}
+					</div>
 
-						<div className="selected-projects-carousel-cta">
-							<Link href={projectsHref} className="selected-projects-cta font-hk">
-								{cta}
-							</Link>
-						</div>
+					<div className="selected-projects-ctas mt-8 md:mt-10">
+						<Link href={projectsHref} className="selected-projects-cta font-hk">
+							{cta}
+						</Link>
 					</div>
 				</>
 			) : (

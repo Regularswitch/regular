@@ -568,6 +568,7 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
         $faq_items = [['question' => '', 'answer' => '']];
     }
 
+    echo '<div id="rs-cap-faq-' . esc_attr($locale) . '" data-rs-accordion data-rs-faq data-locale="' . esc_attr($locale) . '">';
     rs_ds_fieldset_open('Perguntas frequentes (FAQ · AEO)');
     rs_ds_help('Gera a seção na página e o schema FAQPage.');
     echo '<div class="rs-ds-field" style="margin:0 0 12px;">';
@@ -575,38 +576,82 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
     echo '<input type="text" class="rs-ds-input" name="rs_cap_i18n[' . esc_attr($locale) . '][faqTitle]" value="' . esc_attr($faq_title) . '" placeholder="Perguntas frequentes" />';
     echo '</div>';
 
-    echo '<div id="rs-cap-faq-list-' . esc_attr($locale) . '">';
+    echo '<div id="rs-cap-faq-list-' . esc_attr($locale) . '" class="rs-cap-faq-list" data-rs-accordion-list data-rs-faq-list>';
     foreach ($faq_items as $fi => $faq) {
-        $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $fi . ']';
-        echo '<div class="rs-cap-faq-row rs-ds-faq-row">';
-        echo '<div class="rs-ds-field" style="margin:0 0 8px;">';
-        echo '<label class="rs-ds-label">Pergunta</label>';
-        echo '<input type="text" class="rs-ds-input" name="' . esc_attr($prefix) . '[question]" value="' . esc_attr((string) ($faq['question'] ?? '')) . '" />';
-        echo '</div>';
-        echo '<div class="rs-ds-field">';
-        echo '<label class="rs-ds-label">Resposta</label>';
-        echo '<textarea class="rs-ds-textarea" rows="3" name="' . esc_attr($prefix) . '[answer]">' . esc_textarea((string) ($faq['answer'] ?? '')) . '</textarea>';
-        echo '</div>';
-        echo '</div>';
+        rs_capabilities_render_faq_row((int) $fi, $faq, false, $locale);
     }
     echo '</div>';
-    rs_ds_help('Slots extras abaixo (até 12). Preencha só o que for usar.');
 
-    // Slots extras vazios para novas perguntas sem JS.
-    for ($extra = count($faq_items); $extra < max(count($faq_items) + 2, 3) && $extra < 12; $extra++) {
-        $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $extra . ']';
-        echo '<div class="rs-cap-faq-row rs-ds-faq-row rs-ds-faq-row--new">';
-        echo '<div class="rs-ds-field" style="margin:0 0 8px;">';
-        echo '<label class="rs-ds-label">Pergunta (nova)</label>';
-        echo '<input type="text" class="rs-ds-input" name="' . esc_attr($prefix) . '[question]" value="" />';
-        echo '</div>';
-        echo '<div class="rs-ds-field">';
-        echo '<label class="rs-ds-label">Resposta</label>';
-        echo '<textarea class="rs-ds-textarea" rows="2" name="' . esc_attr($prefix) . '[answer]"></textarea>';
-        echo '</div>';
-        echo '</div>';
-    }
+    echo '<div id="rs-cap-faq-template-' . esc_attr($locale) . '" hidden>';
+    rs_capabilities_render_faq_row(0, ['question' => '', 'answer' => ''], true, $locale);
+    echo '</div>';
+
+    echo '<p class="rs-ds-actions">';
+    echo '<button type="button" class="button button-secondary rs-cap-add-faq" data-locale="' . esc_attr($locale) . '">+ Add Pergunta</button>';
+    echo '</p>';
     rs_ds_fieldset_close();
+    echo '</div>';
+}
+
+/**
+ * @param array{question?: string, answer?: string} $item
+ */
+function rs_capabilities_render_faq_row(
+    int $index,
+    array $item,
+    bool $is_template = false,
+    string $locale = 'en'
+): void {
+    $locale = $locale === 'pt' ? 'pt' : 'en';
+    $question = (string) ($item['question'] ?? '');
+    $answer = (string) ($item['answer'] ?? '');
+    $row_index = $is_template ? '__INDEX__' : (string) $index;
+    $prefix = 'rs_cap_i18n[' . $locale . '][faq][' . $row_index . ']';
+    $head_label = $question !== '' ? $question : 'Pergunta';
+    $display = $is_template ? ' style="display:none;"' : '';
+    $is_open = !$is_template && $index === 0;
+    $row_class = 'rs-metabox-accordion-item rs-cap-faq-row' . ($is_open ? ' is-open' : '');
+    ?>
+    <fieldset
+        class="<?php echo esc_attr($row_class); ?>"
+        data-index="<?php echo esc_attr($row_index); ?>"
+        data-locale="<?php echo esc_attr($locale); ?>"
+        <?php echo $display; ?>
+    >
+        <div class="rs-metabox-accordion-head">
+            <span class="rs-metabox-accordion-drag" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+            <button type="button" class="rs-metabox-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                <span class="rs-metabox-accordion-head-title rs-cap-faq-head-title"><?php echo esc_html($head_label); ?></span>
+            </button>
+            <button type="button" class="button-link-delete rs-metabox-accordion-remove rs-cap-remove-faq">Remover</button>
+        </div>
+        <div class="rs-metabox-accordion-panel">
+            <div class="rs-ds-field" style="margin:0 0 12px;">
+                <label class="rs-ds-label">Pergunta</label>
+                <input
+                    type="text"
+                    class="rs-ds-input rs-metabox-accordion-title rs-cap-faq-question"
+                    <?php if (!$is_template) : ?>
+                        name="<?php echo esc_attr($prefix); ?>[question]"
+                        value="<?php echo esc_attr($question); ?>"
+                    <?php endif; ?>
+                    placeholder="Ex: Quanto tempo leva um projeto de branding?"
+                />
+            </div>
+            <div class="rs-ds-field" style="margin:0;">
+                <label class="rs-ds-label">Resposta</label>
+                <textarea
+                    class="rs-ds-textarea rs-cap-faq-answer"
+                    rows="3"
+                    <?php if (!$is_template) : ?>
+                        name="<?php echo esc_attr($prefix); ?>[answer]"
+                    <?php endif; ?>
+                    placeholder="Resposta clara e direta…"
+                ><?php echo $is_template ? '' : esc_textarea($answer); ?></textarea>
+            </div>
+        </div>
+    </fieldset>
+    <?php
 }
 
 function rs_capabilities_render_meta_box(WP_Post $post): void {
@@ -940,6 +985,71 @@ function rs_capabilities_render_admin_footer_script(): void {
                 accordionApis[locale].openItem($template);
             }
             nextIndex[locale] += 1;
+        });
+
+        const faqNextIndex = {};
+        const faqAccordionApis = {};
+
+        function faqList(locale) {
+            return $('#rs-cap-faq-list-' + locale);
+        }
+
+        function assignFaqNames($row, locale, index) {
+            const prefix = 'rs_cap_i18n[' + locale + '][faq][' + index + ']';
+            $row.attr('data-index', String(index));
+            $row.find('.rs-cap-faq-question').attr('name', prefix + '[question]');
+            $row.find('.rs-cap-faq-answer').attr('name', prefix + '[answer]');
+        }
+
+        function reindexFaq(locale) {
+            faqList(locale).find('.rs-cap-faq-row').each(function (index) {
+                assignFaqNames($(this), locale, index);
+            });
+            faqNextIndex[locale] = faqList(locale).find('.rs-cap-faq-row').length;
+        }
+
+        locales.forEach(function (locale) {
+            faqNextIndex[locale] = faqList(locale).find('.rs-cap-faq-row').length;
+            const faqRoot = document.querySelector('#rs-cap-faq-' + locale);
+            if (faqRoot && window.RsMetaboxUi) {
+                faqAccordionApis[locale] = window.RsMetaboxUi.initAccordion(faqRoot, {
+                    defaultTitle: 'Pergunta',
+                    onRemove: function (event, $row) {
+                        event.preventDefault();
+                        if (faqList(locale).find('.rs-cap-faq-row').length <= 1) {
+                            $row.find('.rs-cap-faq-question').val('');
+                            $row.find('.rs-cap-faq-answer').val('');
+                            $row.find('.rs-cap-faq-head-title').text('Pergunta');
+                            return;
+                        }
+                        $row.remove();
+                        reindexFaq(locale);
+                    },
+                    onSortUpdate: function () {
+                        reindexFaq(locale);
+                    },
+                });
+            }
+        });
+
+        $('.rs-cap-add-faq').on('click', function (event) {
+            event.preventDefault();
+            const locale = $(this).data('locale') === 'pt' ? 'pt' : 'en';
+            const index = faqNextIndex[locale] || 0;
+            const $template = $('#rs-cap-faq-template-' + locale + ' .rs-cap-faq-row').first().clone();
+
+            $template.removeAttr('style').removeClass('is-open');
+            $template.find('.rs-cap-faq-question').val('');
+            $template.find('.rs-cap-faq-answer').val('');
+            $template.find('.rs-cap-faq-head-title').text('Pergunta');
+            $template.find('.rs-metabox-accordion-toggle').attr('aria-expanded', 'false');
+            assignFaqNames($template, locale, index);
+            faqList(locale).append($template);
+            faqNextIndex[locale] = index + 1;
+            if (faqAccordionApis[locale]) {
+                faqAccordionApis[locale].openItem($template);
+            }
+            $template.find('.rs-cap-faq-question').trigger('focus');
         });
 
         $('[data-rs-tabs]').on('rs-metabox-tabchange', function (_event, locale) {
