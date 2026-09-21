@@ -228,6 +228,7 @@ html:not(.dark) .brand-mark {
 .about-body,
 .capabilities-accordion-body,
 .capabilities-accordion-list,
+.capabilities-faq-answer,
 .project-accordion-body,
 .legal-content,
 .education-institution-description,
@@ -267,10 +268,37 @@ html:not(.dark) .brand-mark {
 	font-weight: inherit !important;
 }
 
+.capabilities-faq-heading {
+	font-size: clamp(1.25rem, 3vw, 1.875rem);
+	font-weight: 500;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+}
+
+.capabilities-faq-question {
+	font-size: clamp(1.05rem, 2.4vw, 1.375rem);
+	max-width: 42rem;
+}
+
 .capabilities-faq-answer {
-	font-size: 1.25rem;
-	font-weight: 300;
-	line-height: 1.65;
+	max-width: 42rem;
+}
+
+.capabilities-faq-answer p {
+	margin: 0 0 0.75rem;
+}
+
+.capabilities-faq-answer p:last-child {
+	margin-bottom: 0;
+}
+
+.capabilities-faq-answer,
+.capabilities-faq-answer :where(*:not(a)) {
+	color: inherit !important;
+}
+
+.capabilities-faq-answer a {
+	color: var(--fg) !important;
 }
 
 .intro-body p {
@@ -379,9 +407,9 @@ html.dark .selected-projects-nav-btn:focus-visible {
 
 .selected-projects-carousel-slide {
 	box-sizing: border-box;
-	flex: 0 0 min(70vw, 18rem);
-	width: min(70vw, 18rem);
-	min-width: min(70vw, 18rem);
+	flex: 0 0 min(72vw, 17.5rem);
+	width: min(72vw, 17.5rem);
+	min-width: min(72vw, 17.5rem);
 	scroll-snap-align: start;
 }
 
@@ -396,34 +424,19 @@ html.dark .selected-projects-nav-btn:focus-visible {
 	}
 
 	.selected-projects-carousel-slide {
-		/* 2 cards + peek do próximo (ref. design) */
-		flex: 0 0 calc((100% - 1.5rem) / 2.35);
-		width: calc((100% - 1.5rem) / 2.35);
-		min-width: calc((100% - 1.5rem) / 2.35);
+		/* 2 cards + ~35% do próximo (ref. mockup) */
+		flex: 0 0 calc((100% - 1.5rem * 2) / 2.4);
+		width: calc((100% - 1.5rem * 2) / 2.4);
+		min-width: calc((100% - 1.5rem * 2) / 2.4);
 	}
 }
 
 @media (min-width: 1280px) {
 	.selected-projects-carousel-slide {
-		flex: 0 0 calc((100% - 1.5rem) / 2.4);
-		width: calc((100% - 1.5rem) / 2.4);
-		min-width: calc((100% - 1.5rem) / 2.4);
+		flex: 0 0 calc((100% - 1.5rem * 2) / 2.4);
+		width: calc((100% - 1.5rem * 2) / 2.4);
+		min-width: calc((100% - 1.5rem * 2) / 2.4);
 	}
-}
-
-.selected-projects-carousel-cta {
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	justify-content: center;
-	align-self: center;
-	scroll-snap-align: start;
-	padding-inline: 0.5rem 1rem;
-	min-height: 12rem;
-}
-
-.selected-projects-carousel-cta .selected-projects-cta {
-	white-space: nowrap;
 }
 
 /* Listagem /projects — responsivo: 1 (sm) · 2 (md) · 3 (lg) · 4 (xl) */
