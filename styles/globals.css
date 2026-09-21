@@ -392,22 +392,14 @@ html.dark .selected-projects-nav-btn:focus-visible {
 
 @media (min-width: 768px) {
 	.selected-projects-carousel {
-		gap: 1.5rem;
+		gap: 1.25rem;
 	}
 
 	.selected-projects-carousel-slide {
-		/* ~2.25 cards + peek do próximo */
-		flex: 0 0 calc((100% - 1.5rem) / 2.25);
-		width: calc((100% - 1.5rem) / 2.25);
-		min-width: calc((100% - 1.5rem) / 2.25);
-	}
-}
-
-@media (min-width: 1280px) {
-	.selected-projects-carousel-slide {
-		flex: 0 0 calc((100% - 3rem) / 2.5);
-		width: calc((100% - 3rem) / 2.5);
-		min-width: calc((100% - 3rem) / 2.5);
+		/* 4 cards visíveis */
+		flex: 0 0 calc((100% - 3.75rem) / 4);
+		width: calc((100% - 3.75rem) / 4);
+		min-width: calc((100% - 3.75rem) / 4);
 	}
 }
 

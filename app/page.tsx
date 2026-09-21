@@ -20,8 +20,8 @@ import type { Brand, Category, Projects } from '../types';
 
 export const revalidate = 60;
 
-/** Selected home — destaque + carrossel (até 4 cards). */
-const HOME_SELECTED_COUNT = 5;
+/** Selected home — folga para descartar gêmeos *-pt e ainda ter destaque + 4 cards. */
+const HOME_SELECTED_COUNT = 16;
 
 export async function generateMetadata() {
 	const seo = await fetchSectionSeo('intro', 'en');
