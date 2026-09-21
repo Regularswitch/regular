@@ -396,18 +396,18 @@ html.dark .selected-projects-nav-btn:focus-visible {
 	}
 
 	.selected-projects-carousel-slide {
-		/* ~2.25 cards + peek do próximo */
-		flex: 0 0 calc((100% - 1.5rem) / 2.25);
-		width: calc((100% - 1.5rem) / 2.25);
-		min-width: calc((100% - 1.5rem) / 2.25);
+		/* 2 cards + peek do próximo (ref. design) */
+		flex: 0 0 calc((100% - 1.5rem) / 2.35);
+		width: calc((100% - 1.5rem) / 2.35);
+		min-width: calc((100% - 1.5rem) / 2.35);
 	}
 }
 
 @media (min-width: 1280px) {
 	.selected-projects-carousel-slide {
-		flex: 0 0 calc((100% - 3rem) / 2.5);
-		width: calc((100% - 3rem) / 2.5);
-		min-width: calc((100% - 3rem) / 2.5);
+		flex: 0 0 calc((100% - 1.5rem) / 2.4);
+		width: calc((100% - 1.5rem) / 2.4);
+		min-width: calc((100% - 1.5rem) / 2.4);
 	}
 }
 
