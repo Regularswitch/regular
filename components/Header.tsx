@@ -13,6 +13,7 @@ import ThemeToggle from './ThemeToggle';
 import { withLocalePrefix } from '../lib/site/resolveSiteUi';
 import { isNavLinkActive } from '../lib/site/isNavLinkActive';
 import { getContactMailto } from '../lib/site/siteLinks';
+import { isPtOnlyMode } from '../lib/site/localeMode';
 
 type HeaderProps = {
 	isLight?: boolean;
@@ -37,6 +38,7 @@ const TOP_HOVER_ZONE = 16;
 export default function Header({ isLight = false }: HeaderProps) {
 	const router = useRouter();
 	const pathname = usePathname() ?? '';
+	const ptOnly = isPtOnlyMode();
 
 	const [isOpen, setIsOpen] = useState(false);
 	const [isClosing, setIsClosing] = useState(false);
@@ -59,8 +61,12 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const barBotRef = useRef<SVGLineElement | null>(null);
 
 	useEffect(() => {
-		setLanguage(pathname.startsWith('/PT') ? 'PT' : getLanguage());
-	}, [pathname]);
+		if (ptOnly || pathname.startsWith('/PT')) {
+			setLanguage('PT');
+			return;
+		}
+		setLanguage(getLanguage());
+	}, [pathname, ptOnly]);
 
 	useEffect(() => {
 		const mql = window.matchMedia('(max-width: 768px)');
@@ -408,14 +414,16 @@ export default function Header({ isLight = false }: HeaderProps) {
 					{links.map((l) => renderNavLink(l, 'desktop'))}
 				</nav>
 				<div className="hidden lg:flex items-center gap-3">
-					<button
-						type="button"
-						onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
-						className={`rounded w-[34px] h-[28px] text-xs border border-black/10 dark:border-white/15 bg-(--surface) ${textColor} hover:opacity-80`}
-						aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
-					>
-						{language === 'PT' ? 'EN' : 'PT'}
-					</button>
+					{ptOnly ? null : (
+						<button
+							type="button"
+							onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
+							className={`rounded w-[34px] h-[28px] text-xs border border-black/10 dark:border-white/15 bg-(--surface) ${textColor} hover:opacity-80`}
+							aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
+						>
+							{language === 'PT' ? 'EN' : 'PT'}
+						</button>
+					)}
 					<ThemeToggle />
 				</div>
 
@@ -504,14 +512,16 @@ export default function Header({ isLight = false }: HeaderProps) {
 						</ul>
 
 						<div className="px-10 pb-8 text-xs opacity-70">
-							<button
-								type="button"
-								onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
-								className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-black/15"
-								aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
-							>
-								{language === 'PT' ? 'EN' : 'PT'}
-							</button>
+							{ptOnly ? null : (
+								<button
+									type="button"
+									onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
+									className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-black/15"
+									aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
+								>
+									{language === 'PT' ? 'EN' : 'PT'}
+								</button>
+							)}
 							<span className="inline-flex align-middle">
 								<ThemeToggle />
 							</span>
