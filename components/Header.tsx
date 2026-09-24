@@ -544,7 +544,11 @@ export default function Header({ isLight = false }: HeaderProps) {
 							panelsRef.current[1] = el;
 						}}
 						className="header-mobile-social-panel w-full max-w-[700px] rounded-[5px] p-6"
-						style={{ background: 'var(--blob-nav-gradient)' }}
+						style={{
+							backgroundImage:
+								'linear-gradient(90deg, var(--blob-color-1) 0%, var(--blob-color-2) 50%, var(--blob-color-1) 100%)',
+							backgroundSize: '200% 100%',
+						}}
 					>
 						{menuSocialLinks.length > 0 ? (
 							<nav
@@ -564,7 +568,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 											href={href}
 											target="_blank"
 											rel="noopener noreferrer"
-											className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-opacity hover:opacity-90"
+											className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-(--bg)/45 text-(--fg) shadow-sm transition-opacity hover:opacity-90"
 											aria-label={label}
 											title={label}
 										>

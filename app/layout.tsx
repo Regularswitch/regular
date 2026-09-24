@@ -65,7 +65,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 		<html
 			lang={locale === 'pt' ? 'pt-BR' : 'en'}
 			className={`${hankenGrotesk.variable} dark`}
-			style={{ ['--blob-nav-gradient' as string]: blobNavGradient }}
+			style={{
+				['--blob-nav-gradient' as string]: blobNavGradient,
+				['--blob-color-1' as string]: blob.color1,
+				['--blob-color-2' as string]: blob.color2,
+			}}
 			suppressHydrationWarning
 		>
 			<head>
