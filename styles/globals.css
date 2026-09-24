@@ -25,6 +25,8 @@
 		#304ffe 75%,
 		#7b00ff 100%
 	);
+	--blob-color-1: #7b00ff;
+	--blob-color-2: #d400ff;
 }
 
 /* Light theme */
@@ -144,6 +146,27 @@ body::-webkit-scrollbar {
 	.header-mobile-menu-panel {
 		background: var(--fg);
 		color: var(--bg);
+	}
+
+	.header-mobile-social-panel {
+		background-color: var(--blob-color-1);
+		background-image: linear-gradient(
+			90deg,
+			var(--blob-color-1) 0%,
+			var(--blob-color-2) 50%,
+			var(--blob-color-1) 100%
+		);
+		background-size: 200% 100%;
+		background-repeat: repeat;
+		animation: header-nav-gradient-flow 4.5s linear infinite;
+		will-change: background-position;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.header-mobile-social-panel {
+		animation: none;
+		background-size: 100% 100%;
 	}
 }
 
