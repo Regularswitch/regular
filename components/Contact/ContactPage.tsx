@@ -2,6 +2,7 @@
 
 import DateTimeComponent from '../DateTimeComponent';
 import type { ContactContent } from '../../lib/content/contact/defaults';
+import BezierDivider from '../BezierDivider/BezierDivider';
 
 type ContactPageProps = {
 	content: ContactContent;
@@ -35,8 +36,8 @@ export default function ContactPage({ content, locale = 'en' }: ContactPageProps
 					))}
 				</div>
 			</section>
-
-			<section className="contact-datetime border-t border-white/10 py-12 md:py-16" aria-label={clocksLabel}>
+			<BezierDivider />
+			<section className="contact-datetime  py-12 md:py-16" aria-label={clocksLabel}>
 				<DateTimeComponent locale={locale} />
 			</section>
 
