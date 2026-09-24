@@ -12,6 +12,9 @@ export type ContactContent = {
 	blocks: ContactBlock[];
 };
 
+const CONTACT_MAP_URL =
+	'https://www.google.com/maps/search/?api=1&query=Rua+da+Consola%C3%A7%C3%A3o%2C+65%2C+S%C3%A3o+Paulo';
+
 const CONTACT_BLOCKS_PT: ContactBlock[] = [
 	{
 		title: 'CONTATO',
@@ -19,7 +22,7 @@ const CONTACT_BLOCKS_PT: ContactBlock[] = [
 	},
 	{
 		title: 'ENDEREÇO',
-		body: '<p>São Paulo – Brasil<br>Rua da Consolação, 65</p>',
+		body: `<p>São Paulo – Brasil<br><a href="${CONTACT_MAP_URL}" target="_blank" rel="noopener noreferrer">Rua da Consolação, 65</a></p>`,
 	},
 	{
 		title: 'VAGAS',
@@ -38,7 +41,7 @@ const CONTACT_BLOCKS_EN: ContactBlock[] = [
 	},
 	{
 		title: 'ADDRESS',
-		body: '<p>São Paulo – Brazil<br>Rua da Consolação, 65</p>',
+		body: `<p>São Paulo – Brazil<br><a href="${CONTACT_MAP_URL}" target="_blank" rel="noopener noreferrer">Rua da Consolação, 65</a></p>`,
 	},
 	{
 		title: 'JOBS',

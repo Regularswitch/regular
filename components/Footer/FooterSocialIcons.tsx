@@ -4,6 +4,7 @@ import {
 	FaFacebookF,
 	FaInstagram,
 	FaLinkedinIn,
+	FaLocationDot,
 	FaTiktok,
 	FaXTwitter,
 	FaYoutube,
@@ -15,7 +16,7 @@ export type FooterSocialItem = {
 	label?: string;
 };
 
-const ICONS: Record<string, IconType> = {
+export const SOCIAL_ICONS: Record<string, IconType> = {
 	instagram: FaInstagram,
 	linkedin: FaLinkedinIn,
 	youtube: FaYoutube,
@@ -24,9 +25,12 @@ const ICONS: Record<string, IconType> = {
 	twitter: FaXTwitter,
 	facebook: FaFacebookF,
 	behance: FaBehance,
+	location: FaLocationDot,
+	local: FaLocationDot,
+	map: FaLocationDot,
 };
 
-const LABELS: Record<string, string> = {
+export const SOCIAL_LABELS: Record<string, string> = {
 	instagram: 'Instagram',
 	linkedin: 'LinkedIn',
 	youtube: 'YouTube',
@@ -35,7 +39,17 @@ const LABELS: Record<string, string> = {
 	twitter: 'X',
 	facebook: 'Facebook',
 	behance: 'Behance',
+	location: 'Local',
+	local: 'Local',
+	map: 'Local',
 };
+
+/** Redes do painel gradiente do menu mobile (editáveis no Footer do WP). */
+export const MOBILE_MENU_SOCIAL_NETWORKS = ['instagram', 'linkedin', 'location'] as const;
+
+export function normalizeSocialNetwork(network: string): string {
+	return network.trim().toLowerCase();
+}
 
 export default function FooterSocialIcons({
 	links,
@@ -52,10 +66,10 @@ export default function FooterSocialIcons({
 			<p className="site-footer-social-title font-hk text-xl font-medium text-(--fg)">{title}</p>
 			<nav className="site-footer-social-links" aria-label={title}>
 				{visible.map((item) => {
-					const network = item.network.trim().toLowerCase();
-					const Icon = ICONS[network];
+					const network = normalizeSocialNetwork(item.network);
+					const Icon = SOCIAL_ICONS[network];
 					if (!Icon) return null;
-					const label = item.label?.trim() || LABELS[network] || network;
+					const label = item.label?.trim() || SOCIAL_LABELS[network] || network;
 					const href = item.href.trim();
 
 					return (

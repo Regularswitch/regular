@@ -25,6 +25,7 @@ function rs_contact_default_info(string $locale): array {
             'contact_phone' => '+55 11 (9) 4540-8448', 'contact_phone_tel' => '+5511945408448',
             'contact_email' => 'contact@regularswitch.com', 'address_title' => 'ENDEREÇO',
             'address_location' => 'São Paulo – Brasil', 'address_street' => 'Rua da Consolação, 65',
+            'address_map_url' => 'https://www.google.com/maps/search/?api=1&query=Rua+da+Consola%C3%A7%C3%A3o%2C+65%2C+S%C3%A3o+Paulo',
             'jobs_title' => 'VAGAS', 'jobs_text' => 'No momento não estamos contratando.',
             'jobs_email' => 'join-us@regularswitch.com', 'internship_title' => 'ESTÁGIO',
             'internship_text' => 'Envie um e-mail para se candidatar.',
@@ -37,6 +38,7 @@ function rs_contact_default_info(string $locale): array {
         'contact_phone' => '+55 11 (9) 4540-8448', 'contact_phone_tel' => '+5511945408448',
         'contact_email' => 'contact@regularswitch.com', 'address_title' => 'ADDRESS',
         'address_location' => 'São Paulo – Brazil', 'address_street' => 'Rua da Consolação, 65',
+        'address_map_url' => 'https://www.google.com/maps/search/?api=1&query=Rua+da+Consola%C3%A7%C3%A3o%2C+65%2C+S%C3%A3o+Paulo',
         'jobs_title' => 'JOBS', 'jobs_text' => 'We are not hiring at the moment.',
         'jobs_email' => 'join-us@regularswitch.com', 'internship_title' => 'INTERNSHIP',
         'internship_text' => 'Send us an e-mail to apply.',
@@ -57,7 +59,8 @@ function rs_contact_default_headline(string $locale): string {
 function rs_contact_info_is_plain_key(string $key): bool {
     return str_contains($key, 'email')
         || str_contains($key, 'phone')
-        || str_ends_with($key, '_tel');
+        || str_ends_with($key, '_tel')
+        || str_ends_with($key, '_url');
 }
 
 function rs_contact_normalize_info(array $raw, string $locale = 'en'): array {
@@ -68,7 +71,7 @@ function rs_contact_normalize_info(array $raw, string $locale = 'en'): array {
         }
         $value = (string) $raw[$key];
         $out[$key] = rs_contact_info_is_plain_key($key)
-            ? trim(wp_strip_all_tags($value))
+            ? (str_ends_with($key, '_url') ? esc_url_raw(trim(wp_strip_all_tags($value))) : trim(wp_strip_all_tags($value)))
             : trim(wp_kses_post($value));
     }
     if ($out['contact_phone_tel'] === '' && $out['contact_phone'] !== '') {
@@ -180,6 +183,20 @@ function rs_contact_get_info(int $post_id, string $locale = 'en'): array {
 }
 
 /**
+ * Texto rico que entra numa linha dentro de <p>…<br>…</p>.
+ * Remove wrappers <p> do TinyMCE para não aparecer literal no front.
+ */
+function rs_contact_line_html(string $html): string {
+    $html = trim($html);
+    if ($html === '') {
+        return '';
+    }
+    $html = preg_replace('#</p>\s*<p[^>]*>#i', '<br>', $html) ?? $html;
+    $html = preg_replace('#</?p[^>]*>#i', '', $html) ?? $html;
+    return trim(wp_kses_post($html));
+}
+
+/**
  * @param array<string, string> $info
  * @return array<int, array{title: string, body: string}>
  */
@@ -188,25 +205,32 @@ function rs_contact_info_to_blocks(array $info): array {
     $phone_href = is_string($phone_digits) && $phone_digits !== '' ? 'tel:+' . $phone_digits : '';
     $groups = [
         [$info['contact_title'], [
-            $info['contact_location'] !== '' ? esc_html($info['contact_location']) : '',
+            $info['contact_location'] !== '' ? esc_html(wp_strip_all_tags($info['contact_location'])) : '',
             $info['contact_phone'] !== '' ? ($phone_href !== '' ? '<a href="' . esc_url($phone_href) . '">' . esc_html($info['contact_phone']) . '</a>' : esc_html($info['contact_phone'])) : '',
             $info['contact_email'] !== '' ? '<a href="' . esc_url('mailto:' . $info['contact_email']) . '">' . esc_html($info['contact_email']) . '</a>' : '',
         ]],
         [$info['address_title'], [
-            $info['address_location'] !== '' ? esc_html($info['address_location']) : '',
-            $info['address_street'] !== '' ? esc_html($info['address_street']) : '',
+            $info['address_location'] !== '' ? esc_html(wp_strip_all_tags($info['address_location'])) : '',
+            $info['address_street'] !== ''
+                ? (
+                    ($info['address_map_url'] ?? '') !== ''
+                        ? '<a href="' . esc_url((string) $info['address_map_url']) . '" target="_blank" rel="noopener noreferrer">' . esc_html(wp_strip_all_tags($info['address_street'])) . '</a>'
+                        : esc_html(wp_strip_all_tags($info['address_street']))
+                )
+                : '',
         ]],
         [$info['jobs_title'], [
-            $info['jobs_text'] !== '' ? esc_html($info['jobs_text']) : '',
+            $info['jobs_text'] !== '' ? rs_contact_line_html($info['jobs_text']) : '',
             $info['jobs_email'] !== '' ? '<a href="' . esc_url('mailto:' . $info['jobs_email']) . '">' . esc_html($info['jobs_email']) . '</a>' : '',
         ]],
         [$info['internship_title'], [
-            $info['internship_text'] !== '' ? esc_html($info['internship_text']) : '',
+            $info['internship_text'] !== '' ? rs_contact_line_html($info['internship_text']) : '',
             $info['internship_email'] !== '' ? '<a href="' . esc_url('mailto:' . $info['internship_email']) . '">' . esc_html($info['internship_email']) . '</a>' : '',
         ]],
     ];
     $blocks = [];
     foreach ($groups as [$title, $lines]) {
+        $title = trim(wp_strip_all_tags((string) $title));
         $lines = array_values(array_filter($lines));
         if ($title !== '' && $lines) {
             $blocks[] = ['title' => $title, 'body' => '<p>' . implode('<br>', $lines) . '</p>'];
@@ -328,7 +352,12 @@ function rs_contact_render_locale_fields(string $locale, array $loc): void {
 
     $groups = [
         'Contato' => ['contact_title' => 'Título', 'contact_location' => 'Cidade / localização', 'contact_phone' => 'Telefone (exibição)', 'contact_phone_tel' => 'Telefone para o link (só números)', 'contact_email' => 'E-mail'],
-        'Endereço' => ['address_title' => 'Título', 'address_location' => 'Cidade / localização', 'address_street' => 'Rua / endereço'],
+        'Endereço' => [
+            'address_title' => 'Título',
+            'address_location' => 'Cidade / localização',
+            'address_street' => 'Rua / endereço (texto do link)',
+            'address_map_url' => 'Link do mapa (Google Maps, etc.)',
+        ],
         'Vagas' => ['jobs_title' => 'Título', 'jobs_text' => 'Texto', 'jobs_email' => 'E-mail'],
         'Estágio' => ['internship_title' => 'Título', 'internship_text' => 'Texto', 'internship_email' => 'E-mail'],
     ];
@@ -402,7 +431,7 @@ add_action('save_post_contact', function (int $post_id) {
         foreach (array_keys(rs_contact_default_info($locale)) as $key) {
             $raw_val = (string) ($info_raw[$key] ?? '');
             $clean_info[$key] = rs_contact_info_is_plain_key($key)
-                ? sanitize_text_field($raw_val)
+                ? (str_ends_with($key, '_url') ? esc_url_raw($raw_val) : sanitize_text_field($raw_val))
                 : wp_kses_post($raw_val);
         }
         $data['locales'][$locale] = [
