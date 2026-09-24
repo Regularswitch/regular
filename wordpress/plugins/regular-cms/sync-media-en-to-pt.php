@@ -276,7 +276,7 @@ function rs_sync_contact_media(int $from_id, int $to_id): void {
 
         if ($en !== []) {
             // Copia telefones/e-mails do EN; mantém títulos/textos do PT quando existirem.
-            foreach (['contact_phone', 'contact_phone_tel', 'contact_email', 'address_street', 'jobs_email', 'internship_email'] as $key) {
+            foreach (['contact_phone', 'contact_phone_tel', 'contact_email', 'address_street', 'address_map_url', 'jobs_email', 'internship_email'] as $key) {
                 if (!empty($en[$key])) {
                     $pt[$key] = $en[$key];
                 }

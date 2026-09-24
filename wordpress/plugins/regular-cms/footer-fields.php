@@ -28,6 +28,7 @@ const RS_FOOTER_LOCALE_META_KEYS = [
 const RS_FOOTER_SOCIAL_META_KEYS = [
     'rs_footer_social_instagram_href' => 'Instagram — link',
     'rs_footer_social_linkedin_href' => 'LinkedIn — link',
+    'rs_footer_social_location_href' => 'Local — link (mapa / endereço)',
     'rs_footer_social_youtube_href' => 'YouTube — link (opcional)',
     'rs_footer_social_tiktok_href' => 'TikTok — link (opcional)',
     'rs_footer_social_x_href' => 'X / Twitter — link (opcional)',
@@ -36,6 +37,7 @@ const RS_FOOTER_SOCIAL_META_KEYS = [
 const RS_FOOTER_SOCIAL_NETWORKS = [
     'instagram' => 'Instagram',
     'linkedin' => 'LinkedIn',
+    'location' => 'Local',
     'youtube' => 'YouTube',
     'tiktok' => 'TikTok',
     'x' => 'X',
@@ -334,7 +336,7 @@ function rs_footer_render_locale_fields(string $locale, array $meta): void {
 function rs_footer_render_shared_social(array $shared): void {
     echo '<div data-rs-accordion class="rs-footer-social-accordion">';
     rs_metabox_accordion_item_open('Social (EN + PT)', true);
-    rs_ds_help('Os mesmos links valem para English e Português. Campo vazio = ícone oculto no site.');
+    rs_ds_help('Os mesmos links valem para English e Português. Campo vazio = ícone oculto. Instagram, LinkedIn e Local aparecem no menu mobile (faixa com o gradiente de Sistema → Visual da home).');
     foreach (RS_FOOTER_SOCIAL_META_KEYS as $key => $label) {
         rs_render_admin_text_field(
             $key . '_shared',

@@ -38,9 +38,12 @@ type CityState = {
 	time: string;
 };
 
-function formatClock(now: Date, locale: ContactLocale, timeZone: string): CityState {
-	const dateLocale = locale === 'pt' ? 'pt-BR' : 'en-US';
+function dateLocaleForCity(cityId: CityClock['id'], siteLocale: ContactLocale): string {
+	if (cityId === 'paris') return 'fr-FR';
+	return siteLocale === 'pt' ? 'pt-BR' : 'en-US';
+}
 
+function formatClock(now: Date, dateLocale: string, timeZone: string): CityState {
 	return {
 		date: now.toLocaleDateString(dateLocale, {
 			weekday: 'long',
@@ -67,7 +70,7 @@ export default function DateTimeComponent({ locale = 'en' }: DateTimeComponentPr
 			const next: Record<string, CityState> = {};
 
 			for (const city of CITIES) {
-				next[city.id] = formatClock(now, locale, city.timeZone);
+				next[city.id] = formatClock(now, dateLocaleForCity(city.id, locale), city.timeZone);
 			}
 
 			setClocks(next);

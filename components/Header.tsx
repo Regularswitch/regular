@@ -8,11 +8,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import LogoMark from './LogoMark';
 import { useSiteUi } from './SiteUi/SiteUiProvider';
 import { useFooterSocialLinks } from './Footer/FooterSocialProvider';
+import {
+	MOBILE_MENU_SOCIAL_NETWORKS,
+	normalizeSocialNetwork,
+	SOCIAL_ICONS,
+	SOCIAL_LABELS,
+} from './Footer/FooterSocialIcons';
 import translate, { getCookie, setCookie } from './Translate';
 import ThemeToggle from './ThemeToggle';
 import { withLocalePrefix } from '../lib/site/resolveSiteUi';
 import { isNavLinkActive } from '../lib/site/isNavLinkActive';
-import { getContactMailto } from '../lib/site/siteLinks';
 import { isPtOnlyMode } from '../lib/site/localeMode';
 
 type HeaderProps = {
@@ -179,6 +184,14 @@ export default function Header({ isLight = false }: HeaderProps) {
 	const locale = language === 'PT' ? 'pt' : 'en';
 	const siteUi = useSiteUi();
 	const socialLinks = useFooterSocialLinks();
+	const menuSocialLinks = useMemo(() => {
+		const byNetwork = new Map(
+			socialLinks.map((item) => [normalizeSocialNetwork(item.network), item] as const),
+		);
+		return MOBILE_MENU_SOCIAL_NETWORKS.map((network) => byNetwork.get(network)).filter(
+			(item): item is NonNullable<typeof item> => Boolean(item?.href?.trim()),
+		);
+	}, [socialLinks]);
 
 	const textColor = isLight ? 'text-white' : 'text-[color:var(--fg)]';
 
@@ -202,13 +215,12 @@ export default function Header({ isLight = false }: HeaderProps) {
 	function buildOpen() {
 		const nav = navRef.current;
 		const bg = bgRef.current;
-		const [top, middle, bottom] = panelsRef.current;
+		const panels = panelsRef.current.filter(Boolean) as HTMLDivElement[];
 		const barTop = barTopRef.current;
 		const barBot = barBotRef.current;
-		if (!nav || !bg || !top || !middle || !bottom || !barTop || !barBot) return;
+		if (!nav || !bg || panels.length < 2 || !barTop || !barBot) return;
 
 		const bars = [barTop, barBot];
-		const panels = [top, middle, bottom];
 
 		// Always start from a known state (prevents cumulative transforms)
 		gsap.set(panels, { clearProps: 'transform' });
@@ -253,12 +265,11 @@ export default function Header({ isLight = false }: HeaderProps) {
 	function buildClose() {
 		const nav = navRef.current;
 		const bg = bgRef.current;
-		const [top, middle, bottom] = panelsRef.current;
-		if (!nav || !bg || !top || !middle || !bottom) return;
+		const panels = panelsRef.current.filter(Boolean) as HTMLDivElement[];
+		if (!nav || !bg || panels.length < 2) return;
 
 		const barTop = barTopRef.current;
 		const barBot = barBotRef.current;
-		const panels = [top, middle, bottom];
 
 		// If bars aren't mounted yet (portal not ready), force-close without animation.
 		if (!barTop || !barBot) {
@@ -283,7 +294,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 				0,
 			)
 			.to(
-				[bottom, middle, top],
+				[...panels].reverse(),
 				{
 					yPercent: 160,
 					rotation: () => gsap.utils.random(-15, 15),
@@ -459,17 +470,17 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[0] = el;
 						}}
-						className="w-full max-w-[700px] rounded-[5px] bg-white text-black overflow-y-auto"
+						className="header-mobile-menu-panel w-full max-w-[700px] rounded-[5px] overflow-y-auto bg-(--fg) text-(--bg)"
 					>
 						<div className="flex items-center justify-between px-10 pt-8">
 							<Link href={`/${prefix}`.replace('//', '/')} onClick={() => closeMenu()} aria-label="RSW — início">
-								<LogoMark className="h-8 w-auto text-black" />
+								<LogoMark className="h-8 w-auto text-(--bg)" />
 							</Link>
 							<button
 								type="button"
 								onClick={closeMenu}
 								aria-label="Close menu"
-								className="flex h-11 w-11 items-center justify-center text-black"
+								className="flex h-11 w-11 items-center justify-center text-(--bg)"
 							>
 								<svg width="40" height="40" viewBox="0 0 20 20" fill="none" aria-hidden>
 									<line
@@ -516,14 +527,14 @@ export default function Header({ isLight = false }: HeaderProps) {
 								<button
 									type="button"
 									onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
-									className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-black/15"
+									className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-(--bg)/20"
 									aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
 								>
 									{language === 'PT' ? 'EN' : 'PT'}
 								</button>
 							)}
 							<span className="inline-flex align-middle">
-								<ThemeToggle />
+								<ThemeToggle inverted />
 							</span>
 						</div>
 					</div>
@@ -532,49 +543,43 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[1] = el;
 						}}
-						className="w-full max-w-[700px] rounded-[5px] bg-linear-to-r from-purple-600 via-pink-500 to-yellow-400 text-black p-6"
+						className="header-mobile-social-panel w-full max-w-[700px] rounded-[5px] p-6"
+						style={{ background: 'var(--blob-nav-gradient)' }}
 					>
-						<div className="text-(--fg) text-[0.65rem] uppercase tracking-widest opacity-60 mb-3">
-							{siteUi.labels.whatsNewLabel}
-						</div>
-						<div className="flex items-center gap-4">
-							<div>
-								<div className="text-(--fg) font-medium text-lg leading-tight">{siteUi.labels.whatsNewTitle}</div>
-								<div className="text-(--fg) text-sm opacity-70">{siteUi.labels.whatsNewSubtitle}</div>
-							</div>
-						</div>
-					</div>
+						{menuSocialLinks.length > 0 ? (
+							<nav
+								className="flex items-center gap-5"
+								aria-label={language === 'PT' ? 'Redes sociais' : 'Social links'}
+							>
+								{menuSocialLinks.map((item) => {
+									const network = normalizeSocialNetwork(item.network);
+									const Icon = SOCIAL_ICONS[network];
+									if (!Icon) return null;
+									const label = item.label?.trim() || SOCIAL_LABELS[network] || network;
+									const href = item.href.trim();
 
-					<div
-						ref={(el) => {
-							panelsRef.current[2] = el;
-						}}
-						className="w-full max-w-[700px] rounded-[5px] bg-black text-white/70 flex items-center p-6"
-					>
-						<ul className="list-none flex flex-wrap gap-4 text-sm">
-							{socialLinks.map((item) => (
-								<li key={`${item.network}-${item.href}`}>
-									<a
-										href={item.href}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="hover:text-white"
-									>
-										{item.label?.trim() || item.network}
-									</a>
-								</li>
-							))}
-							<li>
-								<a href={getContactMailto()} className="hover:text-white">
-									Email
-								</a>
-							</li>
-							<li>
-								<a href="tel:+5511945408448" className="hover:text-white">
-									Tel
-								</a>
-							</li>
-						</ul>
+									return (
+										<a
+											key={`${network}-${href}`}
+											href={href}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-opacity hover:opacity-90"
+											aria-label={label}
+											title={label}
+										>
+											<Icon size={22} aria-hidden />
+										</a>
+									);
+								})}
+							</nav>
+						) : (
+							<p className="text-sm text-white/80">
+								{language === 'PT'
+									? 'Configure Instagram, LinkedIn e Local no Footer do WordPress.'
+									: 'Set Instagram, LinkedIn and Location in the WordPress Footer.'}
+							</p>
+						)}
 					</div>
 				</div>
 			</div>

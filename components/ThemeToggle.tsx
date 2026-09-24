@@ -20,7 +20,7 @@ function applyTheme(theme: Theme) {
 	else root.classList.remove('dark');
 }
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ inverted = false }: { inverted?: boolean }) {
 	const [theme, setTheme] = useState<Theme>('dark');
 
 	useEffect(() => {
@@ -38,7 +38,11 @@ export default function ThemeToggle() {
 				setCookie('theme', next);
 				applyTheme(next);
 			}}
-			className="inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-black/10 dark:border-white/15 bg-(--surface) text-(--fg) hover:opacity-80"
+			className={
+				inverted
+					? 'inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-(--bg)/20 bg-(--bg)/10 text-(--bg) hover:opacity-80'
+					: 'inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-black/10 dark:border-white/15 bg-(--surface) text-(--fg) hover:opacity-80'
+			}
 			aria-label={theme === 'dark' ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
 		>
 			{theme === 'dark' ? (
