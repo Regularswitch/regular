@@ -1,6 +1,7 @@
 import type { AboutAccordionSection, AboutContent } from './defaults';
 import { sanitizeAboutBody, sanitizeAboutHeadline } from '../../wp/sanitizeRichText';
 import { wpMediaUrl } from '../../wp/mediaUrl';
+import { normalizeGalleryItems } from '../../projects/gallery';
 import type { Projects } from '../../../types';
 
 function attachSectionImages(sections: AboutAccordionSection[], projects: Projects): AboutAccordionSection[] {
@@ -42,6 +43,7 @@ export function buildAboutContent(
 		headline: '',
 		body: '',
 		accordionSections: [],
+		gallery: [],
 	};
 
 	if (!wp) {
@@ -56,5 +58,6 @@ export function buildAboutContent(
 		headline: wp.headline?.trim() ? sanitizeAboutHeadline(wp.headline) : '',
 		body: wp.body?.trim() ? sanitizeAboutBody(wp.body) : '',
 		accordionSections: attachSectionImages(wpSections, projects),
+		gallery: normalizeGalleryItems(wp.gallery),
 	};
 }

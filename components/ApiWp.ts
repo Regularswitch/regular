@@ -592,7 +592,16 @@ export function porterAbout(payloadWp: listResponseWp): AboutContent | null {
     const data = item.about_data;
     const sections = data.accordionSections.filter((section) => section.title);
 
-    if (!data.headline && !data.body && !data.heroImage && !data.heroVideo && sections.length === 0) {
+    const gallery = normalizeGalleryItems(data.gallery);
+
+    if (
+        !data.headline &&
+        !data.body &&
+        !data.heroImage &&
+        !data.heroVideo &&
+        sections.length === 0 &&
+        gallery.length === 0
+    ) {
         return null;
     }
 
@@ -602,6 +611,7 @@ export function porterAbout(payloadWp: listResponseWp): AboutContent | null {
         headline: data.headline,
         body: data.body,
         accordionSections: sections,
+        gallery,
     };
 }
 
