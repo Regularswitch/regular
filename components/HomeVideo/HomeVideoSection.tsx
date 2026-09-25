@@ -12,7 +12,7 @@ export default function HomeVideoSection({ video, poster, locale = 'en' }: HomeV
 	const label = locale === 'pt' ? 'Vídeo' : 'Video';
 
 	return (
-		<section className="home-video-section pt-6 pb-0 md:pt-10" aria-label={label}>
+		<section className="home-video-section py-6 pb-0 md:py-10" aria-label={label}>
 			<div className="home-video-frame relative aspect-video overflow-hidden rounded-[5px] bg-(--surface)">
 				{src ? (
 					<video

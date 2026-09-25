@@ -26,28 +26,24 @@ export default function EducationPage({
 			<EducationHero image={content.heroImage} video={content.heroVideo} />
 
 			{content.headline?.trim() || content.accordionSections.length > 0 ? (
-				<>
+				<section className="education-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
 					{content.headline?.trim() ? (
-						<section className="education-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
-							<div className="min-w-0">
-								<h1
-									className="intro-headline font-hk"
-									dangerouslySetInnerHTML={{ __html: content.headline }}
-								/>
-							</div>
-							<div className="hidden min-w-0 md:block" aria-hidden />
-						</section>
-					) : null}
+						<div className="min-w-0">
+							<h1
+								className="intro-headline font-hk"
+								dangerouslySetInnerHTML={{ __html: content.headline }}
+							/>
+						</div>
+					) : (
+						<div className="hidden min-w-0 md:block" aria-hidden />
+					)}
 
 					{content.accordionSections.length > 0 ? (
-						<section className="education-accordion py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
-							<div className="hidden min-w-0 md:block" aria-hidden />
-							<div className="education-accordion-col min-w-0">
-								<ProjectAccordion sections={content.accordionSections} />
-							</div>
-						</section>
+						<div className="education-accordion-col mt-8 min-w-0 md:mt-0">
+							<ProjectAccordion sections={content.accordionSections} />
+						</div>
 					) : null}
-				</>
+				</section>
 			) : null}
 
 			{institutions.length > 0 ? (

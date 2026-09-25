@@ -14,6 +14,8 @@ const RS_ABOUT_HERO_VIDEO_KEY = 'rs_about_hero_video_id';
 const RS_ABOUT_HEADLINE_KEY = 'rs_about_headline';
 const RS_ABOUT_BODY_KEY = 'rs_about_body';
 const RS_ABOUT_SECTIONS_KEY = 'rs_about_sections';
+const RS_ABOUT_GALLERY_KEY = 'rs_about_gallery';
+const RS_ABOUT_GALLERY_FEATURED_KEY = 'rs_about_gallery_featured';
 
 /**
  * @return array<int, array{title: string, text: string, image_id: int}>
@@ -37,7 +39,12 @@ function rs_about_default_locale(): array {
 function rs_about_i18n_default(): array {
     return [
         'v' => 1,
-        'shared' => ['hero_image_id' => 0, 'hero_video_id' => 0],
+        'shared' => [
+            'hero_image_id' => 0,
+            'hero_video_id' => 0,
+            'gallery_ids' => '',
+            'gallery_featured_ids' => '',
+        ],
         'locales' => [
             'en' => rs_about_default_locale(),
             'pt' => rs_about_default_locale(),
@@ -45,11 +52,78 @@ function rs_about_i18n_default(): array {
     ];
 }
 
+/**
+ * @return array<int, int>
+ */
+function rs_about_parse_csv_ids(string $raw): array {
+    if ($raw === '') {
+        return [];
+    }
+
+    $ids = array_map('intval', explode(',', $raw));
+    return array_values(array_filter($ids, static function (int $id): bool {
+        return $id > 0;
+    }));
+}
+
+/**
+ * @return array<int, int>
+ */
+function rs_about_get_gallery_ids_from_shared(array $shared): array {
+    $ids = rs_about_parse_csv_ids((string) ($shared['gallery_ids'] ?? ''));
+    if ($ids) {
+        return $ids;
+    }
+
+    return [];
+}
+
+/**
+ * @return array<int, int>
+ */
+function rs_about_get_gallery_featured_ids_from_shared(array $shared): array {
+    $featured = rs_about_parse_csv_ids((string) ($shared['gallery_featured_ids'] ?? ''));
+    $in_gallery = array_flip(rs_about_get_gallery_ids_from_shared($shared));
+
+    return array_values(array_filter($featured, static function (int $id) use ($in_gallery): bool {
+        return $id > 0 && isset($in_gallery[$id]);
+    }));
+}
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function rs_about_gallery_to_payload(array $shared): array {
+    $gallery = [];
+    $featured_ids = array_flip(rs_about_get_gallery_featured_ids_from_shared($shared));
+
+    foreach (rs_about_get_gallery_ids_from_shared($shared) as $attachment_id) {
+        $info = null;
+        if (function_exists('rs_project_attachment_info')) {
+            $info = rs_project_attachment_info($attachment_id);
+        }
+        if ($info && !empty($info['url'])) {
+            $info['featured'] = isset($featured_ids[$attachment_id]);
+            $gallery[] = $info;
+        }
+    }
+
+    return $gallery;
+}
+
 function rs_about_i18n_normalize(array $raw): array {
     $data = rs_about_i18n_default();
     $shared = is_array($raw['shared'] ?? null) ? $raw['shared'] : [];
     $data['shared']['hero_image_id'] = (int) ($shared['hero_image_id'] ?? 0);
     $data['shared']['hero_video_id'] = (int) ($shared['hero_video_id'] ?? 0);
+    $data['shared']['gallery_ids'] = implode(',', rs_about_parse_csv_ids((string) ($shared['gallery_ids'] ?? '')));
+    $data['shared']['gallery_featured_ids'] = implode(
+        ',',
+        rs_about_get_gallery_featured_ids_from_shared([
+            'gallery_ids' => $data['shared']['gallery_ids'],
+            'gallery_featured_ids' => (string) ($shared['gallery_featured_ids'] ?? ''),
+        ])
+    );
 
     foreach (['en', 'pt'] as $locale) {
         $loc = is_array($raw['locales'][$locale] ?? null) ? $raw['locales'][$locale] : [];
@@ -93,6 +167,8 @@ function rs_about_i18n_get(int $post_id): array {
     $data['shared'] = [
         'hero_image_id' => (int) get_post_meta($post_id, RS_ABOUT_HERO_IMAGE_KEY, true),
         'hero_video_id' => (int) get_post_meta($post_id, RS_ABOUT_HERO_VIDEO_KEY, true),
+        'gallery_ids' => (string) get_post_meta($post_id, RS_ABOUT_GALLERY_KEY, true),
+        'gallery_featured_ids' => (string) get_post_meta($post_id, RS_ABOUT_GALLERY_FEATURED_KEY, true),
     ];
     $data['locales']['en'] = rs_about_locale_from_legacy_post($post_id);
     $pt_id = (int) get_post_meta($post_id, 'PT', true);
@@ -186,6 +262,7 @@ function rs_about_meta_to_payload(int $post_id, string $locale = 'en'): array {
         'accordionSections' => rs_about_sections_to_payload(
             rs_about_normalize_sections(is_array($loc['sections'] ?? null) ? $loc['sections'] : [])
         ),
+        'gallery' => rs_about_gallery_to_payload(is_array($data['shared'] ?? null) ? $data['shared'] : []),
     ];
 }
 
@@ -199,6 +276,8 @@ function rs_about_sync_legacy_meta(int $post_id, array $data): void {
     $en = is_array($data['locales']['en'] ?? null) ? $data['locales']['en'] : rs_about_default_locale();
     update_post_meta($post_id, RS_ABOUT_HERO_IMAGE_KEY, (int) ($data['shared']['hero_image_id'] ?? 0));
     update_post_meta($post_id, RS_ABOUT_HERO_VIDEO_KEY, (int) ($data['shared']['hero_video_id'] ?? 0));
+    update_post_meta($post_id, RS_ABOUT_GALLERY_KEY, (string) ($data['shared']['gallery_ids'] ?? ''));
+    update_post_meta($post_id, RS_ABOUT_GALLERY_FEATURED_KEY, (string) ($data['shared']['gallery_featured_ids'] ?? ''));
     update_post_meta($post_id, RS_ABOUT_HEADLINE_KEY, (string) ($en['headline'] ?? ''));
     update_post_meta($post_id, RS_ABOUT_BODY_KEY, (string) ($en['body'] ?? ''));
     $sections = rs_about_normalize_sections(is_array($en['sections'] ?? null) ? $en['sections'] : []);
@@ -230,6 +309,8 @@ function rs_about_migrate_to_i18n_once(): void {
         $data['shared'] = [
             'hero_image_id' => (int) get_post_meta($post_id, RS_ABOUT_HERO_IMAGE_KEY, true),
             'hero_video_id' => (int) get_post_meta($post_id, RS_ABOUT_HERO_VIDEO_KEY, true),
+            'gallery_ids' => (string) get_post_meta($post_id, RS_ABOUT_GALLERY_KEY, true),
+            'gallery_featured_ids' => (string) get_post_meta($post_id, RS_ABOUT_GALLERY_FEATURED_KEY, true),
         ];
         $data = rs_about_i18n_normalize($data);
         rs_section_i18n_save($post_id, RS_ABOUT_I18N_KEY, $data);
@@ -246,7 +327,7 @@ add_action('init', function () {
             return current_user_can('edit_posts');
         },
     ]);
-    foreach ([RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY, RS_ABOUT_HEADLINE_KEY, RS_ABOUT_BODY_KEY, RS_ABOUT_SECTIONS_KEY] as $key) {
+    foreach ([RS_ABOUT_HERO_IMAGE_KEY, RS_ABOUT_HERO_VIDEO_KEY, RS_ABOUT_HEADLINE_KEY, RS_ABOUT_BODY_KEY, RS_ABOUT_SECTIONS_KEY, RS_ABOUT_GALLERY_KEY, RS_ABOUT_GALLERY_FEATURED_KEY] as $key) {
         register_post_meta('about', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -400,6 +481,161 @@ function rs_about_render_locale_fields(string $locale, array $loc): void {
     echo '</div>';
 }
 
+function rs_about_render_gallery_row(int $index, int $attachment_id, bool $is_template = false, bool $featured = false): void {
+    $field_id = $is_template ? 'rs_about_gallery_image___INDEX__' : 'rs_about_gallery_image_' . $index;
+    $display = $is_template ? ' style="display:none;"' : '';
+    $featured = $is_template ? false : $featured;
+
+    $url = $attachment_id > 0 ? (string) wp_get_attachment_url($attachment_id) : '';
+    $mime = $attachment_id > 0 ? (string) get_post_mime_type($attachment_id) : '';
+    $is_video = $mime !== '' && str_starts_with($mime, 'video/');
+    $meta = $attachment_id > 0 ? wp_get_attachment_metadata($attachment_id) : [];
+    $media_width = (int) ($meta['width'] ?? 0);
+    $media_height = (int) ($meta['height'] ?? 0);
+    $thumb = '';
+    if ($attachment_id > 0 && !$is_video) {
+        $thumb = (string) (wp_get_attachment_image_url($attachment_id, 'medium') ?: $url);
+    }
+
+    $row_classes = 'rs-project-gallery-row';
+    if ($featured) {
+        $row_classes .= ' rs-project-gallery-row--wide';
+    }
+    ?>
+    <div
+        class="<?php echo esc_attr($row_classes); ?>"
+        data-index="<?php echo esc_attr($is_template ? '__INDEX__' : (string) $index); ?>"
+        <?php if ($media_width > 0) : ?>data-media-width="<?php echo esc_attr((string) $media_width); ?>"<?php endif; ?>
+        <?php if ($media_height > 0) : ?>data-media-height="<?php echo esc_attr((string) $media_height); ?>"<?php endif; ?>
+        <?php echo $display; ?>
+    >
+        <div class="rs-project-gallery-tile<?php echo $featured ? ' is-featured' : ''; ?>">
+            <input
+                type="hidden"
+                id="<?php echo esc_attr($field_id); ?>"
+                value="<?php echo esc_attr((string) $attachment_id); ?>"
+                data-rs-cap-image="1"
+                data-rs-library="media"
+            />
+            <input
+                type="hidden"
+                class="rs-project-gallery-featured-flag"
+                value="<?php echo $featured ? '1' : '0'; ?>"
+            />
+            <div class="rs-project-gallery-media">
+                <div class="rs-media-preview rs-project-gallery-preview" data-target="<?php echo esc_attr($field_id); ?>">
+                    <?php if ($url && $is_video) : ?>
+                        <video src="<?php echo esc_url($url); ?>" muted playsinline preload="metadata"></video>
+                        <span class="rs-project-gallery-badge" title="Vídeo">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg>
+                            vídeo
+                        </span>
+                    <?php elseif ($thumb || $url) : ?>
+                        <img src="<?php echo esc_url($thumb ?: $url); ?>" alt="" />
+                        <?php if (str_contains(strtolower($mime), 'gif') || str_ends_with(strtolower($url), '.gif')) : ?>
+                            <span class="rs-project-gallery-badge">gif</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="rs-project-gallery-actions" aria-hidden="false">
+                <span class="rs-project-gallery-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+                <button type="button" class="rs-about-remove-gallery rs-project-remove-gallery" title="Remover" aria-label="Remover mídia">&times;</button>
+                <button
+                    type="button"
+                    class="rs-about-gallery-featured rs-project-gallery-featured"
+                    title="Destaque: ocupa duas colunas no desktop"
+                    aria-label="Destaque (duas colunas no desktop)"
+                    aria-pressed="<?php echo $featured ? 'true' : 'false'; ?>"
+                >★</button>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+function rs_about_render_gallery_fields(array $shared): void {
+    $gallery_ids = rs_about_get_gallery_ids_from_shared($shared);
+    $gallery_featured_ids = array_flip(rs_about_get_gallery_featured_ids_from_shared($shared));
+
+    rs_ds_fieldset_open('Galeria (como em Projetos)');
+    echo '<p class="rs-ds-help">Imagens, GIFs e vídeos. Arraste para reordenar. ★ marca destaque (duas colunas).</p>';
+    echo '<textarea id="rs-about-gallery-json" name="rs_about_gallery_json" hidden>' . esc_textarea(wp_json_encode($gallery_ids) ?: '[]') . '</textarea>';
+    echo '<textarea id="rs-about-gallery-featured-json" name="rs_about_gallery_featured_json" hidden>' . esc_textarea(wp_json_encode(array_keys($gallery_featured_ids)) ?: '[]') . '</textarea>';
+    echo '<p id="rs-about-gallery-empty" class="rs-ds-help"' . ($gallery_ids ? ' style="display:none;"' : '') . '>Nenhuma mídia na galeria.</p>';
+    echo '<div id="rs-about-gallery-list" class="rs-project-gallery-grid">';
+    foreach ($gallery_ids as $index => $attachment_id) {
+        rs_about_render_gallery_row((int) $index, (int) $attachment_id, false, isset($gallery_featured_ids[(int) $attachment_id]));
+    }
+    echo '</div>';
+    echo '<div id="rs-about-gallery-template" hidden>';
+    rs_about_render_gallery_row(0, 0, true);
+    echo '</div>';
+    echo '<p class="rs-ds-actions"><button type="button" class="button button-primary" id="rs-about-add-gallery">+ Adicionar mídias</button></p>';
+    ?>
+    <style>
+        #rs-about-gallery-list.rs-project-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 12px 0;
+        }
+        #rs-about-gallery-list .rs-project-gallery-row { margin: 0; }
+        #rs-about-gallery-list .rs-project-gallery-row--wide { grid-column: span 2; }
+        #rs-about-gallery-list .rs-project-gallery-tile {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            border-radius: 6px;
+            background: #f0f0f1;
+            border: 1px solid #c3c4c7;
+            cursor: grab;
+        }
+        #rs-about-gallery-list .rs-project-gallery-tile.is-featured { border-color: #2271b1; box-shadow: inset 0 0 0 1px #2271b1; }
+        #rs-about-gallery-list .rs-project-gallery-media,
+        #rs-about-gallery-list .rs-project-gallery-preview { position: absolute; inset: 0; }
+        #rs-about-gallery-list .rs-project-gallery-preview img,
+        #rs-about-gallery-list .rs-project-gallery-preview video {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        #rs-about-gallery-list .rs-project-gallery-actions {
+            position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; z-index: 2;
+        }
+        #rs-about-gallery-list .rs-project-gallery-handle,
+        #rs-about-gallery-list .rs-project-remove-gallery,
+        #rs-about-gallery-list .rs-project-gallery-featured {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border: 0; border-radius: 4px;
+            background: rgba(0,0,0,.65); color: #fff; cursor: pointer; opacity: 0;
+        }
+        #rs-about-gallery-list .rs-project-gallery-handle { cursor: grab; font-size: 12px; }
+        #rs-about-gallery-list .rs-project-gallery-tile:hover .rs-project-gallery-handle,
+        #rs-about-gallery-list .rs-project-gallery-tile:hover .rs-project-remove-gallery,
+        #rs-about-gallery-list .rs-project-gallery-tile:hover .rs-project-gallery-featured,
+        #rs-about-gallery-list .rs-project-gallery-tile.is-featured .rs-project-gallery-featured {
+            opacity: 1;
+        }
+        #rs-about-gallery-list .rs-project-gallery-badge {
+            position: absolute; left: 6px; bottom: 6px; padding: 2px 6px;
+            border-radius: 3px; background: rgba(0,0,0,.7); color: #fff; font-size: 11px;
+        }
+        #rs-about-gallery-list .rs-project-gallery-placeholder {
+            border: 1px dashed #2271b1; border-radius: 6px; background: #f0f6fc; min-height: 80px;
+        }
+        @media (max-width: 1100px) {
+            #rs-about-gallery-list.rs-project-gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (max-width: 782px) {
+            #rs-about-gallery-list.rs-project-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #rs-about-gallery-list .rs-project-gallery-handle,
+            #rs-about-gallery-list .rs-project-remove-gallery,
+            #rs-about-gallery-list .rs-project-gallery-featured { opacity: 1; }
+        }
+    </style>
+    <?php
+    rs_ds_fieldset_close();
+}
+
 function rs_about_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_about_save', 'rs_about_nonce');
 
@@ -423,6 +659,8 @@ function rs_about_render_meta_box(WP_Post $post): void {
         'rs_about_shared_hero_video'
     );
     rs_ds_fieldset_close();
+
+    rs_about_render_gallery_fields(is_array($i18n['shared'] ?? null) ? $i18n['shared'] : []);
 
     rs_ds_locale_tabs_open(['en' => 'English', 'pt' => 'Português'], 'en');
 
@@ -540,6 +778,37 @@ add_action('save_post_about', function (int $post_id) {
         ];
     }
 
+    $gallery_ids = null;
+    $gallery_featured = null;
+    if (!empty($_POST['rs_about_gallery_json'])) {
+        $decoded = json_decode(wp_unslash((string) $_POST['rs_about_gallery_json']), true);
+        if (is_array($decoded)) {
+            $gallery_ids = array_values(array_filter(array_map('intval', $decoded)));
+        }
+    }
+    if (!empty($_POST['rs_about_gallery_featured_json'])) {
+        $decoded = json_decode(wp_unslash((string) $_POST['rs_about_gallery_featured_json']), true);
+        if (is_array($decoded)) {
+            $gallery_featured = array_values(array_filter(array_map('intval', $decoded)));
+        }
+    }
+    if ($gallery_ids !== null) {
+        $data['shared']['gallery_ids'] = implode(',', $gallery_ids);
+        $in_gallery = array_flip($gallery_ids);
+        $featured = [];
+        if (is_array($gallery_featured)) {
+            foreach ($gallery_featured as $id) {
+                if (isset($in_gallery[$id])) {
+                    $featured[] = $id;
+                }
+            }
+        }
+        $data['shared']['gallery_featured_ids'] = implode(',', $featured);
+    } else {
+        $data['shared']['gallery_ids'] = (string) ($previous['shared']['gallery_ids'] ?? '');
+        $data['shared']['gallery_featured_ids'] = (string) ($previous['shared']['gallery_featured_ids'] ?? '');
+    }
+
     $normalized = rs_about_i18n_normalize(
         rs_section_shared_hero_guard_against_wipe(
             $data,
@@ -577,10 +846,147 @@ function rs_about_render_admin_footer_script(): void {
         const locales = ['en', 'pt'];
         const nextIndex = {};
         const accordionApis = {};
+        let nextGalleryIndex = $('#rs-about-gallery-list .rs-project-gallery-row').length;
 
         function list(locale) {
             return $('#rs-about-sections-list-' + locale);
         }
+
+        function syncGalleryEmptyState() {
+            const hasRows = $('#rs-about-gallery-list .rs-project-gallery-row').length > 0;
+            $('#rs-about-gallery-empty').toggle(!hasRows);
+        }
+
+        function collectGalleryJson() {
+            const ids = [];
+            const featured = [];
+            $('#rs-about-gallery-list .rs-project-gallery-row').each(function () {
+                const row = $(this);
+                const imageId = parseInt(row.find('input[data-rs-cap-image]').val(), 10) || 0;
+                if (imageId > 0) {
+                    ids.push(imageId);
+                    if (row.find('.rs-project-gallery-featured-flag').val() === '1') {
+                        featured.push(imageId);
+                    }
+                }
+            });
+            $('#rs-about-gallery-json').val(JSON.stringify(ids));
+            $('#rs-about-gallery-featured-json').val(JSON.stringify(featured));
+        }
+
+        function assignGalleryNames(row, index) {
+            const fieldId = 'rs_about_gallery_image_' + index;
+            row.find('input[data-rs-cap-image]').removeAttr('name').attr('id', fieldId);
+            row.find('.rs-project-gallery-featured-flag').removeAttr('name');
+            row.find('.rs-media-preview').attr('data-target', fieldId);
+        }
+
+        function reindexGallery() {
+            $('#rs-about-gallery-list .rs-project-gallery-row').each(function (i) {
+                $(this).attr('data-index', String(i));
+                assignGalleryNames($(this), i);
+            });
+            nextGalleryIndex = $('#rs-about-gallery-list .rs-project-gallery-row').length;
+            syncGalleryEmptyState();
+            collectGalleryJson();
+        }
+
+        function syncGalleryRowWide(row) {
+            const isWide = row.find('.rs-project-gallery-featured-flag').val() === '1';
+            row.toggleClass('rs-project-gallery-row--wide', isWide);
+            row.find('.rs-project-gallery-tile').toggleClass('is-featured', isWide);
+            row.find('.rs-about-gallery-featured').attr('aria-pressed', isWide ? 'true' : 'false');
+        }
+
+        function setGalleryRowMediaSize(row, attachment) {
+            row.removeAttr('data-media-width data-media-height');
+            const width = parseInt(attachment && attachment.width, 10) || 0;
+            const height = parseInt(attachment && attachment.height, 10) || 0;
+            if (width > 0) row.attr('data-media-width', String(width));
+            if (height > 0) row.attr('data-media-height', String(height));
+        }
+
+        function galleryPreviewHtml(attachment) {
+            if (!attachment || !attachment.url) return '';
+            const mime = attachment.mime || '';
+            if (mime.indexOf('video/') === 0 || /\.mp4(\?|$)/i.test(attachment.url)) {
+                return '<video src="' + attachment.url + '" muted playsinline preload="metadata"></video><span class="rs-project-gallery-badge" title="Vídeo"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg> vídeo</span>';
+            }
+            const thumb = (attachment.sizes && attachment.sizes.medium && attachment.sizes.medium.url) || attachment.url;
+            const isGif = mime.indexOf('gif') !== -1 || /\.gif(\?|$)/i.test(attachment.url);
+            return '<img src="' + thumb + '" alt="" />' + (isGif ? '<span class="rs-project-gallery-badge">gif</span>' : '');
+        }
+
+        function appendGalleryAttachment(attachment) {
+            if (!attachment || !attachment.id) return;
+            const index = nextGalleryIndex;
+            const template = $('#rs-about-gallery-template .rs-project-gallery-row').first().clone();
+            template.removeAttr('style').attr('data-index', String(index));
+            template.find('input[data-rs-cap-image]').val(String(attachment.id));
+            template.find('.rs-project-gallery-featured-flag').val('0');
+            template.find('.rs-project-gallery-tile').removeClass('is-featured');
+            template.find('.rs-about-gallery-featured').attr('aria-pressed', 'false');
+            template.removeClass('rs-project-gallery-row--wide');
+            setGalleryRowMediaSize(template, attachment);
+            template.find('.rs-project-gallery-preview').html(galleryPreviewHtml(attachment));
+            assignGalleryNames(template, index);
+            $('#rs-about-gallery-list').append(template);
+            nextGalleryIndex += 1;
+            syncGalleryEmptyState();
+            collectGalleryJson();
+        }
+
+        if ($.fn.sortable) {
+            $('#rs-about-gallery-list').sortable({
+                items: '.rs-project-gallery-row',
+                handle: '.rs-project-gallery-handle, .rs-project-gallery-tile',
+                cancel: '.rs-about-gallery-featured, .rs-about-remove-gallery',
+                placeholder: 'rs-project-gallery-placeholder',
+                tolerance: 'pointer',
+                opacity: 0.9,
+                start: function (_event, ui) {
+                    ui.placeholder.toggleClass(
+                        'rs-project-gallery-row--wide',
+                        ui.item.hasClass('rs-project-gallery-row--wide')
+                    );
+                },
+                update: reindexGallery,
+            });
+        }
+
+        $('#rs-about-add-gallery').on('click', function (event) {
+            event.preventDefault();
+            if (typeof wp === 'undefined' || !wp.media) return;
+            const frame = wp.media({
+                title: 'Adicionar mídias à galeria',
+                button: { text: 'Adicionar' },
+                multiple: true,
+                library: { type: ['image', 'video'] },
+            });
+            frame.on('select', function () {
+                const selection = frame.state().get('selection');
+                if (!selection) return;
+                selection.each(function (model) {
+                    appendGalleryAttachment(model.toJSON());
+                });
+            });
+            frame.open();
+        });
+
+        $(document).on('click', '.rs-about-remove-gallery', function (event) {
+            event.preventDefault();
+            $(this).closest('.rs-project-gallery-row').remove();
+            reindexGallery();
+        });
+
+        $(document).on('click', '.rs-about-gallery-featured', function (event) {
+            event.preventDefault();
+            const row = $(this).closest('.rs-project-gallery-row');
+            const flag = row.find('.rs-project-gallery-featured-flag');
+            flag.val(flag.val() === '1' ? '0' : '1');
+            syncGalleryRowWide(row);
+            collectGalleryJson();
+        });
 
         function syncHeadlineEditors() {
             if (typeof tinymce !== 'undefined') {
@@ -811,10 +1217,18 @@ function rs_about_render_admin_footer_script(): void {
             nextIndex[locale] += 1;
         });
 
-        $('#post').on('submit', collectAllSectionsJson);
-        $('#publish, #save-post').on('click', function () {
-            window.setTimeout(collectAllSectionsJson, 0);
+        $('#post').on('submit', function () {
+            collectAllSectionsJson();
+            collectGalleryJson();
         });
+        $('#publish, #save-post').on('click', function () {
+            window.setTimeout(function () {
+                collectAllSectionsJson();
+                collectGalleryJson();
+            }, 0);
+        });
+        syncGalleryEmptyState();
+        collectGalleryJson();
     });
     </script>
     <?php

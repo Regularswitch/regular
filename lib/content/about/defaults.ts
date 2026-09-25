@@ -1,4 +1,5 @@
 import type { ProjectAccordionSection } from '../../projects/parseContent';
+import type { ProjectGalleryImage } from '../../../types';
 
 export type AboutAccordionSection = ProjectAccordionSection & {
 	image?: string;
@@ -12,6 +13,8 @@ export type AboutContent = {
 	headline: string;
 	body: string;
 	accordionSections: AboutAccordionSection[];
+	/** Galeria compartilhada (igual projetos): imagens/vídeos/gifs. */
+	gallery?: ProjectGalleryImage[];
 };
 
 const ABOUT_ACCORDION_PT: AboutAccordionSection[] = [

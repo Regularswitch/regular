@@ -7,8 +7,9 @@ import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import type { AboutContent } from '../../lib/content/about/defaults';
 import type { Projects } from '../../types';
 import LatestProjects from '../LatestProjects/LatestProjects';
+import ProjectAccordion from '../Project/ProjectAccordion';
+import ProjectGallery from '../Project/ProjectGallery';
 import { useSiteUiLocale } from '../SiteUi/SiteUiProvider';
-import AboutAccordionPanel from './AboutAccordionPanel';
 import AboutHero from './AboutHero';
 
 type AboutPageProps = {
@@ -21,26 +22,51 @@ export default function AboutPage({ content, latestProjects, locale = 'en' }: Ab
 	const projectsHref = withLocalePrefix(pagePath(PROJECTS_PAGE_SLUG), locale);
 	const siteUi = useSiteUiLocale(locale);
 	const cta = siteUi.labels.seeMoreWork;
+	const galleryLabel = locale === 'pt' ? 'Galeria' : 'Gallery';
+	const hasIntro = Boolean(content.headline?.trim() || content.body?.trim());
+	const hasAccordion = content.accordionSections.length > 0;
+	const gallery = content.gallery ?? [];
 
 	return (
 		<article className="about-page">
 			<AboutHero image={content.heroImage} video={content.heroVideo} />
 
-			<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
-				<h1
-					className="intro-headline min-w-0 font-hk"
-					dangerouslySetInnerHTML={{ __html: content.headline }}
-				/>
+			{hasIntro || hasAccordion ? (
+				<section className="about-intro py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16">
+					{hasIntro ? (
+						<div className="min-w-0">
+							{content.headline?.trim() ? (
+								<h1
+									className="intro-headline font-hk"
+									dangerouslySetInnerHTML={{ __html: content.headline }}
+								/>
+							) : null}
+							{content.body?.trim() ? (
+								<div
+									className={`about-body intro-body min-w-0 max-w-none font-hk${
+										content.headline?.trim() ? ' mt-8' : ''
+									}`}
+									dangerouslySetInnerHTML={{ __html: content.body }}
+								/>
+							) : null}
+						</div>
+					) : (
+						<div className="hidden min-w-0 md:block" aria-hidden />
+					)}
 
-				<div
-					className="about-body intro-body mt-8 min-w-0 max-w-none font-hk md:mt-0"
-					dangerouslySetInnerHTML={{ __html: content.body }}
-				/>
-			</section>
+					{hasAccordion ? (
+						<div className="about-accordion-col mt-8 min-w-0 md:mt-0">
+							<ProjectAccordion sections={content.accordionSections} />
+						</div>
+					) : null}
+				</section>
+			) : null}
 
-			<div className="pb-10 md:pb-14">
-				<AboutAccordionPanel sections={content.accordionSections} />
-			</div>
+			{gallery.length > 0 ? (
+				<div className="pb-10 md:pb-14">
+					<ProjectGallery images={gallery} title={galleryLabel} locale={locale} />
+				</div>
+			) : null}
 
 			<div className="flex justify-center pb-12 md:pb-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">

@@ -13,6 +13,7 @@ import { useLegalPolicies } from './Legal/LegalPoliciesProvider';
 import { getCookie } from './Translate';
 import { getContactMailto, getNewsletterHref } from '../lib/site/siteLinks';
 import { sanitizeFooterRichHtml } from '../lib/wp/sanitizeRichText';
+import BezierDivider from './BezierDivider/BezierDivider';
 
 type FooterLocale = 'en' | 'pt';
 
@@ -73,67 +74,73 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 	const links = resolveFooterLinks(rawLinks);
 
 	return (
-		<footer className="site-footer mt-6 border-t border-black/10 pt-8 dark:border-white/10 md:mt-8 md:pt-10">
-			<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
-				<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
-					{links.map((item: FooterLink) => (
-						<Link
-							key={`${item.title}-${item.href}`}
-							href={withPrefix(item.href, locale)}
-							className="group block max-w-xs"
-							{...(item.external || isExternal(item.href)
-								? { target: '_blank', rel: 'noopener noreferrer' }
-								: {})}
-						>
-							<div
-								className="font-hk text-xl font-medium text-(--fg)"
-								dangerouslySetInnerHTML={{ __html: item.title }}
-								suppressHydrationWarning
-							/>
-							<div
-								className="mt-1 text-xs text-(--muted) transition-opacity group-hover:opacity-80"
-								dangerouslySetInnerHTML={{ __html: item.subtitle }}
-								suppressHydrationWarning
-							/>
-						</Link>
-					))}
+		<>
+			<div className="px-7">
+				<BezierDivider />
+			</div>
+			<footer className="site-footer mt-6 pt-8 dark:border-white/10 md:mt-8 md:pt-10">
+				<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
+					<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
+						{links.map((item: FooterLink) => (
+							<Link
+								key={`${item.title}-${item.href}`}
+								href={withPrefix(item.href, locale)}
+								className="group block max-w-xs"
+								{...(item.external || isExternal(item.href)
+									? { target: '_blank', rel: 'noopener noreferrer' }
+									: {})}
+							>
+								<div
+									className="font-hk text-xl font-medium text-(--fg)"
+									dangerouslySetInnerHTML={{ __html: item.title }}
+									suppressHydrationWarning
+								/>
+								<div
+									className="mt-1 text-xs text-(--muted) transition-opacity group-hover:opacity-80"
+									dangerouslySetInnerHTML={{ __html: item.subtitle }}
+									suppressHydrationWarning
+								/>
+							</Link>
+						))}
+					</div>
+
+					<FooterSocialIcons links={socialLinks} title="Social" />
 				</div>
 
-				<FooterSocialIcons links={socialLinks} title="Social" />
-			</div>
+				<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
+					<FontVariante text={brandMark} align="justify" splitOnMobile />
+				</div>
 
-			<div className="site-footer-brand mt-14 w-full overflow-hidden px-7 md:mt-20">
-				<FontVariante text={brandMark} align="justify" splitOnMobile />
-			</div>
+				<nav
+					className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-xs text-(--muted) md:mt-10"
+					aria-label="Legal"
+				>
+					<span className="inline-flex items-center gap-2">
+						<span>{legal.brand}</span>
+					</span>
+					<span className="inline-flex items-center gap-2">
+						<span aria-hidden>/</span>
+						<button
+							type="button"
+							className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+							onClick={() => openPolicy('privacy')}
+						>
+							{legal.privacy}
+						</button>
+					</span>
+					<span className="inline-flex items-center gap-2">
+						<span aria-hidden>/</span>
+						<button
+							type="button"
+							className="transition-opacity hover:opacity-80 hover:text-(--fg)"
+							onClick={() => openPolicy('cookies')}
+						>
+							{legal.cookies}
+						</button>
+					</span>
+				</nav>
+			</footer>
+		</>
 
-			<nav
-				className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 px-7 pb-10 text-xs text-(--muted) md:mt-10"
-				aria-label="Legal"
-			>
-				<span className="inline-flex items-center gap-2">
-					<span>{legal.brand}</span>
-				</span>
-				<span className="inline-flex items-center gap-2">
-					<span aria-hidden>/</span>
-					<button
-						type="button"
-						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
-						onClick={() => openPolicy('privacy')}
-					>
-						{legal.privacy}
-					</button>
-				</span>
-				<span className="inline-flex items-center gap-2">
-					<span aria-hidden>/</span>
-					<button
-						type="button"
-						className="transition-opacity hover:opacity-80 hover:text-(--fg)"
-						onClick={() => openPolicy('cookies')}
-					>
-						{legal.cookies}
-					</button>
-				</span>
-			</nav>
-		</footer>
 	);
 }
