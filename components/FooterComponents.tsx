@@ -75,7 +75,9 @@ export default function FooterComponents({ footerEn, footerPt }: FooterComponent
 
 	return (
 		<>
-			<BezierDivider />
+			<div className="px-7">
+				<BezierDivider />
+			</div>
 			<footer className="site-footer mt-6 pt-8 dark:border-white/10 md:mt-8 md:pt-10">
 				<div className="flex flex-col gap-10 px-7 md:flex-row md:items-start md:justify-between md:gap-12">
 					<div className="grid gap-10 md:w-1/2 md:grid-cols-3 md:gap-8">
