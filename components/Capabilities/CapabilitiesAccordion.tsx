@@ -47,7 +47,7 @@ export default function CapabilitiesAccordion({
 				const seeCategoryLabel = locale === 'pt' ? 'Ver projetos relacionados' : 'See related projects';
 
 				const imageEl = imageSrc ? (
-					<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface)">
+					<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px]">
 						<Image
 							src={imageSrc}
 							alt={imageAlt}

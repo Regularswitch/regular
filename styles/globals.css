@@ -513,7 +513,6 @@ html.dark .selected-projects-nav-btn:focus-visible {
 .selected-projects-card-image {
 	aspect-ratio: 1 / 1;
 	border-radius: var(--radius);
-	background: color-mix(in srgb, var(--fg) 6%, var(--surface));
 }
 
 .selected-projects-card-shimmer {
@@ -893,7 +892,6 @@ html.dark .selected-projects-nav-btn:focus-visible {
 .latest-projects-card-image {
 	aspect-ratio: 1 / 1;
 	border-radius: var(--radius);
-	background: var(--surface);
 }
 
 .latest-projects-card-image img {
@@ -1810,7 +1808,6 @@ html.dark .selected-projects-nav-btn:focus-visible {
 	width: 100%;
 	aspect-ratio: 16 / 9;
 	min-height: 12rem;
-	background: var(--surface);
 }
 
 .home-video-section .home-video-frame video,

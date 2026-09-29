@@ -27,7 +27,7 @@ export default function ProjectYoutubeVideos({
 			<div className="project-gallery-grid">
 				{items.map((item, index) => (
 					<div key={item.id} className="project-gallery-item project-gallery-item--wide">
-						<div className="project-youtube-frame overflow-hidden rounded-[5px] bg-(--surface)">
+						<div className="project-youtube-frame overflow-hidden rounded-[5px]">
 							<iframe
 								src={youtubeEmbedUrl(item.id)}
 								title={`${title} — ${label} ${index + 1}`}

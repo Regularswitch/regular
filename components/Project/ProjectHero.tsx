@@ -42,7 +42,7 @@ export default function ProjectHero({
 
 	return (
 		<section className="project-hero" aria-label={title}>
-			<div className="project-hero-image relative aspect-square overflow-hidden rounded-[5px] bg-(--surface) md:aspect-video">
+			<div className="project-hero-image relative aspect-square overflow-hidden rounded-[5px] md:aspect-video">
 				{isVideo ? (
 					<video
 						className="absolute inset-0 h-full w-full object-cover object-center"

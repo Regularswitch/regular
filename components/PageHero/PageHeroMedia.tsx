@@ -34,8 +34,8 @@ export default function PageHeroMedia({
 		<div
 			className={
 				fullBleed
-					? 'page-hero-media page-hero-media--bleed relative overflow-hidden bg-(--surface)'
-					: 'page-hero-media relative aspect-square overflow-hidden rounded-[5px] bg-(--surface) md:aspect-6/3'
+					? 'page-hero-media page-hero-media--bleed relative overflow-hidden'
+					: 'page-hero-media relative aspect-square overflow-hidden rounded-[5px] md:aspect-6/3'
 			}
 		>
 			{children}

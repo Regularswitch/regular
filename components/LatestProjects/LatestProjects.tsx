@@ -117,7 +117,7 @@ function LatestProjectCard({
 
 	return (
 		<Link href={href} data-latest-card className="latest-projects-card group block shrink-0">
-			<div className="latest-projects-card-image relative overflow-hidden bg-(--surface)">
+			<div className="latest-projects-card-image relative overflow-hidden">
 				{cardImage ? (
 					<Image
 						src={cardImage}
