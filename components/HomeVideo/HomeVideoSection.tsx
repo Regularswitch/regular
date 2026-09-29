@@ -13,7 +13,7 @@ export default function HomeVideoSection({ video, poster, locale = 'en' }: HomeV
 
 	return (
 		<section className="home-video-section py-6 pb-0 md:py-10" aria-label={label}>
-			<div className="home-video-frame relative aspect-video overflow-hidden rounded-[5px] bg-(--surface)">
+			<div className="home-video-frame relative aspect-video overflow-hidden rounded-[5px]">
 				{src ? (
 					<video
 						className="absolute inset-0 h-full w-full object-cover object-center"
