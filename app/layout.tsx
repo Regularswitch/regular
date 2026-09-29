@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import { LegalPoliciesProvider } from '../components/Legal/LegalPoliciesProvider';
 import ScrollProgressBar from '../components/ScrollProgressBar';
 import JsonLd from '../components/Seo/JsonLd';
+import GoogleAnalytics from '../components/Seo/GoogleAnalytics';
 import { SiteUiProvider } from '../components/SiteUi/SiteUiProvider';
 import { buildNavActiveGradient, resolveBlobVisual } from '../lib/site/blobDefaults';
 import { hankenGrotesk } from '../lib/config/fonts';
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				<JsonLd id="studio-faq-jsonld" data={studioFaqJsonLd} />
 			</head>
 			<body>
+				<GoogleAnalytics />
 				<CustomCursor palette={blob.palette} />
 				<ScrollProgressBar />
 				<SiteUiProvider siteUi={buildSiteUiWithHeaderNav(siteUi, headerNav)}>
