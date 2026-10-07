@@ -70,6 +70,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				['--blob-nav-gradient' as string]: blobNavGradient,
 				['--blob-color-1' as string]: blob.color1,
 				['--blob-color-2' as string]: blob.color2,
+				['--mobile-menu-bg' as string]: blob.menuBg ?? '#e8ebf1',
+				['--mobile-menu-fg' as string]: blob.menuFg ?? '#000000',
 			}}
 			suppressHydrationWarning
 		>

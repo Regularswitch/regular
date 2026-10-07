@@ -27,7 +27,7 @@ export default function CapabilitiesPage({ content, latestProjects, locale = 'en
 		<article className="capabilities-page">
 			<CapabilitiesHero headline={content.headline} />
 
-			<section className="py-10 md:py-14">
+			<section className="pb-10 md:pb-14">
 				<CapabilitiesAccordion sections={content.sections} locale={locale} />
 			</section>
 

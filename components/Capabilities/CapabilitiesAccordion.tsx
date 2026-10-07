@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
@@ -18,81 +18,120 @@ type CapabilitiesAccordionProps = {
 	locale?: 'en' | 'pt';
 };
 
+function sectionImageUrl(section?: CapabilitySection): string | undefined {
+	if (!section?.image) return undefined;
+	return wpMediaUrl(section.image) ?? section.image;
+}
+
 export default function CapabilitiesAccordion({
 	sections,
 	defaultOpenIndex = -1,
 	locale = 'en',
 }: CapabilitiesAccordionProps) {
-	const [openIndex, setOpenIndex] = useState(defaultOpenIndex);
+	const visibleSections = useMemo(
+		() => sections.filter((section) => section.title?.trim()),
+		[sections],
+	);
 
-	if (!sections.length) return null;
+	const initialIndex =
+		defaultOpenIndex >= 0 && defaultOpenIndex < visibleSections.length ? defaultOpenIndex : -1;
+
+	const [openIndex, setOpenIndex] = useState(initialIndex);
+	const [pinnedImage, setPinnedImage] = useState<string | undefined>(() =>
+		sectionImageUrl(visibleSections[initialIndex >= 0 ? initialIndex : 0]),
+	);
+	const [pinnedSlug, setPinnedSlug] = useState<string | undefined>(
+		() => visibleSections[initialIndex >= 0 ? initialIndex : 0]?.imageProjectSlug,
+	);
+
+	const activeSection = openIndex >= 0 ? visibleSections[openIndex] : undefined;
+	const activeImage = sectionImageUrl(activeSection) ?? pinnedImage;
+	const activeSlug = activeSection?.imageProjectSlug ?? pinnedSlug;
+	const imageAlt = projectImageAltFallback(
+		activeSlug?.replace(/-/g, ' ') || activeSection?.title.replace(/<[^>]+>/g, '') || 'Capabilities',
+		locale,
+	);
+	const projectHref = activeSlug ? withLocalePrefix(`/project/${activeSlug}`, locale) : null;
+
+	if (!visibleSections.length) return null;
+
+	const seeProjectLabel = locale === 'pt' ? 'Ver projeto' : 'See project';
+	const seeCategoryLabel = locale === 'pt' ? 'Ver projetos relacionados' : 'See related projects';
+
+	const imageEl = activeImage ? (
+		<div className="capabilities-side-image relative aspect-square min-w-0 overflow-hidden rounded-[5px] md:sticky md:top-28">
+			<Image
+				key={activeImage}
+				src={activeImage}
+				alt={imageAlt}
+				fill
+				sizes="(max-width: 768px) 100vw, 45vw"
+				className="object-cover object-center transition-opacity duration-300"
+			/>
+		</div>
+	) : (
+		<div
+			className="capabilities-side-image relative aspect-square min-w-0 overflow-hidden rounded-[5px] md:sticky md:top-28"
+			aria-hidden
+		/>
+	);
 
 	return (
-		<div className="capabilities-accordion">
-			<BezierDivider />
-			{sections.map((section, index) => {
-				const isOpen = openIndex === index;
-				const imageSrc = section.image ? (wpMediaUrl(section.image) ?? section.image) : undefined;
-				const projectHref = section.imageProjectSlug
-					? withLocalePrefix(`/project/${section.imageProjectSlug}`, locale)
-					: null;
-				const categoryHref = section.relatedCategorySlug
-					? categoryArchivePath(section.relatedCategorySlug, locale)
-					: null;
-				const imageAlt = projectImageAltFallback(
-					section.imageProjectSlug?.replace(/-/g, ' ') || section.title.replace(/<[^>]+>/g, ''),
-					locale,
-				);
-				const seeProjectLabel = locale === 'pt' ? 'Ver projeto' : 'See project';
-				const seeCategoryLabel = locale === 'pt' ? 'Ver projetos relacionados' : 'See related projects';
+		<section className="capabilities-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
+			<div className="mb-10 min-w-0 md:mb-0">
+				{imageEl && projectHref ? (
+					<Link href={projectHref} className="block">
+						{imageEl}
+					</Link>
+				) : (
+					imageEl
+				)}
+			</div>
 
-				const imageEl = imageSrc ? (
-					<div className="capabilities-accordion-image relative aspect-square overflow-hidden rounded-[5px]">
-						<Image
-							src={imageSrc}
-							alt={imageAlt}
-							fill
-							sizes="(max-width: 768px) 100vw, 45vw"
-							className="object-cover object-center"
-						/>
-					</div>
-				) : null;
+			<div className="capabilities-accordion min-w-0 md:col-start-2">
+				<BezierDivider />
+				{visibleSections.map((section, index) => {
+					const isOpen = openIndex === index;
+					const categoryHref = section.relatedCategorySlug
+						? categoryArchivePath(section.relatedCategorySlug, locale)
+						: null;
+					const sectionProjectHref = section.imageProjectSlug
+						? withLocalePrefix(`/project/${section.imageProjectSlug}`, locale)
+						: null;
 
-				return (
-					<div key={section.title}>
-						<button
-							type="button"
-							className="accordion-trigger flex w-full items-center justify-between gap-4 py-5 text-left"
-							onClick={() => setOpenIndex(isOpen ? -1 : index)}
-							aria-expanded={isOpen}
-						>
-							<span
-								className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}
-								dangerouslySetInnerHTML={{ __html: section.title }}
-							/>
-							<span
-								className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
-								aria-hidden
+					return (
+						<div key={section.title}>
+							<button
+								type="button"
+								className="accordion-trigger flex w-full items-center justify-between gap-4 py-5 text-left"
+								onClick={() => {
+									if (isOpen) {
+										setOpenIndex(-1);
+										return;
+									}
+									const nextImage = sectionImageUrl(section);
+									if (nextImage) setPinnedImage(nextImage);
+									if (section.imageProjectSlug) setPinnedSlug(section.imageProjectSlug);
+									setOpenIndex(index);
+								}}
+								aria-expanded={isOpen}
 							>
-								<AccordionPlusIcon />
-							</span>
-						</button>
+								<span
+									className={`accordion-trigger-title font-hk normal-case${isOpen ? ' is-open' : ''}`}
+									dangerouslySetInnerHTML={{ __html: section.title }}
+								/>
+								<span
+									className={`accordion-trigger-icon text-lg leading-none${isOpen ? ' is-open text-(--fg)' : ' text-(--muted)'}`}
+									aria-hidden
+								>
+									<AccordionPlusIcon />
+								</span>
+							</button>
 
-						<div className={`accordion-panel${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
-							<div className="accordion-panel-inner">
-								<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
-									<div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
-										{imageEl && projectHref ? (
-											<Link href={projectHref} className="block">
-												{imageEl}
-											</Link>
-										) : (
-											imageEl
-										)}
-
-										<div
-											className={`capabilities-accordion-content font-hk${imageSrc ? '' : ' md:col-span-2'}`}
-										>
+							<div className={`accordion-panel${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
+								<div className="accordion-panel-inner">
+									<div className="accordion-panel-content capabilities-accordion-panel pb-8 pt-2">
+										<div className="capabilities-accordion-content font-hk">
 											{section.lead ? (
 												<p className="text-lg leading-snug text-(--fg) md:text-xl md:leading-tight">
 													{section.lead}
@@ -121,11 +160,11 @@ export default function CapabilitiesAccordion({
 												</div>
 											) : null}
 
-											{(projectHref || categoryHref) && (
+											{(sectionProjectHref || categoryHref) && (
 												<div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 md:mt-8">
-													{projectHref ? (
+													{sectionProjectHref ? (
 														<Link
-															href={projectHref}
+															href={sectionProjectHref}
 															className="font-hk text-sm text-(--fg) underline underline-offset-4 md:text-base"
 														>
 															{seeProjectLabel}
@@ -145,11 +184,11 @@ export default function CapabilitiesAccordion({
 									</div>
 								</div>
 							</div>
+							<BezierDivider />
 						</div>
-						<BezierDivider />
-					</div>
-				);
-			})}
-		</div>
+					);
+				})}
+			</div>
+		</section>
 	);
 }
