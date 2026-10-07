@@ -1,29 +1,43 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 import type { CapabilitiesFaqItem } from '../../types';
+import { CONTACT_PAGE_SLUG, pagePath } from '../../lib/site/pageSlugs';
+import { withLocalePrefix } from '../../lib/site/resolveSiteUi';
 import BezierDivider from '../BezierDivider/BezierDivider';
 import { AccordionPlusIcon } from '../SiteIcons';
 
 type CapabilitiesFaqProps = {
 	title?: string;
 	items?: CapabilitiesFaqItem[];
+	locale?: 'en' | 'pt';
 };
 
-export default function CapabilitiesFaq({ title, items }: CapabilitiesFaqProps) {
+export default function CapabilitiesFaq({ title, items, locale = 'en' }: CapabilitiesFaqProps) {
 	const list = (items ?? []).filter((item) => item.question?.trim() && item.answer?.trim());
 	const [openIndex, setOpenIndex] = useState(0);
 
 	if (!list.length) return null;
 
-	const heading = title?.trim() || 'FAQ';
+	const heading = title?.trim() || (locale === 'pt' ? 'Perguntas frequentes' : 'FAQ');
+	const contactLabel = locale === 'pt' ? 'Contato' : 'Contact';
+	const contactHref = withLocalePrefix(pagePath(CONTACT_PAGE_SLUG), locale);
 
 	return (
-		<section className="capabilities-faq py-10 md:py-14" aria-label={heading}>
-			<h2 className="capabilities-faq-heading font-hk text-(--fg)">{heading}</h2>
+		<section
+			className="capabilities-faq py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16"
+			aria-label={heading}
+		>
+			<div className="capabilities-faq-intro min-w-0">
+				<h2 className="capabilities-faq-heading font-hk text-(--fg)">{heading}</h2>
+				<Link href={contactHref} className="selected-projects-cta font-hk mt-8 inline-flex md:mt-10">
+					{contactLabel}
+				</Link>
+			</div>
 
-			<div className="capabilities-faq-list mt-8 md:mt-10">
+			<div className="capabilities-faq-list mt-10 min-w-0 md:mt-0">
 				<BezierDivider />
 				{list.map((item, index) => {
 					const isOpen = openIndex === index;

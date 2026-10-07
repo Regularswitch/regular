@@ -31,7 +31,7 @@ export default function CapabilitiesPage({ content, latestProjects, locale = 'en
 				<CapabilitiesAccordion sections={content.sections} locale={locale} />
 			</section>
 
-			<CapabilitiesFaq title={content.faqTitle} items={content.faq} />
+			<CapabilitiesFaq title={content.faqTitle} items={content.faq} locale={locale} />
 
 			<div className="flex justify-center pb-12 md:pb-16">
 				<Link href={projectsHref} className="selected-projects-cta font-hk">
