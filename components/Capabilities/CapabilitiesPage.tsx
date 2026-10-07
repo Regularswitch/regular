@@ -18,11 +18,11 @@ export default function CapabilitiesPage({ content, latestProjects, locale = 'en
 		<article className="capabilities-page">
 			<CapabilitiesHero headline={content.headline} />
 
-			<section className="pb-16 md:pb-24">
+			<section className="pb-16 md:pb-28">
 				<CapabilitiesAccordion sections={content.sections} locale={locale} />
 			</section>
-
-			<div className="pb-16 md:pb-24">
+			
+			<div className="pb-16 md:pb-28">
 				<CapabilitiesFaq title={content.faqTitle} items={content.faq} locale={locale} />
 			</div>
 
