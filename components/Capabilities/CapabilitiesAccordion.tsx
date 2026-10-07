@@ -77,7 +77,7 @@ export default function CapabilitiesAccordion({
 	);
 
 	return (
-		<section className="capabilities-accordion-section md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
+		<section className="capabilities-accordion-section flex flex-col md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
 			<div className="mb-10 min-w-0 md:mb-0">
 				{imageEl && projectHref ? (
 					<Link href={projectHref} className="block">

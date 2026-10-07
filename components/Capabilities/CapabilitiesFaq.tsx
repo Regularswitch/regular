@@ -17,7 +17,7 @@ type CapabilitiesFaqProps = {
 
 export default function CapabilitiesFaq({ title, items, locale = 'en' }: CapabilitiesFaqProps) {
 	const list = (items ?? []).filter((item) => item.question?.trim() && item.answer?.trim());
-	const [openIndex, setOpenIndex] = useState(0);
+	const [openIndex, setOpenIndex] = useState(-1);
 
 	if (!list.length) return null;
 
@@ -27,7 +27,7 @@ export default function CapabilitiesFaq({ title, items, locale = 'en' }: Capabil
 
 	return (
 		<section
-			className="capabilities-faq py-10 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-14 lg:gap-16"
+			className="capabilities-faq flex flex-col py-4 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-6 lg:gap-16"
 			aria-label={heading}
 		>
 			<div className="capabilities-faq-intro min-w-0">
