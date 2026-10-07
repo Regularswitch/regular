@@ -7,7 +7,7 @@ export default function CapabilitiesHero({ headline }: CapabilitiesHeroProps) {
 
 	return (
 		<section
-			className="capabilities-hero flex flex-col py-12 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-20 lg:gap-16"
+			className="capabilities-hero flex flex-col py-12 md:grid md:grid-cols-2 md:items-start md:gap-12 md:py-20 md:pb-24 lg:gap-16"
 			aria-label="Capabilities"
 		>
 			<h1
