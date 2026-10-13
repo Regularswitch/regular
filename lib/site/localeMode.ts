@@ -1,9 +1,8 @@
 /**
- * Site só em PT enquanto o EN não estiver pronto.
- * Defina NEXT_PUBLIC_FORCE_LOCALE=pt na Vercel (Production).
- * Remova ou deixe vazio para voltar ao EN+PT.
+ * Site em EN + PT.
+ * Antes: NEXT_PUBLIC_FORCE_LOCALE=pt forçava só português.
+ * Mantido desligado — o seletor EN/PT e rotas sem /PT voltam a funcionar.
  */
 export function isPtOnlyMode(): boolean {
-	const raw = (process.env.NEXT_PUBLIC_FORCE_LOCALE || '').trim().toLowerCase();
-	return raw === 'pt' || raw === 'pt-only' || raw === '1';
+	return false;
 }
