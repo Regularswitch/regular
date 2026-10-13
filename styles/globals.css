@@ -27,6 +27,8 @@
 	);
 	--blob-color-1: #7b00ff;
 	--blob-color-2: #d400ff;
+	--mobile-menu-bg: #e8ebf1;
+	--mobile-menu-fg: #000000;
 }
 
 /* Light theme */
@@ -142,10 +144,10 @@ body::-webkit-scrollbar {
 		width: 100%;
 	}
 
-	/* Painel do menu mobile: cores invertidas vs. tema do site (--fg/--bg) */
+	/* Painel do menu mobile: cores do CMS (Visual da home) */
 	.header-mobile-menu-panel {
-		background: var(--fg);
-		color: var(--bg);
+		background: var(--mobile-menu-bg);
+		color: var(--mobile-menu-fg);
 	}
 
 	.header-mobile-social-panel {
@@ -301,19 +303,36 @@ html:not(.dark) .brand-mark {
 }
 
 .capabilities-faq-heading {
-	font-size: clamp(1.25rem, 3vw, 1.875rem);
+	font-size: clamp(1.75rem, 4vw, 2.75rem);
 	font-weight: 500;
-	line-height: 1.1;
-	letter-spacing: -0.01em;
+	line-height: 1.05;
+	letter-spacing: -0.02em;
+	text-align: left;
+}
+
+@media (max-width: 767px) {
+	.capabilities-hero,
+	.capabilities-accordion-section,
+	.capabilities-faq {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.capabilities-faq-intro,
+	.capabilities-faq-list,
+	.capabilities-accordion-section > * {
+		width: 100%;
+		max-width: 100%;
+	}
 }
 
 .capabilities-faq-question {
 	font-size: clamp(1.05rem, 2.4vw, 1.375rem);
-	max-width: 42rem;
+	max-width: none;
 }
 
 .capabilities-faq-answer {
-	max-width: 42rem;
+	max-width: none;
 }
 
 .capabilities-faq-answer p {

@@ -40,7 +40,7 @@ export default function ThemeToggle({ inverted = false }: { inverted?: boolean }
 			}}
 			className={
 				inverted
-					? 'inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-(--bg)/20 bg-(--bg)/10 text-(--bg) hover:opacity-80'
+					? 'inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-(--mobile-menu-fg)/20 bg-(--mobile-menu-fg)/10 text-(--mobile-menu-fg) hover:opacity-80'
 					: 'inline-flex items-center justify-center rounded w-[28px] h-[28px] select-none border border-black/10 dark:border-white/15 bg-(--surface) text-(--fg) hover:opacity-80'
 			}
 			aria-label={theme === 'dark' ? 'Alternar para tema claro' : 'Alternar para tema escuro'}

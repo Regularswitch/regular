@@ -179,6 +179,10 @@ export type BlobVisual = {
   enabled?: boolean;
   color1: string;
   color2: string;
+  /** Fundo do painel do menu mobile. */
+  menuBg?: string;
+  /** Texto/ícones do painel do menu mobile. */
+  menuFg?: string;
   palette: string[];
   /** URL do vídeo full-width na home (Sistema → Visual da home). */
   video?: string;

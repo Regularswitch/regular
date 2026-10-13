@@ -972,6 +972,8 @@ export function porterBlobVisual(value: unknown): BlobVisual | null {
     return {
         color1: item.color1 as string,
         color2: item.color2 as string,
+        menuBg: typeof item.menuBg === 'string' ? item.menuBg : undefined,
+        menuFg: typeof item.menuFg === 'string' ? item.menuFg : undefined,
         palette: item.palette as string[],
         enabled: Boolean(item.enabled),
         video: typeof item.video === 'string' ? item.video : '',

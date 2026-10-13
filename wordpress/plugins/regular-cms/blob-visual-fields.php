@@ -12,11 +12,15 @@ define('RS_BLOB_VISUAL_LOADED', true);
 const RS_BLOB_DEFAULT_COLOR1 = '#fe4857';
 const RS_BLOB_DEFAULT_COLOR2 = '#4af117';
 const RS_BLOB_DEFAULT_PALETTE = '#7B00FF,#D400FF,#FF5FAF,#304FFE,#FFD500,#4af117,#fe4857';
+const RS_BLOB_DEFAULT_MENU_BG = '#e8ebf1';
+const RS_BLOB_DEFAULT_MENU_FG = '#000000';
 const RS_BLOB_MAX_COLORS = 8;
 
 const RS_BLOB_META_COLOR1 = 'rs_blob_color1';
 const RS_BLOB_META_COLOR2 = 'rs_blob_color2';
 const RS_BLOB_META_PALETTE = 'rs_blob_palette';
+const RS_BLOB_META_MENU_BG = 'rs_blob_menu_bg';
+const RS_BLOB_META_MENU_FG = 'rs_blob_menu_fg';
 const RS_BLOB_META_ENABLED = 'rs_blob_enabled';
 /** Vídeo full-width na home (abaixo dos Selected Projects). */
 const RS_BLOB_META_VIDEO_ID = 'rs_home_video_id';
@@ -92,6 +96,8 @@ function rs_blob_visual_get_meta(int $post_id): array {
         RS_BLOB_META_COLOR1    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR1, true),
         RS_BLOB_META_COLOR2    => (string) get_post_meta($post_id, RS_BLOB_META_COLOR2, true),
         RS_BLOB_META_PALETTE   => (string) get_post_meta($post_id, RS_BLOB_META_PALETTE, true),
+        RS_BLOB_META_MENU_BG   => (string) get_post_meta($post_id, RS_BLOB_META_MENU_BG, true),
+        RS_BLOB_META_MENU_FG   => (string) get_post_meta($post_id, RS_BLOB_META_MENU_FG, true),
         RS_BLOB_META_ENABLED   => (string) get_post_meta($post_id, RS_BLOB_META_ENABLED, true),
         RS_BLOB_META_VIDEO_ID  => (int) get_post_meta($post_id, RS_BLOB_META_VIDEO_ID, true),
         RS_BLOB_META_POSTER_ID => (int) get_post_meta($post_id, RS_BLOB_META_POSTER_ID, true),
@@ -151,12 +157,14 @@ function rs_blob_visual_payload(?int $post_id = null): array {
 
     if ($post_id <= 0) {
         return [
-            'enabled'  => false,
-            'color1'   => RS_BLOB_DEFAULT_COLOR1,
-            'color2'   => RS_BLOB_DEFAULT_COLOR2,
-            'palette'  => $defaults_palette,
-            'video'    => '',
-            'poster'   => '',
+            'enabled' => false,
+            'color1'  => RS_BLOB_DEFAULT_COLOR1,
+            'color2'  => RS_BLOB_DEFAULT_COLOR2,
+            'menuBg'  => RS_BLOB_DEFAULT_MENU_BG,
+            'menuFg'  => RS_BLOB_DEFAULT_MENU_FG,
+            'palette' => $defaults_palette,
+            'video'   => '',
+            'poster'  => '',
         ];
     }
 
@@ -167,6 +175,8 @@ function rs_blob_visual_payload(?int $post_id = null): array {
         'enabled' => rs_blob_visual_is_enabled($post_id),
         'color1'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR1], $palette, RS_BLOB_DEFAULT_COLOR1),
         'color2'  => rs_blob_clamp_to_palette($meta[RS_BLOB_META_COLOR2], $palette, RS_BLOB_DEFAULT_COLOR2),
+        'menuBg'  => rs_blob_normalize_hex((string) $meta[RS_BLOB_META_MENU_BG], RS_BLOB_DEFAULT_MENU_BG),
+        'menuFg'  => rs_blob_normalize_hex((string) $meta[RS_BLOB_META_MENU_FG], RS_BLOB_DEFAULT_MENU_FG),
         'palette' => $palette,
         'video'   => rs_blob_visual_resolve_video_url($meta),
         'poster'  => rs_blob_visual_attachment_url((int) $meta[RS_BLOB_META_POSTER_ID]),
@@ -194,6 +204,8 @@ function rs_blob_visual_ensure_post(): void {
     if (!is_wp_error($post_id) && $post_id > 0) {
         update_post_meta($post_id, RS_BLOB_META_COLOR1, RS_BLOB_DEFAULT_COLOR1);
         update_post_meta($post_id, RS_BLOB_META_COLOR2, RS_BLOB_DEFAULT_COLOR2);
+        update_post_meta($post_id, RS_BLOB_META_MENU_BG, RS_BLOB_DEFAULT_MENU_BG);
+        update_post_meta($post_id, RS_BLOB_META_MENU_FG, RS_BLOB_DEFAULT_MENU_FG);
         update_post_meta($post_id, RS_BLOB_META_PALETTE, RS_BLOB_DEFAULT_PALETTE);
         update_post_meta($post_id, RS_BLOB_META_ENABLED, '0');
     }
@@ -202,7 +214,7 @@ function rs_blob_visual_ensure_post(): void {
 }
 
 add_action('init', function () {
-    foreach ([RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR2, RS_BLOB_META_PALETTE] as $key) {
+    foreach ([RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR2, RS_BLOB_META_PALETTE, RS_BLOB_META_MENU_BG, RS_BLOB_META_MENU_FG] as $key) {
         register_post_meta('home-visual', $key, [
             'single'        => true,
             'type'          => 'string',
@@ -348,6 +360,25 @@ function rs_blob_render_color_picker_row(string $input_id, string $input_name, s
     echo '</div>';
 }
 
+/**
+ * Mesmo layout visual da toolbar/swatch, mas cor livre (qualquer hex).
+ * O input type=color é o próprio swatch clicável (abre o picker nativo).
+ */
+function rs_blob_render_free_color_picker_row(string $input_id, string $input_name, string $value, string $fallback, string $label): void {
+    $value = rs_blob_normalize_hex($value, $fallback);
+
+    echo '<div class="rs-blob-field" data-rs-blob-free-picker>';
+    echo '<label class="rs-blob-label" for="' . esc_attr($input_id) . '-picker">' . esc_html($label) . '</label>';
+    echo '<input type="hidden" id="' . esc_attr($input_id) . '" name="' . esc_attr($input_name) . '" value="' . esc_attr($value) . '" />';
+    echo '<div class="rs-blob-toolbar" role="group" aria-label="' . esc_attr($label) . '">';
+    echo '<span class="rs-blob-swatch is-active rs-blob-swatch--free" style="--swatch:' . esc_attr($value) . ';">';
+    echo '<input type="color" id="' . esc_attr($input_id) . '-picker" class="rs-blob-swatch-color-input" value="' . esc_attr($value) . '" title="' . esc_attr($value) . '" aria-label="' . esc_attr($label) . '" />';
+    echo '<span class="rs-blob-swatch-dot" aria-hidden="true"></span>';
+    echo '</span>';
+    echo '</div>';
+    echo '</div>';
+}
+
 function rs_blob_visual_render_meta_box(WP_Post $post): void {
     wp_nonce_field('rs_blob_visual_save', 'rs_blob_visual_nonce');
 
@@ -366,11 +397,13 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
         $palette,
         RS_BLOB_DEFAULT_COLOR2
     );
+    $menu_bg = rs_blob_normalize_hex((string) $meta[RS_BLOB_META_MENU_BG], RS_BLOB_DEFAULT_MENU_BG);
+    $menu_fg = rs_blob_normalize_hex((string) $meta[RS_BLOB_META_MENU_FG], RS_BLOB_DEFAULT_MENU_FG);
 
     echo '<p class="rs-blob-help">';
     echo 'Paleta única para a home em <strong>inglês e português</strong>. ';
     echo 'Novas cores só na paleta (máx. ' . (int) RS_BLOB_MAX_COLORS . '). ';
-    echo 'Principal e secundária são escolhidas a partir dela. ';
+    echo 'Principal e secundária alimentam a faixa social do menu mobile. ';
     echo rs_plugin_version_markup();
     echo '</p>';
 
@@ -404,8 +437,14 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
     echo '</p>';
     echo '</div>';
 
-    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR1, $color1, $palette, 'Cor principal');
-    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR2, RS_BLOB_META_COLOR2, $color2, $palette, 'Cor secundária');
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR1, RS_BLOB_META_COLOR1, $color1, $palette, 'Cor principal (faixa social do menu)');
+    rs_blob_render_color_picker_row(RS_BLOB_META_COLOR2, RS_BLOB_META_COLOR2, $color2, $palette, 'Cor secundária (faixa social do menu)');
+
+    echo '<hr style="margin:24px 0;border:0;border-top:1px solid #dcdcde;" />';
+    echo '<p class="rs-blob-label" style="margin-bottom:4px;">Menu mobile — painel</p>';
+    echo '<p class="rs-blob-hint" style="margin-top:0;margin-bottom:14px;">Fundo e texto do painel de navegação (qualquer cor; não afetam o tema claro/escuro do site).</p>';
+    rs_blob_render_free_color_picker_row(RS_BLOB_META_MENU_BG, RS_BLOB_META_MENU_BG, $menu_bg, RS_BLOB_DEFAULT_MENU_BG, 'Fundo do painel');
+    rs_blob_render_free_color_picker_row(RS_BLOB_META_MENU_FG, RS_BLOB_META_MENU_FG, $menu_fg, RS_BLOB_DEFAULT_MENU_FG, 'Texto e ícones');
 
     ?>
     <style>
@@ -454,6 +493,28 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
             box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35);
         }
         .rs-blob-swatch.is-active .rs-blob-swatch-dot { display: block; }
+        .rs-blob-swatch--free {
+            display: inline-block;
+            overflow: hidden;
+        }
+        .rs-blob-swatch-color-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .rs-blob-swatch--free:has(.rs-blob-swatch-color-input:focus-visible) {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
         .rs-blob-swatch--add {
             background: conic-gradient(
                 from 180deg,
@@ -784,6 +845,29 @@ function rs_blob_visual_render_meta_box(WP_Post $post): void {
         }
 
         setPalette(getPalette());
+
+        document.querySelectorAll('[data-rs-blob-free-picker]').forEach(function (field) {
+            var hidden = field.querySelector('input[type="hidden"]');
+            var picker = field.querySelector('.rs-blob-swatch-color-input');
+            var swatch = field.querySelector('.rs-blob-swatch--free');
+            if (!hidden || !picker || !swatch) return;
+
+            function applyColor(color) {
+                color = normalizeHex(color);
+                if (!color) return;
+                hidden.value = color;
+                picker.value = color;
+                picker.title = color;
+                swatch.style.setProperty('--swatch', color);
+            }
+
+            picker.addEventListener('input', function () {
+                applyColor(picker.value);
+            });
+            picker.addEventListener('change', function () {
+                applyColor(picker.value);
+            });
+        });
     })();
     </script>
     <?php
@@ -822,8 +906,19 @@ add_action('save_post_home-visual', function (int $post_id) {
         RS_BLOB_DEFAULT_COLOR2
     );
 
+    $menu_bg = rs_blob_normalize_hex(
+        isset($_POST[RS_BLOB_META_MENU_BG]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_MENU_BG])) : '',
+        RS_BLOB_DEFAULT_MENU_BG
+    );
+    $menu_fg = rs_blob_normalize_hex(
+        isset($_POST[RS_BLOB_META_MENU_FG]) ? sanitize_text_field(wp_unslash($_POST[RS_BLOB_META_MENU_FG])) : '',
+        RS_BLOB_DEFAULT_MENU_FG
+    );
+
     update_post_meta($post_id, RS_BLOB_META_COLOR1, $color1);
     update_post_meta($post_id, RS_BLOB_META_COLOR2, $color2);
+    update_post_meta($post_id, RS_BLOB_META_MENU_BG, $menu_bg);
+    update_post_meta($post_id, RS_BLOB_META_MENU_FG, $menu_fg);
     update_post_meta($post_id, RS_BLOB_META_PALETTE, implode(',', $palette));
     update_post_meta($post_id, RS_BLOB_META_ENABLED, !empty($_POST[RS_BLOB_META_ENABLED]) ? '1' : '0');
 

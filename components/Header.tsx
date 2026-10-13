@@ -470,17 +470,17 @@ export default function Header({ isLight = false }: HeaderProps) {
 						ref={(el) => {
 							panelsRef.current[0] = el;
 						}}
-						className="header-mobile-menu-panel w-full max-w-[700px] rounded-[5px] overflow-y-auto bg-(--fg) text-(--bg)"
+						className="header-mobile-menu-panel w-full max-w-[700px] rounded-[5px] overflow-y-auto bg-(--mobile-menu-bg) text-(--mobile-menu-fg)"
 					>
 						<div className="flex items-center justify-between px-10 pt-8">
 							<Link href={`/${prefix}`.replace('//', '/')} onClick={() => closeMenu()} aria-label="RSW — início">
-								<LogoMark className="h-8 w-auto text-(--bg)" />
+								<LogoMark className="h-8 w-auto text-(--mobile-menu-fg)" />
 							</Link>
 							<button
 								type="button"
 								onClick={closeMenu}
 								aria-label="Close menu"
-								className="flex h-11 w-11 items-center justify-center text-(--bg)"
+								className="flex h-11 w-11 items-center justify-center text-(--mobile-menu-fg)"
 							>
 								<svg width="40" height="40" viewBox="0 0 20 20" fill="none" aria-hidden>
 									<line
@@ -527,7 +527,7 @@ export default function Header({ isLight = false }: HeaderProps) {
 								<button
 									type="button"
 									onClick={() => setLanguageCookie(language === 'PT' ? 'EN' : 'PT')}
-									className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-(--bg)/20"
+									className="mr-3 inline-flex items-center justify-center rounded px-3 py-2 border border-(--mobile-menu-fg)/20"
 									aria-label={language === 'PT' ? 'Mudar para inglês' : 'Mudar para português'}
 								>
 									{language === 'PT' ? 'EN' : 'PT'}
