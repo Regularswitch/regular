@@ -16,7 +16,7 @@ type CapabilitiesPageProps = {
 export default function CapabilitiesPage({ content, latestProjects, locale = 'en' }: CapabilitiesPageProps) {
 	return (
 		<article className="capabilities-page">
-			<CapabilitiesHero headline={content.headline} />
+			<CapabilitiesHero headline={content.headline} headlineRight={content.headlineRight} />
 
 			<section className="pb-16 md:pb-28">
 				<CapabilitiesAccordion sections={content.sections} locale={locale} />

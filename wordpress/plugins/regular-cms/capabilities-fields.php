@@ -150,14 +150,15 @@ function rs_capabilities_normalize_faq(array $items): array {
 }
 
 /**
- * @return array{headline: string, sections: array, faqTitle: string, faq: array}
+ * @return array{headline: string, headlineRight: string, sections: array, faqTitle: string, faq: array}
  */
 function rs_capabilities_default_locale(): array {
     return [
-        'headline'  => '',
-        'sections'  => [],
-        'faqTitle'  => '',
-        'faq'       => [],
+        'headline'      => '',
+        'headlineRight' => '',
+        'sections'      => [],
+        'faqTitle'      => '',
+        'faq'           => [],
     ];
 }
 
@@ -188,10 +189,11 @@ function rs_capabilities_i18n_normalize(array $raw): array {
         $faq = is_array($loc['faq'] ?? null) ? $loc['faq'] : [];
 
         $data['locales'][$locale] = [
-            'headline' => trim((string) ($loc['headline'] ?? '')),
-            'sections' => rs_capabilities_normalize_sections($sections),
-            'faqTitle' => trim(wp_strip_all_tags((string) ($loc['faqTitle'] ?? ''))),
-            'faq'      => rs_capabilities_normalize_faq($faq),
+            'headline'      => trim((string) ($loc['headline'] ?? '')),
+            'headlineRight' => trim((string) ($loc['headlineRight'] ?? '')),
+            'sections'      => rs_capabilities_normalize_sections($sections),
+            'faqTitle'      => trim(wp_strip_all_tags((string) ($loc['faqTitle'] ?? ''))),
+            'faq'           => rs_capabilities_normalize_faq($faq),
         ];
     }
 
@@ -201,7 +203,7 @@ function rs_capabilities_i18n_normalize(array $raw): array {
 /**
  * Lê headline e seções flat de um post legado.
  *
- * @return array{headline: string, sections: array<int, array{title: string, text: string, image_id: int}>}
+ * @return array{headline: string, headlineRight: string, sections: array<int, array{title: string, text: string, image_id: int}>}
  */
 function rs_capabilities_locale_from_legacy_post(int $post_id): array {
     if ($post_id <= 0) {
@@ -217,10 +219,11 @@ function rs_capabilities_locale_from_legacy_post(int $post_id): array {
     }
 
     return [
-        'headline' => trim((string) get_post_meta($post_id, RS_CAPABILITIES_HEADLINE_KEY, true)),
-        'sections' => rs_capabilities_normalize_sections($sections),
-        'faqTitle' => '',
-        'faq'      => [],
+        'headline'      => trim((string) get_post_meta($post_id, RS_CAPABILITIES_HEADLINE_KEY, true)),
+        'headlineRight' => '',
+        'sections'      => rs_capabilities_normalize_sections($sections),
+        'faqTitle'      => '',
+        'faq'           => [],
     ];
 }
 
@@ -290,6 +293,9 @@ function rs_capabilities_meta_to_payload(int $post_id, string $locale = 'en'): a
         if (trim((string) ($loc['headline'] ?? '')) === '') {
             $loc['headline'] = $en['headline'] ?? '';
         }
+        if (trim((string) ($loc['headlineRight'] ?? '')) === '') {
+            $loc['headlineRight'] = $en['headlineRight'] ?? '';
+        }
         if (empty($loc['sections'])) {
             $loc['sections'] = $en['sections'] ?? [];
         }
@@ -302,14 +308,15 @@ function rs_capabilities_meta_to_payload(int $post_id, string $locale = 'en'): a
     }
 
     return [
-        'headline' => trim((string) ($loc['headline'] ?? '')),
-        'sections' => rs_capabilities_sections_to_payload(
+        'headline'      => trim((string) ($loc['headline'] ?? '')),
+        'headlineRight' => trim((string) ($loc['headlineRight'] ?? '')),
+        'sections'      => rs_capabilities_sections_to_payload(
             rs_capabilities_normalize_sections(
                 is_array($loc['sections'] ?? null) ? $loc['sections'] : []
             )
         ),
-        'faqTitle' => trim((string) ($loc['faqTitle'] ?? '')),
-        'faq'      => rs_capabilities_normalize_faq(
+        'faqTitle'      => trim((string) ($loc['faqTitle'] ?? '')),
+        'faq'           => rs_capabilities_normalize_faq(
             is_array($loc['faq'] ?? null) ? $loc['faq'] : []
         ),
     ];
@@ -530,14 +537,27 @@ function rs_capabilities_render_locale_fields(string $locale, array $loc): void 
         $sections = [['title' => '', 'text' => '', 'image_id' => 0]];
     }
 
-    rs_ds_fieldset_open('Headline');
+    $headline_right_id = 'rs_cap_headline_right_' . $locale;
+    $headline_right_name = 'rs_cap_i18n[' . $locale . '][headlineRight]';
+
+    rs_ds_fieldset_open('Headline (coluna esquerda)');
     rs_render_rich_text_field(
         $headline_id,
         $headline_name,
         (string) ($loc['headline'] ?? ''),
         'inline',
     );
-    rs_ds_help('Use o botão B para destacar palavras.');
+    rs_ds_help('Coluna esquerda. Use o botão B para destacar palavras.');
+    rs_ds_fieldset_close();
+
+    rs_ds_fieldset_open('Headline (coluna direita)');
+    rs_render_rich_text_field(
+        $headline_right_id,
+        $headline_right_name,
+        (string) ($loc['headlineRight'] ?? ''),
+        'inline',
+    );
+    rs_ds_help('Coluna direita no desktop. No mobile fica abaixo da esquerda.');
     rs_ds_fieldset_close();
 
     echo '<div id="rs-cap-accordion-' . esc_attr($locale) . '" data-rs-accordion data-locale="' . esc_attr($locale) . '">';
@@ -754,10 +774,11 @@ add_action('save_post_capabilities', function (int $post_id) {
         $loc = is_array($raw[$locale] ?? null) ? $raw[$locale] : [];
         $faq_raw = is_array($loc['faq'] ?? null) ? $loc['faq'] : [];
         $data['locales'][$locale] = [
-            'headline' => wp_kses_post((string) ($loc['headline'] ?? '')),
-            'sections' => rs_capabilities_parse_sections_from_request($locale),
-            'faqTitle' => sanitize_text_field((string) ($loc['faqTitle'] ?? '')),
-            'faq'      => rs_capabilities_normalize_faq($faq_raw),
+            'headline'      => wp_kses_post((string) ($loc['headline'] ?? '')),
+            'headlineRight' => wp_kses_post((string) ($loc['headlineRight'] ?? '')),
+            'sections'      => rs_capabilities_parse_sections_from_request($locale),
+            'faqTitle'      => sanitize_text_field((string) ($loc['faqTitle'] ?? '')),
+            'faq'           => rs_capabilities_normalize_faq($faq_raw),
         ];
     }
 
@@ -798,9 +819,9 @@ function rs_capabilities_render_admin_footer_script(): void {
                 tinymce.triggerSave();
             }
             locales.forEach(function (locale) {
-                const headlineId = 'rs_cap_headline_' + locale;
                 if (typeof wp !== 'undefined' && wp.editor && wp.editor.save) {
-                    wp.editor.save(headlineId);
+                    wp.editor.save('rs_cap_headline_' + locale);
+                    wp.editor.save('rs_cap_headline_right_' + locale);
                 }
             });
             $('textarea[id^="rs_cap_section_text_"]').each(function () {

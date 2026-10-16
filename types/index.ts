@@ -126,6 +126,8 @@ export type CapabilitiesFaqItem = {
 
 export type CapabilitiesContent = {
   headline: string;
+  /** Coluna direita do hero (mesmo estilo do headline). */
+  headlineRight?: string;
   sections: CapabilitySection[];
   faqTitle?: string;
   faq?: CapabilitiesFaqItem[];
