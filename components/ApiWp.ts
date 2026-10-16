@@ -512,6 +512,7 @@ function isCapabilitiesContent(value: unknown): value is CapabilitiesContent {
     if (!value || typeof value !== 'object') return false;
     const item = value as Record<string, unknown>;
     if (typeof item.headline !== 'string') return false;
+    if (item.headlineRight !== undefined && typeof item.headlineRight !== 'string') return false;
     if (!Array.isArray(item.sections)) return false;
     if (!item.sections.every(isCapabilitySection)) return false;
     if (item.faq !== undefined) {
@@ -530,9 +531,11 @@ export function porterCapabilities(payloadWp: listResponseWp): CapabilitiesConte
         const faq = Array.isArray(item.capabilities_data.faq)
             ? item.capabilities_data.faq.filter((entry) => entry.question?.trim() && entry.answer?.trim())
             : [];
-        if (item.capabilities_data.headline || sections.length > 0 || faq.length > 0) {
+        const headlineRight = item.capabilities_data.headlineRight?.trim() ?? '';
+        if (item.capabilities_data.headline || headlineRight || sections.length > 0 || faq.length > 0) {
             return {
                 headline: item.capabilities_data.headline,
+                headlineRight: headlineRight || undefined,
                 sections,
                 faqTitle: item.capabilities_data.faqTitle?.trim() || undefined,
                 faq: faq.length ? faq : undefined,

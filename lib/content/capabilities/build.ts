@@ -38,6 +38,7 @@ export function buildCapabilitiesContent(
 ): CapabilitiesContent {
 	const empty: CapabilitiesContent = {
 		headline: '',
+		headlineRight: '',
 		sections: [],
 		faq: [],
 	};
@@ -51,6 +52,7 @@ export function buildCapabilitiesContent(
 
 	return {
 		headline: wp.headline?.trim() ?? '',
+		headlineRight: wp.headlineRight?.trim() ?? '',
 		sections: attachProjectImages(sections, projects),
 		faqTitle: wp.faqTitle?.trim() || undefined,
 		faq: faq.length ? faq : undefined,
